@@ -1,6 +1,7 @@
 package main
 
 import (
+	"C"
 	"bufio"
 	"context"
 	"embed"
@@ -85,30 +86,40 @@ var (
 	nextID  int64
 )
 
-func main() {
-	port := "8080"
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
-	}
-
+//export StartVectServer
+func StartVectServer(port C.int) C.int {
+	p := int(port)
 	subFS, err := fs.Sub(webFS, "web")
 	if err != nil {
-		log.Fatal(err)
+		return C.int(-1)
 	}
-	http.Handle("/", http.FileServer(http.FS(subFS)))
 
-	http.HandleFunc("/api/scan", handleScan)
-	http.HandleFunc("/api/scan/", handleScanByID)
-	http.HandleFunc("/api/resolve-asn/", handleResolveASN)
-	http.HandleFunc("/api/cancel/", handleCancel)
-	http.HandleFunc("/api/local-ip", handleLocalIP)
-	http.HandleFunc("/api/traceroute/", handleTraceroute)
-	http.HandleFunc("/api/route-type/", handleRouteType)
-	http.HandleFunc("/api/route-type", handleBatchRouteType)
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.FS(subFS)))
+	mux.HandleFunc("/api/scan", handleScan)
+	mux.HandleFunc("/api/scan/", handleScanByID)
+	mux.HandleFunc("/api/resolve-asn/", handleResolveASN)
+	mux.HandleFunc("/api/cancel/", handleCancel)
+	mux.HandleFunc("/api/local-ip", handleLocalIP)
+	mux.HandleFunc("/api/traceroute/", handleTraceroute)
+	mux.HandleFunc("/api/route-type/", handleRouteType)
+	mux.HandleFunc("/api/route-type", handleBatchRouteType)
 
-	log.Printf("Vect Web UI starting on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	server := &http.Server{
+		Addr:    fmt.Sprintf("127.0.0.1:%d", p),
+		Handler: mux,
+	}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("server error: %v", err)
+		}
+	}()
+
+	return C.int(0)
 }
+
+func main() {}
 
 func newScanID() string {
 	id := atomic.AddInt64(&nextID, 1)
