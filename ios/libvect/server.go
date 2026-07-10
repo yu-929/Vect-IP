@@ -66,6 +66,7 @@ type ProgressData struct {
 	BestPrefix string  `json:"bestPrefix"`
 	ElapsedMS  int64   `json:"elapsedMS"`
 	Nodes      int     `json:"nodes"`
+	Stage      int     `json:"stage"`
 }
 
 type ScanSession struct {
@@ -178,16 +179,9 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 				BestPrefix: info.BestPrefix,
 				ElapsedMS:  info.Elapsed.Milliseconds(),
 				Nodes:      info.Nodes,
+				Stage:      3,
 			}
-			subs := make([]chan ProgressData, len(session.subs))
-			copy(subs, session.subs)
-			session.mu.Unlock()
-			for _, ch := range subs {
-				select {
-				case ch <- session.progress:
-				default:
-				}
-			}
+			sendProgress(session)
 		},
 	}
 
@@ -236,6 +230,18 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
+		// Stage 1: CIDR/ASN parsing
+		session.mu.Lock()
+		session.progress = ProgressData{Budget: req.Budget, Stage: 1, Completed: 1}
+		sendProgress(session)
+		session.mu.Unlock()
+
+		// Stage 2: IP sampling
+		session.mu.Lock()
+		session.progress = ProgressData{Budget: req.Budget, Stage: 2, Completed: 1}
+		sendProgress(session)
+		session.mu.Unlock()
+
 		eng := engine.New(cfg, probeCfg)
 		resp, err := eng.Run(ctx, engReq)
 
@@ -247,6 +253,10 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			session.status = "completed"
 			session.result = resp.Top
 		}
+		// Stage 4: filtering/sorting
+		session.progress.Stage = 4
+		session.progress.Completed = 1
+		sendProgress(session)
 		subs := make([]chan ProgressData, len(session.subs))
 		copy(subs, session.subs)
 		session.subs = nil
@@ -304,6 +314,17 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"id": id})
+}
+
+func sendProgress(session *ScanSession) {
+	subs := make([]chan ProgressData, len(session.subs))
+	copy(subs, session.subs)
+	for _, ch := range subs {
+		select {
+		case ch <- session.progress:
+		default:
+		}
+	}
 }
 
 func handleScanByID(w http.ResponseWriter, r *http.Request) {
