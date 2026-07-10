@@ -1,7 +1,6 @@
 package main
 
 import (
-	"C"
 	"bufio"
 	"context"
 	"embed"
@@ -29,12 +28,6 @@ import (
 //go:embed web
 var webFS embed.FS
 
-var (
-	scans   = make(map[string]*ScanSession)
-	scansMu sync.RWMutex
-	nextID  int64
-)
-
 type ScanRequest struct {
 	CIDRs           []string `json:"cidrs"`
 	ASN             int      `json:"asn"`
@@ -58,11 +51,11 @@ type ScanRequest struct {
 }
 
 type ScanStatus struct {
-	ID       string            `json:"id"`
-	Status   string            `json:"status"`
-	Progress *ProgressData     `json:"progress,omitempty"`
-	Result   []engine.TopResult `json:"result,omitempty"`
-	Error    string            `json:"error,omitempty"`
+	ID        string          `json:"id"`
+	Status    string          `json:"status"`
+	Progress  *ProgressData   `json:"progress,omitempty"`
+	Result    []engine.TopResult `json:"result,omitempty"`
+	Error     string          `json:"error,omitempty"`
 }
 
 type ProgressData struct {
@@ -86,35 +79,35 @@ type ScanSession struct {
 	subs     []chan ProgressData
 }
 
-//export StartVectServer
-func StartVectServer(port C.int) C.int {
-	p := int(port)
+var (
+	scans   = make(map[string]*ScanSession)
+	scansMu sync.RWMutex
+	nextID  int64
+)
+
+func main() {
+	port := "8080"
+	if p := os.Getenv("PORT"); p != "" {
+		port = p
+	}
+
 	subFS, err := fs.Sub(webFS, "web")
 	if err != nil {
-		return -1
+		log.Fatal(err)
 	}
+	http.Handle("/", http.FileServer(http.FS(subFS)))
 
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(subFS)))
-	mux.HandleFunc("/api/scan", handleScan)
-	mux.HandleFunc("/api/scan/", handleScanByID)
-	mux.HandleFunc("/api/resolve-asn/", handleResolveASN)
-	mux.HandleFunc("/api/cancel/", handleCancel)
-	mux.HandleFunc("/api/local-ip", handleLocalIP)
-	mux.HandleFunc("/api/traceroute/", handleTraceroute)
+	http.HandleFunc("/api/scan", handleScan)
+	http.HandleFunc("/api/scan/", handleScanByID)
+	http.HandleFunc("/api/resolve-asn/", handleResolveASN)
+	http.HandleFunc("/api/cancel/", handleCancel)
+	http.HandleFunc("/api/local-ip", handleLocalIP)
+	http.HandleFunc("/api/traceroute/", handleTraceroute)
+	http.HandleFunc("/api/route-type/", handleRouteType)
+	http.HandleFunc("/api/route-type", handleBatchRouteType)
 
-	server := &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", p),
-		Handler: mux,
-	}
-
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("server error: %v", err)
-		}
-	}()
-
-	return C.int(0)
+	log.Printf("Vect Web UI starting on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 func newScanID() string {
@@ -134,9 +127,9 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Resolve ASN if provided
 	var cidrs []string
 	cidrs = append(cidrs, req.CIDRs...)
-
 	if req.ASN > 0 {
 		asnCIDRs, err := resolveASN(req.ASN, req.IPVersion)
 		if err != nil {
@@ -160,7 +153,6 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		}
 		cidrs = filtered
 	}
-
 	if len(cidrs) == 0 {
 		http.Error(w, "no CIDRs or ASN provided", 400)
 		return
@@ -170,7 +162,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	session := &ScanSession{
 		status: "running",
 		progress: ProgressData{
-			Budget: req.Budget,
+			Budget:  req.Budget,
 		},
 	}
 	scansMu.Lock()
@@ -230,8 +222,8 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	engReq := engine.Request{
-		CIDRs: cidrs,
-		Probe: probeCfg,
+		CIDRs:    cidrs,
+		Probe:    probeCfg,
 	}
 
 	if req.Concurrency <= 0 {
@@ -257,7 +249,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		cfg.ColoBlock = strings.Split(req.ColoExclude, ",")
 	}
 
-	go func() {
+go func() {
 		// Stage 1: CIDR/ASN parsing
 		session.mu.Lock()
 		session.progress = ProgressData{Budget: req.Budget, Stage: 1, Completed: 1}
@@ -298,6 +290,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			close(ch)
 		}
 
+		// Run download tests if requested
 		if req.DownloadTop > 0 && len(session.result) > 0 {
 			session.mu.Lock()
 			session.status = "downloading"
@@ -337,6 +330,39 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 			}
+		}
+
+		// Fill route types for all results
+		if len(session.result) > 0 {
+			ips := make([]string, len(session.result))
+			for i, r := range session.result {
+				ips[i] = r.IP.String()
+			}
+
+			rctx, rcancel := context.WithTimeout(context.Background(), 120*time.Second)
+			routeResults := batchClassifyRoutes(rctx, ips)
+			rcancel()
+
+			session.mu.Lock()
+			for i := range session.result {
+				if ri, ok := routeResults[session.result[i].IP.String()]; ok {
+					if session.result[i].Trace == nil {
+						session.result[i].Trace = make(map[string]string)
+					}
+					routeLabel := "Normal"
+					routeLine := ""
+					if ri != nil {
+						routeLabel = ri.RouteType
+						routeLine = ri.RouteLine
+					}
+					if routeLine != "" {
+						session.result[i].Trace["route"] = fmt.Sprintf("%s｜%s｜%s", ri.Org, routeLine, routeLabel)
+					} else {
+						session.result[i].Trace["route"] = routeLabel
+					}
+				}
+			}
+			session.mu.Unlock()
 		}
 
 		session.mu.Lock()
@@ -546,6 +572,115 @@ type LocalIPInfo struct {
 	Location  string   `json:"location,omitempty"`
 }
 
+var premiumASNs = map[int]string{
+	4809:  "CN2",
+	9929:  "CUII",
+	58807: "CMIN2",
+}
+
+var optimizedASNs = map[int]string{
+	58453: "CMI",
+	4134:  "163",
+	4837:  "169",
+	4538:  "CERNET",
+	24445: "CMHK",
+	132203: "CNI",
+}
+
+type RouteInfo struct {
+	ASN       int    `json:"asn"`
+	Org       string `json:"org"`
+	RouteType string `json:"routeType"`
+	RouteLine string `json:"routeLine"`
+}
+
+func classifyRoute(asn int) (routeType, routeLine string) {
+	if line, ok := premiumASNs[asn]; ok {
+		return "Premium", line
+	}
+	if line, ok := optimizedASNs[asn]; ok {
+		return "Optimized", line
+	}
+	return "Normal", ""
+}
+
+// hopPrefixPatterns matches IP prefixes in traceroute hops to identify route lines.
+// Models IP-Tidy's _HOP_PATTERNS / _ROUTE_TABLE logic.
+var hopPrefixPatterns = []struct {
+	prefix    string
+	line      string
+	routeType string
+}{
+	{"59.43.", "CN2", "Premium"},     // China Telecom CN2 backbone
+	{"223.120.", "CUII", "Premium"},  // China Unicom CUII backbone
+	{"219.158.", "CMI", "Optimized"}, // China Mobile International
+	{"202.97.", "163", "Optimized"},  // China Telecom 163 backbone
+}
+
+func matchHopPrefix(ip string) (routeType, line string) {
+	for _, p := range hopPrefixPatterns {
+		if strings.HasPrefix(ip, p.prefix) {
+			return p.routeType, p.line
+		}
+	}
+	return "", ""
+}
+
+func lookupRoute(ctx context.Context, ip string) *RouteInfo {
+	client := &http.Client{Timeout: 5 * time.Second}
+	url := fmt.Sprintf("http://ip-api.com/json/%s?fields=query,as,asname,org,isp", ip)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var data struct {
+		AS     string `json:"as"`
+		ASName string `json:"asname"`
+		Org    string `json:"org"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return nil
+	}
+
+	asn := 0
+	fmt.Sscanf(data.AS, "AS%d", &asn)
+	routeType, routeLine := classifyRoute(asn)
+	return &RouteInfo{
+		ASN:       asn,
+		Org:       data.Org,
+		RouteType: routeType,
+		RouteLine: routeLine,
+	}
+}
+
+func batchClassifyRoutes(ctx context.Context, ips []string) map[string]*RouteInfo {
+	results := make(map[string]*RouteInfo)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5)
+
+	for _, ip := range ips {
+		wg.Add(1)
+		go func(ip string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			info := classifyRouteByTrace(ctx, ip)
+			mu.Lock()
+			results[ip] = info
+			mu.Unlock()
+		}(ip)
+	}
+	wg.Wait()
+	return results
+}
+
 func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 	info := LocalIPInfo{}
 
@@ -642,8 +777,14 @@ func handleTraceroute(w http.ResponseWriter, r *http.Request) {
 }
 
 func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
-	// Try traceroute first, fall back to tcptraceroute
-	cmd := exec.CommandContext(ctx, "traceroute", "-n", "-q", "1", "-w", "2", ip)
+	// Try NextTrace first for best results (TCP mode, GeoIP, ASN)
+	hops := runNextTrace(ctx, ip)
+	if hops != nil {
+		return hops
+	}
+
+	// Fall back to standard traceroute with TCP mode (-T -p 443)
+	cmd := exec.CommandContext(ctx, "traceroute", "-T", "-p", "443", "-n", "-q", "1", "-w", "2", ip)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil
@@ -652,9 +793,8 @@ func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
 		return nil
 	}
 
-	var hops []TracerouteHop
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
+	var scanner *bufio.Scanner
+	for scanner = bufio.NewScanner(stdout); scanner.Scan(); {
 		line := scanner.Text()
 		parts := strings.Fields(line)
 		if len(parts) < 2 {
@@ -679,4 +819,208 @@ func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
 	return hops
 }
 
-func main() {}
+type nextTraceGeo struct {
+	ASN     string `json:"ASN"`
+	Country string `json:"Country"`
+	City    string `json:"City"`
+	Owner   string `json:"Owner"`
+}
+
+type nextTraceHop struct {
+	Success bool           `json:"Success"`
+	Address *string        `json:"Address"`
+	TTL     int            `json:"TTL"`
+	RTT     float64        `json:"RTT"`
+	Geo     *nextTraceGeo `json:"Geo"`
+}
+
+type nextTraceResult struct {
+	Hops [][]nextTraceHop `json:"Hops"`
+}
+
+func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
+	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "3", ip)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil
+	}
+	if err := cmd.Start(); err != nil {
+		return nil
+	}
+
+	var output []byte
+	if output, err = io.ReadAll(stdout); err != nil {
+		cmd.Wait()
+		return nil
+	}
+	cmd.Wait()
+
+	var result nextTraceResult
+	if err := json.Unmarshal(output, &result); err != nil {
+		return nil
+	}
+
+	var hops []TracerouteHop
+	for _, hopGroup := range result.Hops {
+		if len(hopGroup) == 0 {
+			continue
+		}
+		h := hopGroup[0]
+		hop := TracerouteHop{Hop: h.TTL}
+		if !h.Success || h.Address == nil {
+			hop.Lost = true
+		} else {
+			hop.IP = *h.Address
+			hop.MS = fmt.Sprintf("%.2f", h.RTT)
+		}
+		hops = append(hops, hop)
+	}
+	if len(hops) > 0 {
+		return hops
+	}
+	return nil
+}
+
+func classifyRouteByTrace(ctx context.Context, ip string) *RouteInfo {
+	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "5", ip)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil
+	}
+	if err := cmd.Start(); err != nil {
+		return nil
+	}
+	var output []byte
+	if output, err = io.ReadAll(stdout); err != nil {
+		cmd.Wait()
+		return nil
+	}
+	cmd.Wait()
+
+	var result nextTraceResult
+	if err := json.Unmarshal(output, &result); err != nil {
+		return nil
+	}
+
+	// Collect all ASNs and hop IPs along the path
+	seenASNs := make(map[int]bool)
+	var lastASN int
+	var lastOwner string
+	premiumFound := ""
+	optimizedFound := ""
+	for _, hopGroup := range result.Hops {
+		if len(hopGroup) == 0 {
+			continue
+		}
+		h := hopGroup[0]
+		if h.Geo != nil && h.Geo.ASN != "" {
+			asn := 0
+			fmt.Sscanf(h.Geo.ASN, "AS%d", &asn)
+			if asn > 0 {
+				seenASNs[asn] = true
+				lastASN = asn
+				lastOwner = h.Geo.Owner
+			}
+		}
+		// Check hop IP prefix patterns (IP-Tidy style _HOP_PATTERNS)
+		if h.Address != nil && *h.Address != "" {
+			if rt, line := matchHopPrefix(*h.Address); rt != "" {
+				if rt == "Premium" {
+					premiumFound = line
+				} else if rt == "Optimized" && premiumFound == "" {
+					optimizedFound = line
+				}
+			}
+		}
+	}
+
+	// Classify: ASN check first, then IP prefix patterns
+	if premiumFound == "" {
+		for asn := range seenASNs {
+			if line, ok := premiumASNs[asn]; ok {
+				premiumFound = line
+				break
+			}
+		}
+	}
+	if premiumFound == "" && optimizedFound == "" {
+		for asn := range seenASNs {
+			if line, ok := optimizedASNs[asn]; ok {
+				optimizedFound = line
+				break
+			}
+		}
+	}
+
+	if premiumFound != "" {
+		return &RouteInfo{ASN: lastASN, Org: lastOwner, RouteType: "Premium", RouteLine: premiumFound}
+	}
+	if optimizedFound != "" {
+		return &RouteInfo{ASN: lastASN, Org: lastOwner, RouteType: "Optimized", RouteLine: optimizedFound}
+	}
+
+	// Fall back to destination IP ASN
+	return lookupRoute(ctx, ip)
+}
+
+func handleRouteType(w http.ResponseWriter, r *http.Request) {
+	ip := strings.TrimPrefix(r.URL.Path, "/api/route-type/")
+	if ip == "" {
+		http.Error(w, "missing IP", 400)
+		return
+	}
+	if parsed := net.ParseIP(ip); parsed == nil {
+		http.Error(w, "invalid IP", 400)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	info := lookupRoute(ctx, ip)
+	if info == nil {
+		http.Error(w, "route lookup failed", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(info)
+}
+
+func handleBatchRouteType(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IPs []string `json:"ips"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	if len(req.IPs) == 0 {
+		json.NewEncoder(w).Encode(map[string]*RouteInfo{})
+		return
+	}
+
+	results := make(map[string]*RouteInfo)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 10)
+
+	for _, ip := range req.IPs {
+		wg.Add(1)
+		go func(ip string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+			defer cancel()
+			info := lookupRoute(ctx, ip)
+			mu.Lock()
+			results[ip] = info
+			mu.Unlock()
+		}(ip)
+	}
+	wg.Wait()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}

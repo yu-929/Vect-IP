@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/netip"
 	"net/url"
 	"os"
@@ -29,11 +30,16 @@ func (r *repeatStringFlag) Set(v string) error {
 	return nil
 }
 
-// isValidDomain validates if a string is a valid domain name.
-// Returns true if the domain is valid, false otherwise.
+// isValidDomain validates if a string is a valid domain name or IP literal.
+// Returns true if the domain or IP is valid, false otherwise.
 func isValidDomain(domain string) bool {
 	if domain == "" {
 		return false
+	}
+
+	// Accept bare IP literals (both IPv4 and IPv6)
+	if ip := net.ParseIP(domain); ip != nil {
+		return true
 	}
 
 	// Maximum length check (253 characters)
@@ -79,6 +85,7 @@ func main() {
 		sni       string
 		hostHdr   string
 		path      string
+		port      int
 		dlTop     int
 		dlBytes   int64
 		dlTimeout time.Duration
@@ -127,6 +134,7 @@ func main() {
 	flag.StringVar(&sni, "sni", "", "TLS SNI server name (deprecated: use --host)")
 	flag.StringVar(&hostHdr, "host-header", "", "HTTP Host header (deprecated: use --host)")
 	flag.StringVar(&path, "path", "/cdn-cgi/trace", "HTTP path to request")
+	flag.IntVar(&port, "port", 443, "TLS probe port")
 	flag.IntVar(&dlTop, "download-top", 5, "After search, run download speed test for top N IPs (0 to disable)")
 	flag.Int64Var(&dlBytes, "download-bytes", 0, "Download test size in bytes; 0 = 50M for default endpoint, no limit for custom URL (default: 0)")
 	flag.DurationVar(&dlTimeout, "download-timeout", 45*time.Second, "Per-IP download test timeout")
@@ -228,6 +236,7 @@ func main() {
 		SNI:        sni,
 		HostHeader: hostHdr,
 		Path:       path,
+		Port:       port,
 		Rounds:     rounds,
 		SkipFirst:  skipFirst,
 	}

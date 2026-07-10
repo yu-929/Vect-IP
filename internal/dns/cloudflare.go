@@ -8,9 +8,13 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"time"
 )
 
 const cloudflareAPIBase = "https://api.cloudflare.com/client/v4"
+
+// cfRateLimit enforces Cloudflare API rate limits (1200 req/5min ~ 4 req/s).
+var cfRateLimit = time.NewTicker(300 * time.Millisecond)
 
 // CloudflareProvider implements Provider for Cloudflare DNS.
 type CloudflareProvider struct {
@@ -31,6 +35,11 @@ func NewCloudflareProvider(token, zoneID string) *CloudflareProvider {
 
 func (p *CloudflareProvider) Name() string {
 	return "cloudflare"
+}
+
+// throttle blocks until the rate limiter allows the next request.
+func (p *CloudflareProvider) throttle() {
+	<-cfRateLimit.C
 }
 
 // cfDNSRecord represents a Cloudflare DNS record.
@@ -84,6 +93,7 @@ func (p *CloudflareProvider) getZoneName(ctx context.Context) (string, error) {
 	}
 
 	url := fmt.Sprintf("%s/zones/%s", cloudflareAPIBase, p.zoneID)
+	p.throttle()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -181,6 +191,7 @@ func (p *CloudflareProvider) CreateRecords(ctx context.Context, subdomain string
 
 func (p *CloudflareProvider) listRecords(ctx context.Context, name, recordType string) ([]cfDNSRecord, error) {
 	url := fmt.Sprintf("%s/zones/%s/dns_records?type=%s&name=%s", cloudflareAPIBase, p.zoneID, recordType, name)
+	p.throttle()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -217,6 +228,7 @@ func (p *CloudflareProvider) listRecords(ctx context.Context, name, recordType s
 
 func (p *CloudflareProvider) deleteRecord(ctx context.Context, recordID string) error {
 	url := fmt.Sprintf("%s/zones/%s/dns_records/%s", cloudflareAPIBase, p.zoneID, recordID)
+	p.throttle()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
@@ -253,6 +265,7 @@ func (p *CloudflareProvider) deleteRecord(ctx context.Context, recordID string) 
 
 func (p *CloudflareProvider) createRecord(ctx context.Context, name, recordType, content string) error {
 	url := fmt.Sprintf("%s/zones/%s/dns_records", cloudflareAPIBase, p.zoneID)
+	p.throttle()
 
 	payload := map[string]interface{}{
 		"type":    recordType,

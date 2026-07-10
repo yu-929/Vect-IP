@@ -19,8 +19,9 @@ type Config struct {
 	SNI        string
 	HostHeader string
 	Path       string
-	Rounds     int // 总测试次数，默认6
-	SkipFirst  int // 跳过前N次，默认1（跳过第1次握手）
+	Port       int    // TLS port (default 443)
+	Rounds     int   // 总测试次数，默认6
+	SkipFirst  int   // 跳过前N次，默认1（跳过第1次握手）
 }
 
 type Result struct {
@@ -51,6 +52,9 @@ func NewProber(cfg Config) *Prober {
 	}
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = 3 * time.Second
+	}
+	if cfg.Port <= 0 {
+		cfg.Port = 443
 	}
 
 	transport := &http.Transport{
@@ -92,7 +96,11 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 		targetHost = "[" + targetHost + "]"
 	}
 
-	url := "https://" + targetHost + p.cfg.Path
+	port := p.cfg.Port
+	if port <= 0 {
+		port = 443
+	}
+	url := fmt.Sprintf("https://%s:%d%s", targetHost, port, p.cfg.Path)
 
 	var (
 		connectStart time.Time

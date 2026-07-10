@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vect">
@@ -10,12 +10,14 @@
 <title>Vect - Monte Carlo IP Selector</title>
 <style>
 :root{--bg:#0F1118;--surface:#1A1D28;--input:#242836;--border:#303647;--text:#FFFFFF;--secondary:#B0B8D0;--muted:#78829C;--brand:#4294FF;--danger:#FF5F57;--success:#34C759;--orange:#FF9500;--stage1:#60E0E8;--stage2:#4294FF;--stage3:#70B8FF;--stage4:#B388FF}
+[data-theme="light"]{--bg:#F2F2F7;--surface:#FFFFFF;--input:#E8E8ED;--border:#D1D1D6;--text:#1C1C1E;--secondary:#636366;--muted:#8E8E93;--brand:#007AFF;--danger:#FF3B30;--success:#34C759;--orange:#FF9500;--stage1:#00C7BE;--stage2:#007AFF;--stage3:#5856D6;--stage4:#AF52DE}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',Roboto,'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;padding-top:env(safe-area-inset-top)}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',Roboto,'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;padding-top:env(safe-area-inset-top);touch-action:manipulation;transition:background .25s,color .25s}
 .container{max-width:800px;margin:0 auto;padding:12px 16px 40px;padding-bottom:calc(env(safe-area-inset-bottom) + 40px)}
 
 /* Nav */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0 16px;position:sticky;top:0;z-index:50;background:rgba(15,17,24,.85);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0 16px;position:sticky;top:0;z-index:50;background:rgba(15,17,24,.85);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:background .25s}
+[data-theme="light"] .nav{background:rgba(242,242,247,.85)}
 .nav-brand{display:flex;flex-direction:column;gap:1px}
 .nav-title{font-size:24px;font-weight:700;letter-spacing:-.3px;background:linear-gradient(135deg,var(--brand),#60A5FA);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
 .nav-sub{font-size:13px;color:var(--muted);font-weight:400;letter-spacing:.2px}
@@ -25,7 +27,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .nav-btn svg{width:20px;height:20px}
 
 /* Card */
-.card{background:var(--surface);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 2px 16px rgba(0,0,0,.3)}
+.card{background:var(--surface);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 2px 16px rgba(0,0,0,.3);transition:background .25s,box-shadow .25s}
 .card-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
 /* Segmented Control */
@@ -165,10 +167,20 @@ tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
 <!-- Nav Bar -->
 <div class="nav">
 <div class="nav-brand">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="margin:0 auto 4px">
+<circle cx="16" cy="16" r="14" stroke="url(#vg)" stroke-width="2"/>
+<circle cx="16" cy="16" r="4" fill="var(--brand)"/>
+<path d="M16 2v10M16 20v10M2 16h10M20 16h10" stroke="var(--brand)" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+<path d="M6 6l7 7M19 19l7 7M26 6l-7 7M13 19l-7 7" stroke="var(--brand)" stroke-width="1.2" stroke-linecap="round" opacity=".3"/>
+<defs><linearGradient id="vg" x1="0" y1="0" x2="32" y2="32"><stop offset="0%" stop-color="var(--brand)"/><stop offset="100%" stop-color="#60A5FA"/></linearGradient></defs>
+</svg>
 <div class="nav-title">Vect</div>
 <div class="nav-sub">Monte Carlo IP Selector</div>
 </div>
 <div class="nav-actions">
+<button class="nav-btn" onclick="toggleTheme()" id="themeBtn" aria-label="切换主题">
+<svg id="themeIcon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a8 8 0 100 16 6 6 0 010-12 6 6 0 00-6-4z"/></svg>
+</button>
 <div class="menu-wrap">
 <button class="nav-btn" onclick="toggleMenu()" aria-label="菜单">
 <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
@@ -195,6 +207,22 @@ SJC 美西低延迟
 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg>
 清空输入
 </div>
+<div class="menu-divider"></div>
+<div class="menu-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px;cursor:default">
+<div style="font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.3px">目标设置</div>
+<input id="host" value="example.com" style="width:100%;height:32px;padding:0 8px;background:var(--input);border:1px solid transparent;border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit" placeholder="目标域名">
+<input id="path" value="/cdn-cgi/trace" style="width:100%;height:32px;padding:0 8px;background:var(--input);border:1px solid transparent;border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit" placeholder="请求路径">
+</div>
+<div class="menu-divider"></div>
+<div class="menu-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px;cursor:default">
+<div style="font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.3px">高级参数</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<div><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px">搜索头</label><input id="heads" type="number" value="4" style="width:100%;height:32px;padding:0 8px;background:var(--input);border:1px solid transparent;border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit"></div>
+<div><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px">波束宽度</label><input id="beam" type="number" value="32" style="width:100%;height:32px;padding:0 8px;background:var(--input);border:1px solid transparent;border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit"></div>
+<div><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px">超时 (s)</label><input id="timeout" type="number" value="3" step="0.5" style="width:100%;height:32px;padding:0 8px;background:var(--input);border:1px solid transparent;border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit"></div>
+<div><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px">测试轮次</label><input id="rounds" type="number" value="6" style="width:100%;height:32px;padding:0 8px;background:var(--input);border:1px solid transparent;border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit"></div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -218,8 +246,8 @@ SJC 美西低延迟
 <div class="card">
 <div class="card-title">扫描配置</div>
 <div class="segmented">
-<button class="seg-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="2000" data-concurrency="200">Cloudflare 快速</button>
-<button class="seg-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="5000" data-concurrency="200">Cloudflare 完整</button>
+<button class="seg-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="2000" data-concurrency="200">Quick Scan</button>
+<button class="seg-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="5000" data-concurrency="200">Full Scan</button>
 </div>
 <div class="section">
 <div class="field">
@@ -230,8 +258,9 @@ SJC 美西低延迟
 </div>
 </div>
 <div class="section">
+<div class="row">
 <div class="field">
-<label>或输入 ASN 自动解析</label>
+<label>输入 ASN 自动解析</label>
 <div class="input-group">
 <input id="asn" type="number" placeholder="例如 13335">
 <button class="btn-icon" id="resolveBtn" onclick="resolveASN()" aria-label="解析 ASN">
@@ -239,15 +268,8 @@ SJC 美西低延迟
 </button>
 </div>
 </div>
-</div>
-
-<div class="section">
-<div class="row">
 <div class="field"><label>IP 版本</label>
 <select id="ipVersion"><option value="0">IPv4 + IPv6</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select>
-</div>
-<div class="field"><label>&nbsp;</label>
-<select id="ipVersion2"><option value="0">IPv4 + IPv6</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select>
 </div>
 </div>
 </div>
@@ -255,8 +277,6 @@ SJC 美西低延迟
 <div class="section">
 <div class="row">
 <div class="field"><label>探测预算</label><input id="budget" type="number" value="2000"></div>
-<div class="field"><label>搜索头</label><input id="heads" type="number" value="4"></div>
-<div class="field"><label>波束宽度</label><input id="beam" type="number" value="32"></div>
 <div class="field"><label>并发数</label><input id="concurrency" type="number" value="200"></div>
 <div class="field"><label>保留 TOP</label><input id="topN" type="number" value="20"></div>
 <div class="field"><label>带宽测速 TOP</label><input id="downloadTop" type="number" value="5"></div>
@@ -265,29 +285,21 @@ SJC 美西低延迟
 
 <div class="section">
 <div class="row">
-<div class="field"><label>超时 (s)</label><input id="timeout" type="number" value="3" step="0.5"></div>
-<div class="field"><label>测试轮次</label><input id="rounds" type="number" value="6"></div>
-<div class="field"><label>目标域名</label><input id="host" value="example.com"></div>
-<div class="field"><label>请求路径</label><input id="path" value="/cdn-cgi/trace"></div>
-</div>
-</div>
-
-<div class="section">
-<div class="row">
 <div class="field">
 <label>测速模式</label>
-<select id="downloadMode"><option value="all">固定数量</option><option value="sequential" selected>Sequential</option></select>
+<select id="downloadMode"><option value="all" selected>固定数量</option><option value="sequential">Sequential</option></select>
 </div>
-<div class="field"><label>&nbsp;</label>
-<input id="coloAllow" placeholder="如 HKG,SJC,NRT"><span class="tag tag-white" style="position:absolute;right:10px;top:28px">WHITE</span>
+<div class="field">
+<label>机房过滤</label>
+<div class="input-group" style="gap:4px">
+<select id="coloMode" onchange="toggleColoInput()" style="flex:0 0 auto;width:auto;min-width:80px;padding:0 24px 0 8px;height:44px;background:var(--input);border:1px solid transparent;border-radius:10px;color:var(--text);font-size:13px;outline:none;font-family:inherit;background-image:url('data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' fill=\'%2378829C\' viewBox=\'0 0 10 6\'%3E%3Cpath d=\'M1 1l4 4 4-4\'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;-webkit-appearance:none;appearance:none"><option value="">关闭</option><option value="allow">白名单</option><option value="exclude">黑名单</option></select>
+<input id="coloInput" placeholder="如 HKG,SJC,NRT" disabled style="flex:1;height:44px;padding:0 12px;background:var(--input);border:1px solid transparent;border-radius:10px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
 </div>
-<div class="field"><label>&nbsp;</label>
-<input id="coloExclude" placeholder="如 LAX,DFW"><span class="tag tag-black" style="position:absolute;right:10px;top:28px">BLACK</span>
 </div>
+<div class="field"><label>&nbsp;</label></div>
 <div class="field"><label>&nbsp;</label></div>
 </div>
 </div>
-
 <div class="btn-row">
 <button class="btn btn-primary" id="startBtn" onclick="startScan()">
 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg>
@@ -385,13 +397,30 @@ const stageConfig=[
 {id:'s4',total:1,label:'过滤排序'}
 ];
 
+// Theme
+const storedTheme=localStorage.getItem('vect-theme')||'dark';
+document.documentElement.setAttribute('data-theme',storedTheme);
+updateThemeIcon(storedTheme);
+function toggleTheme(){
+const cur=document.documentElement.getAttribute('data-theme');
+const next=cur==='light'?'dark':'light';
+document.documentElement.setAttribute('data-theme',next);
+localStorage.setItem('vect-theme',next);
+updateThemeIcon(next);
+}
+function updateThemeIcon(theme){
+const icon=S('themeIcon');
+if(theme==='light')icon.innerHTML='<path d="M10 2a8 8 0 000 16 6 6 0 000-12z"/>';
+else icon.innerHTML='<path d="M10 2a8 8 0 100 16 6 6 0 010-12 6 6 0 00-6-4z"/>';
+}
+
+function toggleColoInput(){
+const mode=S('coloMode').value;
+S('coloInput').disabled=!mode;
+S('coloInput').placeholder=mode==='allow'?'如 HKG,SJC,NRT':mode==='exclude'?'如 LAX,DFW':'';
+}
+
 // Sync IP version selectors
-document.getElementById('ipVersion').addEventListener('change', function() {
-    document.getElementById('ipVersion2').value = this.value;
-});
-document.getElementById('ipVersion2').addEventListener('change', function() {
-    document.getElementById('ipVersion').value = this.value;
-});
 
 // Preset buttons
 document.querySelectorAll('.seg-btn').forEach(b=>{
@@ -475,7 +504,8 @@ timeout:(parseFloat(S('timeout').value)||3)+'s',
 host:S('host').value||'example.com',path:S('path').value||'/cdn-cgi/trace',
 rounds:parseInt(S('rounds').value)||6,skipFirst:1,
 downloadTop:parseInt(S('downloadTop').value)||5,downloadMode:S('downloadMode').value,
-coloAllow:S('coloAllow').value.trim(),coloExclude:S('coloExclude').value.trim(),
+coloAllow:S('coloMode').value==='allow'?S('coloInput').value.trim():'',
+coloExclude:S('coloMode').value==='exclude'?S('coloInput').value.trim():'',
 ipVersion:parseInt(S('ipVersion').value)||0};
 if(!body.cidrs.length&&!body.asn){showError('请输入 CIDR 或 ASN');return;}
 hideError();
