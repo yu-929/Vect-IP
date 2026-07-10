@@ -7,12 +7,30 @@ struct TracerouteHop: Codable {
     let lost: Bool
 }
 
+func withSockAddr<T>(_ addr: inout sockaddr_in, _ body: (UnsafePointer<sockaddr>, socklen_t) -> T) -> T {
+    return withUnsafePointer(to: &addr) { ptr in
+        ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+            body(sockPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
+        }
+    }
+}
+
+func withMutSockAddr<T>(_ addr: inout sockaddr_in, _ body: (UnsafeMutablePointer<sockaddr>, inout socklen_t) -> T) -> T {
+    return withUnsafeMutablePointer(to: &addr) { ptr in
+        ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+            var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+            return body(sockPtr, &len)
+        }
+    }
+}
+
 func runTraceroute(target: String, maxHops: Int = 30, probeTimeout: TimeInterval = 3) -> [TracerouteHop] {
     var addr = sockaddr_in()
     addr.sin_family = sa_family_t(AF_INET)
 
-    if let ipAddr = target.withCString({ inet_addr($0) }), ipAddr != INADDR_NONE {
-        addr.sin_addr = in_addr(s_addr: ipAddr)
+    let raw = inet_addr(target)
+    if raw != INADDR_NONE {
+        addr.sin_addr = in_addr(s_addr: raw)
     } else {
         var hints = addrinfo()
         hints.ai_family = AF_INET
@@ -49,7 +67,9 @@ func runTraceroute(target: String, maxHops: Int = 30, probeTimeout: TimeInterval
 
         let start = Date()
 
-        let sent = sendto(probeFd, "", 0, 0, &destAddr, socklen_t(MemoryLayout<sockaddr_in>.size))
+        let sent = withSockAddr(&destAddr) { sa, len in
+            sendto(probeFd, "", 0, 0, sa, len)
+        }
         guard sent >= 0 else {
             hops.append(TracerouteHop(hop: ttl, ip: "*", ms: "", lost: true))
             continue
@@ -58,7 +78,11 @@ func runTraceroute(target: String, maxHops: Int = 30, probeTimeout: TimeInterval
         var fromAddr = sockaddr_in()
         var fromLen = socklen_t(MemoryLayout<sockaddr_in>.size)
         var buf = [UInt8](repeating: 0, count: 512)
-        let n = recvfrom(icmpFd, &buf, 512, 0, &fromAddr, &fromLen)
+        let n = withUnsafeMutablePointer(to: &fromAddr) { ptr in
+            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+                recvfrom(icmpFd, &buf, 512, 0, sockPtr, &fromLen)
+            }
+        }
 
         let elapsed = Date().timeIntervalSince(start)
 
@@ -99,13 +123,20 @@ func startTracerouteService() {
         addr.sin_addr = in_addr(s_addr: INADDR_LOOPBACK)
         addr.sin_port = CFSwapInt16HostToBig(8091)
 
-        guard bind(sock, &addr, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0 else { return }
+        let bindOK = withSockAddr(&addr) { sa, len in
+            bind(sock, sa, len) == 0
+        }
+        guard bindOK else { return }
         guard listen(sock, 5) == 0 else { return }
 
         while true {
             var clientAddr = sockaddr_in()
             var clientLen = socklen_t(MemoryLayout<sockaddr_in>.size)
-            let client = accept(sock, &clientAddr, &clientLen)
+            let client = withUnsafeMutablePointer(to: &clientAddr) { ptr in
+                ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+                    accept(sock, sockPtr, &clientLen)
+                }
+            }
             guard client >= 0 else { continue }
 
             DispatchQueue.global(qos: .background).async {
