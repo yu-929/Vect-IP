@@ -172,7 +172,10 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 				Nodes:      info.Nodes,
 				Stage:      3,
 			}
-			sendProgress(session)
+			subs := make([]chan ProgressData, len(session.subs))
+			copy(subs, session.subs)
+			session.mu.Unlock()
+			sendProgress(session.progress, subs)
 		},
 	}
 
@@ -224,14 +227,18 @@ go func() {
 		// Stage 1: CIDR/ASN parsing
 		session.mu.Lock()
 		session.progress = ProgressData{Budget: req.Budget, Stage: 1, Completed: 1}
-		sendProgress(session)
+		subs := make([]chan ProgressData, len(session.subs))
+		copy(subs, session.subs)
 		session.mu.Unlock()
+		sendProgress(session.progress, subs)
 
 		// Stage 2: IP sampling
 		session.mu.Lock()
 		session.progress = ProgressData{Budget: req.Budget, Stage: 2, Completed: 1}
-		sendProgress(session)
+		subs = make([]chan ProgressData, len(session.subs))
+		copy(subs, session.subs)
 		session.mu.Unlock()
+		sendProgress(session.progress, subs)
 
 		eng := engine.New(cfg, probeCfg)
 		resp, err := eng.Run(ctx, engReq)
@@ -247,11 +254,11 @@ go func() {
 		// Stage 4: filtering/sorting
 		session.progress.Stage = 4
 		session.progress.Completed = 1
-		sendProgress(session)
-		subs := make([]chan ProgressData, len(session.subs))
+		subs = make([]chan ProgressData, len(session.subs))
 		copy(subs, session.subs)
 		session.subs = nil
 		session.mu.Unlock()
+		sendProgress(session.progress, subs)
 
 		for _, ch := range subs {
 			close(ch)
@@ -308,12 +315,10 @@ go func() {
 	json.NewEncoder(w).Encode(map[string]string{"id": id})
 }
 
-func sendProgress(session *ScanSession) {
-	subs := make([]chan ProgressData, len(session.subs))
-	copy(subs, session.subs)
+func sendProgress(progress ProgressData, subs []chan ProgressData) {
 	for _, ch := range subs {
 		select {
-		case ch <- session.progress:
+		case ch <- progress:
 		default:
 		}
 	}

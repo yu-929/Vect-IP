@@ -2,7 +2,7 @@ name: Build IPA
 on:
   push:
     branches: [main]
-    paths: ['ios/**', 'internal/**', 'cmd/**', 'web/**', 'go.mod', 'go.sum']
+    paths: ['ios/**', 'internal/**', 'cmd/**', 'cmd/vect-web/web/**', '.github/workflows/**', 'go.mod', 'go.sum']
   workflow_dispatch:
 
 jobs:
@@ -14,6 +14,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+
+      - name: Generate iOS app icons
+        run: cd ios && ./generate-icons.sh
 
       - name: Build Go static library for iOS
         run: cd ios && ./build-libvect.sh

@@ -9,6 +9,10 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 LIB_DIR="$SCRIPT_DIR/libvect"
 OUTPUT_DIR="$SCRIPT_DIR/VectApp"
 
+# Generate app icons (requires macOS)
+echo "==> Generating iOS app icons..."
+"$SCRIPT_DIR/generate-icons.sh"
+
 SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
 CLANG=$(xcrun --sdk iphoneos --find clang)
 

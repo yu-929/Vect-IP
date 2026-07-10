@@ -4,12 +4,10 @@
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
-    <key>CFBundleDisplayName</key>
-    <string>Vect IP</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.vect</string>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -17,9 +15,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>
@@ -27,16 +25,5 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
-        <key>UIApplicationSupportsMultipleScenes</key>
-        <false/>
-    </dict>
-    <key>UILaunchScreen</key>
-    <dict/>
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-    </array>
 </dict>
 </plist>

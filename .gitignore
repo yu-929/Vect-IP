@@ -21,3 +21,8 @@ __debug_bin
 # OS
 .DS_Store
 Thumbs.db
+
+# iOS generated files
+ios/VectApp/libvect.a
+ios/VectApp/libvect.h
+ios/VectApp/Assets.xcassets/AppIcon.appiconset/icon-*.png
