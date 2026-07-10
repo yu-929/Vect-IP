@@ -113,7 +113,7 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 		return out
 	}
 	req.Host = p.cfg.HostName
-	req.Header.Set("User-Agent", "mcis/0.1")
+	req.Header.Set("User-Agent", "vect/0.1")
 	req.Header.Set("Accept", "application/octet-stream")
 
 	resp, err := p.client.Do(req)

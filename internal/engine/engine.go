@@ -415,21 +415,14 @@ func (e *Engine) sampleIPWithDedup(prefix netip.Prefix, head *bandit.SearchHead)
 		ip := head.Sampler.SampleIP(prefix)
 		last = ip
 
-		// Use uint128 representation for efficient dedup
-		key := ipToKey(ip)
-		if _, loaded := e.seenIPs.LoadOrStore(key, struct{}{}); !loaded {
+		// Use IP directly as key for dedup
+		if _, loaded := e.seenIPs.LoadOrStore(ip, struct{}{}); !loaded {
 			return ip
 		}
 	}
 
 	// Too many duplicates, return last sampled
 	return last
-}
-
-// ipToKey converts an IP to a comparable key.
-// Using the IP directly as netip.Addr is comparable and efficient.
-func ipToKey(ip netip.Addr) netip.Addr {
-	return ip
 }
 
 // loadPrefixes loads and deduplicates CIDR prefixes from the request.

@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	mrand "math/rand"
 	"net/netip"
 	"os"
 	"strings"
@@ -85,79 +84,6 @@ func SplitPrefix(p netip.Prefix, step int) ([]netip.Prefix, error) {
 		out = append(out, netip.PrefixFrom(childAddr, newBits).Masked())
 	}
 	return out, nil
-}
-
-// RandomAddr returns a uniformly random address inside prefix p.
-// It uses math/rand for speed; caller controls seed.
-func RandomAddr(p netip.Prefix, r *mrand.Rand) netip.Addr {
-	p = p.Masked()
-	if p.Addr().Is4() {
-		return randomAddr4(p, r)
-	}
-	return randomAddr6(p, r)
-}
-
-func randomAddr4(p netip.Prefix, r *mrand.Rand) netip.Addr {
-	a := p.Addr().As4()
-	base := binary.BigEndian.Uint32(a[:])
-	hostBits := 32 - p.Bits()
-	var host uint32
-	if hostBits == 0 {
-		host = 0
-	} else {
-		host = uint32(r.Uint64() & ((uint64(1) << hostBits) - 1))
-	}
-	ip := base | host
-	var out [4]byte
-	binary.BigEndian.PutUint32(out[:], ip)
-	return netip.AddrFrom4(out)
-}
-
-func randomAddr6(p netip.Prefix, r *mrand.Rand) netip.Addr {
-	a := p.Addr().As16()
-	base := a[:]
-	hostBits := 128 - p.Bits()
-	if hostBits <= 0 {
-		return netip.AddrFrom16(a)
-	}
-
-	// Fill a random 128-bit value, then keep only host bits and OR into base.
-	var rand128 [16]byte
-	// Use math/rand to keep sampling reproducible under --seed (important for A/B tuning).
-	u0 := r.Uint64()
-	u1 := r.Uint64()
-	binary.BigEndian.PutUint64(rand128[0:8], u0)
-	binary.BigEndian.PutUint64(rand128[8:16], u1)
-
-	keepHostBits(&rand128, hostBits)
-	applyHostBits(base, rand128)
-	var out [16]byte
-	copy(out[:], base)
-	return netip.AddrFrom16(out)
-}
-
-// keepHostBits zeroes the top (128-hostBits) bits.
-func keepHostBits(b *[16]byte, hostBits int) {
-	topBits := 128 - hostBits
-	if topBits <= 0 {
-		return
-	}
-	fullBytes := topBits / 8
-	remBits := topBits % 8
-	for i := 0; i < fullBytes; i++ {
-		b[i] = 0
-	}
-	if remBits > 0 && fullBytes < 16 {
-		mask := byte(0xFF >> remBits)
-		b[fullBytes] &= mask
-	}
-}
-
-// applyHostBits ORs random host bits into base (which already has network bits fixed).
-func applyHostBits(base []byte, host [16]byte) {
-	for i := 0; i < 16; i++ {
-		base[i] |= host[i]
-	}
 }
 
 // childPrefixAddr computes the i-th child prefix address when splitting.

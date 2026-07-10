@@ -1,1 +1,23 @@
-mcis.exe
+# Binaries
+vect
+vect.exe
+vect-*
+
+# Test binaries
+*.test
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# Editor
+.idea/
+*.swp
+*.swo
+__debug_bin
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

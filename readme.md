@@ -1,16 +1,16 @@
-# Monte Carlo IP Searcher（mcis）
+# Vect（蒙特卡洛 IP 优选器）
 
 一个 **Cloudflare IP 优选**工具：用蒙特卡洛搜索算法，在更少探测次数下，从 IPv4/IPv6 网段里找到更快、更稳定的 IP。
 
-## 为什么选择 mcis？
+## 为什么选择 Vect？
 
 **传统 IP 优选工具的两难困境：**
 - **扫描少了** → 随机打靶，可能错过真正的好 IP
 - **扫描多了** → 耗时太长，还容易触发运营商风控
 
-**mcis 的核心价值：用 1/600 的探测次数，找到接近全段扫描的最优 IP。**
+**Vect 的核心价值：用 1/600 的探测次数，找到接近全段扫描的最优 IP。**
 
-传统工具是"广撒网"，而 mcis 是"精准制导"——通过智能搜索把有限的探测预算集中到真正有潜力的 IP 段，好钢用在刀刃上。
+传统工具是"广撒网"，而 Vect 是"精准制导"——通过智能搜索把有限的探测预算集中到真正有潜力的 IP 段，好钢用在刀刃上。
 
 **效率对比（以 Cloudflare IPv4 为例）：**
 
@@ -18,9 +18,9 @@
 |-----------|----------|------|
 | 全段暴力扫描 | ~180 万 | Cloudflare IPv4 约 180 万个 IP |
 | CloudflareSpeedTest 默认 | ~1 万 | 每个 /24 段随机测 1 个 |
-| **mcis 推荐配置** | **3000** | 智能搜索，聚焦有潜力区域 |
+| **Vect 推荐配置** | **3000** | 智能搜索，聚焦有潜力区域 |
 
-**mcis 如何做到的？**
+**Vect 如何做到的？**
 
 | 特性 | 说明 |
 |------|------|
@@ -31,7 +31,22 @@
 
 ## 下载安装
 
-[Release](https://github.com/Leo-Mu/montecarlo-ip-searcher/releases/latest) 下载解压后，在文件夹中右键打开终端即可运行。
+### 一键安装（推荐）
+
+```bash
+# 安装
+curl -sL https://raw.githubusercontent.com/Leo-Mu/montecarlo-ip-searcher/main/install.sh | bash
+
+# 更新到最新版
+curl -sL https://raw.githubusercontent.com/Leo-Mu/montecarlo-ip-searcher/main/install.sh | bash -s update
+
+# 卸载
+curl -sL https://raw.githubusercontent.com/Leo-Mu/montecarlo-ip-searcher/main/install.sh | bash -s uninstall
+```
+
+### GitHub Release
+
+[Release](https://github.com/Leo-Mu/montecarlo-ip-searcher/releases/latest) 下载解压后即可运行。
 
 ## 推荐配置
 
@@ -39,10 +54,10 @@
 
 ```bash
 # IPv4 推荐配置
-./mcis -v --out text --cidr-file ./ipv4cidr.txt --budget 3000 --concurrency 100
+vect -v --out text --cidr-file ./ipv4cidr.txt --budget 3000 --concurrency 100
 
 # IPv6 推荐配置
-./mcis -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads 16 --concurrency 100
+vect -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads 16 --concurrency 100
 ```
 
 从源码运行：
@@ -129,7 +144,7 @@ go run ./cmd/mcis -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads
 **提示：** 使用你自己的网站作为 `--host`，可以确保优选出的 IP 对你的网站生效：
 
 ```bash
-./mcis -v --out text --cidr-file ./ipv4cidr.txt --host your-domain.com --budget 3000 --concurrency 100
+vect -v --out text --cidr-file ./ipv4cidr.txt --host your-domain.com --budget 3000 --concurrency 100
 ```
 
 ## 可选功能
@@ -161,10 +176,10 @@ go run ./cmd/mcis -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads
 
 ```bash
 # 自定义地址：默认下载完整文件再算速度
-./mcis -v --out text --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/path/to/largefile
+vect -v --out text --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/path/to/largefile
 
 # 自定义地址且限制只下载前 50MB
-./mcis -v --out text --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/path/to/largefile --download-bytes 50000000
+vect -v --out text --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/path/to/largefile --download-bytes 50000000
 ```
 
 **注意：** 不限制大小时单次下载可能很大，请视情况调大 `--download-timeout`；流量约等于「文件大小 × 参与测速的 IP 数」。
@@ -178,10 +193,10 @@ go run ./cmd/mcis -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads
 
 ```bash
 # 默认模式：测速前 5 个 IP（可能有些会失败）
-./mcis -v --out text --cidr-file ./ipv4cidr.txt --download-top 5 --download-mode all
+vect -v --out text --cidr-file ./ipv4cidr.txt --download-top 5 --download-mode all
 
 # 顺序模式：按顺序测速，直到 5 个成功就停（如果前 5 个都成功，就只测 5 个）
-./mcis -v --out text --cidr-file ./ipv4cidr.txt --download-top 5 --download-mode sequential
+vect -v --out text --cidr-file ./ipv4cidr.txt --download-top 5 --download-mode sequential
 ```
 
 ### DNS 自动上传
@@ -202,10 +217,10 @@ go run ./cmd/mcis -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads
 # Cloudflare（使用环境变量）
 export CF_API_TOKEN="your_token"
 export CF_ZONE_ID="your_zone_id"
-./mcis --cidr-file ./ipv4cidr.txt --dns-provider cloudflare --dns-subdomain cf -v
+vect --cidr-file ./ipv4cidr.txt --dns-provider cloudflare --dns-subdomain cf -v
 
 # Vercel
-./mcis --cidr-file ./ipv4cidr.txt --dns-provider vercel --dns-zone example.com --dns-subdomain cf --dns-token YOUR_TOKEN -v
+vect --cidr-file ./ipv4cidr.txt --dns-provider vercel --dns-zone example.com --dns-subdomain cf --dns-token YOUR_TOKEN -v
 ```
 
 ## 自带网段文件
@@ -262,10 +277,10 @@ export CF_ZONE_ID="your_zone_id"
 
 ## 构建
 
-需要 Go 1.25+：
+需要 Go 1.22+：
 
 ```bash
-go build -o mcis ./cmd/mcis
+go build -o vect ./cmd/mcis
 ```
 
 ## License

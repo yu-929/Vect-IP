@@ -4,14 +4,12 @@ import (
 	"math"
 	"math/rand"
 	"net/netip"
-	"sync"
 )
 
 // ThompsonSampler implements Thompson Sampling for arm selection.
 // It uses posterior sampling to balance exploration and exploitation.
 type ThompsonSampler struct {
 	rng *rand.Rand
-	mu  sync.Mutex
 
 	// Penalty factor for failed probes when computing combined score
 	failurePenalty float64
@@ -34,9 +32,6 @@ func NewThompsonSampler(seed int64, timeoutMS float64) *ThompsonSampler {
 func (s *ThompsonSampler) SampleScore(node *ArmNode) float64 {
 	alpha, beta, mu, lambda, alphaNG, betaNG := node.GetPosteriorParams()
 	stats := node.Stats()
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	// For nodes with very few samples, use optimistic initialization
 	// This encourages exploration of unknown regions
@@ -210,16 +205,11 @@ func (s *ThompsonSampler) sampleNormal(mu, sigma float64) float64 {
 
 // SampleIP samples a random IP address from the given prefix.
 func (s *ThompsonSampler) SampleIP(prefix netip.Prefix) netip.Addr {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	return sampleAddrFromPrefix(prefix, s.rng)
 }
 
 // SampleUniform returns a uniform random number in [0, 1).
 func (s *ThompsonSampler) SampleUniform() float64 {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	return s.rng.Float64()
 }
 

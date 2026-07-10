@@ -133,7 +133,7 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	if p.cfg.HostHeader != "" {
 		req.Host = p.cfg.HostHeader
 	}
-	req.Header.Set("User-Agent", "mcis/0.1")
+	req.Header.Set("User-Agent", "vect/0.1")
 	req.Header.Set("Accept", "text/plain")
 
 	httpRes, err := p.client.Do(req)

@@ -115,7 +115,7 @@ func (c *TopNCollector) Consider(r TopResult) {
 		if r.ScoreMS < c.heap.items[idx].ScoreMS {
 			c.heap.items[idx] = r
 			heap.Fix(c.heap, idx)
-			c.rebuildIPMap()
+			c.ipSeen[r.IP] = idx
 		}
 		return
 	}
@@ -123,7 +123,7 @@ func (c *TopNCollector) Consider(r TopResult) {
 	// If heap is not full, just add
 	if c.heap.Len() < c.n {
 		heap.Push(c.heap, r)
-		c.rebuildIPMap()
+		c.ipSeen[r.IP] = len(c.heap.items) - 1
 		return
 	}
 
@@ -135,17 +135,13 @@ func (c *TopNCollector) Consider(r TopResult) {
 
 		// Add the new one
 		heap.Push(c.heap, r)
-		c.rebuildIPMap()
+		c.ipSeen[r.IP] = len(c.heap.items) - 1
 	}
 }
 
-// rebuildIPMap rebuilds the IP -> index map after heap modifications.
-func (c *TopNCollector) rebuildIPMap() {
-	c.ipSeen = make(map[netip.Addr]int, len(c.heap.items))
-	for i, item := range c.heap.items {
-		c.ipSeen[item.IP] = i
-	}
-}
+// rebuildIPMap is kept for compatibility but no longer needed
+// since we now update ipSeen incrementally.
+func (c *TopNCollector) rebuildIPMap() {}
 
 // Best returns the best result so far.
 func (c *TopNCollector) Best() TopResult {
