@@ -18,22 +18,31 @@ jobs:
       - name: Build Go static library for iOS
         run: cd ios && ./build-libvect.sh
 
-      - name: Archive IPA
+      - name: Build .app (unsigned)
         run: |
-          xcodebuild archive \
+          xcodebuild build \
             -project ios/VectApp.xcodeproj \
             -scheme VectApp \
             -configuration Release \
-            -archivePath build/VectApp.xcarchive
+            -sdk iphoneos \
+            -derivedDataPath build/derived \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
-      - name: Export IPA
+      - name: Package unsigned IPA
         run: |
-          xcodebuild -exportArchive \
-            -archivePath build/VectApp.xcarchive \
-            -exportPath build/VectApp.ipa \
-            -exportOptionsPlist ios/exportOptions.plist
+          mkdir -p build/Payload
+          cp -r build/derived/Build/Products/Release-iphoneos/VectApp.app build/Payload/
+          cd build && zip -r VectApp.ipa Payload/
 
       - uses: actions/upload-artifact@v4
         with:
           name: VectApp
           path: build/VectApp.ipa
+
+      - name: Verify IPA
+        run: |
+          unzip -l build/VectApp.ipa | head -20
+          echo "---"
+          ls -lh build/VectApp.ipa
