@@ -553,7 +553,7 @@ heads:parseInt(S('heads').value)||4,beam:parseInt(S('beam').value)||32,
 timeout:(parseFloat(S('timeout').value)||3)+'s',
 host:S('host').value||'example.com',path:S('path').value||'/cdn-cgi/trace',
 rounds:parseInt(S('rounds').value)||6,skipFirst:1,
-downloadTop:parseInt(S('downloadTop').value)||5,downloadMode:S('downloadMode').value,
+downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').value,
 coloAllow:S('coloMode').value==='allow'?S('coloInput').value.trim():'',
 coloExclude:S('coloMode').value==='exclude'?S('coloInput').value.trim():'',
 ipVersion:parseInt(S('ipVersion').value)||0};
