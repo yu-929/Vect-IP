@@ -13,6 +13,7 @@
 		A10004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004; };
 		A10005 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005; };
 		A10006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10006; };
+		A10007 /* TracerouteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		B10009 /* VectApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "VectApp-Bridging-Header.h"; sourceTree = "<group>"; };
 		B10010 /* libvect.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvect.a; sourceTree = "<group>"; };
 		B10011 /* libvect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libvect.h; sourceTree = "<group>"; };
+		B10012 /* TracerouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracerouteService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +63,7 @@
 				B10009 /* VectApp-Bridging-Header.h */,
 				B10010 /* libvect.a */,
 				B10011 /* libvect.h */,
+				B10012 /* TracerouteService.swift */,
 			);
 			path = VectApp;
 			sourceTree = "<group>";
@@ -143,6 +146,7 @@
 				A10003 /* WebView.swift in Sources */,
 				A10004 /* SettingsView.swift in Sources */,
 				A10005 /* AppSettings.swift in Sources */,
+				A10007 /* TracerouteService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
