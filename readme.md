@@ -1,4 +1,4 @@
-# Vect (Monte Carlo IP Selector)
+# Monte Carlo IP Selector
 
 一个 **Cloudflare IP 优选**工具：用蒙特卡洛搜索算法，在更少探测次数下，从 IPv4/IPv6 网段里找到更快、更稳定的 IP。
 
