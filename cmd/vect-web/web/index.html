@@ -164,10 +164,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .trace-lost{color:var(--danger)}
 
 /* ===== History Expand ===== */
-.h-expand-bar{margin-top:6px;padding-top:6px;border-top:0.5px solid var(--glass-border)}
-.expand-btn{display:flex;align-items:center;gap:4px;width:100%;padding:6px 0;border:none;background:transparent;color:var(--primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.h-expand-bar{margin-top:6px;padding-top:6px;border-top:0.5px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between}
+.expand-btn{display:flex;align-items:center;gap:4px;padding:6px 0;border:none;background:transparent;color:var(--primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s}
 .expand-btn:active{opacity:0.6}
 .expand-btn svg{transition:transform .2s ease;width:12px;height:12px}
+.h-copy-all-btn{padding:4px 8px;border:none;border-radius:6px;background:rgba(0,119,237,0.08);color:var(--primary);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.h-copy-all-btn:active{background:rgba(0,119,237,0.18)}
 .h-detail{padding:4px 0 0}
 .h-detail-row{padding:6px 2px;border-bottom:0.5px solid var(--glass-border);display:flex;flex-wrap:wrap;gap:2px 0}
 .h-detail-row:last-child{border-bottom:none}
@@ -817,7 +819,7 @@ if(r0)html+='<span class="hm">数据中心: <strong>'+(r0.colo||'-')+'</strong><
 if(tracerouteEnabled&&r0)html+='<span class="hm"><span style="color:var(--primary);cursor:pointer;font-size:12px" onclick="runTracerouteHist(\''+r0.ip+'\',\''+hi+'\')">路由追踪</span></span>';
 html+='</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
-if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 '+total+' 个结果</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button></div>';
+if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 '+total+' 个结果</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button><button class="h-copy-all-btn" onclick="copyAllResults('+hi+')" title="复制全部">复制全部</button></div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
 if(ri===0)return;
@@ -900,6 +902,13 @@ copyText(ip);
 function copyText(t){
 if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('已复制: '+t));}
 else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已复制: '+t);}
+}
+function copyAllResults(hi){
+const history=loadHistory();
+const h=history[hi];
+if(!h||!h.results||!h.results.length)return;
+const text=h.results.map(r=>r.ip+'#'+(r.colo||'')).join('\n');
+copyText(text);
 }
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.add('show');
