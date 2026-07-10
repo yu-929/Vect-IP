@@ -675,7 +675,9 @@ if(trEl)trEl.innerHTML='<span style="color:var(--danger)">失败</span>';
 
 function renderTraceroute(ip,hops,rowIdx){
 const trEl=S('tr_'+rowIdx);
-if(!trEl||!hops||!hops.length){if(trEl)trEl.innerHTML='<span style="color:var(--muted)">无路由</span>';return;}
+if(!trEl)return;
+if(!hops||!hops.length){trEl.innerHTML='<span style="color:var(--muted)">无路由</span>';return;}
+if(hops.length===1&&hops[0].ip==='N/A'){trEl.innerHTML='<span style="color:var(--muted)">iOS 不支持</span>';return;}
 let html='<div class="trace-wrap">';
 hops.forEach(h=>{
 if(h.lost)html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-lost">*</span></div>';

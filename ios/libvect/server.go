@@ -15,6 +15,7 @@ import (
 	"net/netip"
 	"os"
 	"os/exec"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -788,6 +789,9 @@ func handleTraceroute(w http.ResponseWriter, r *http.Request) {
 }
 
 func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
+	if runtime.GOOS == "ios" {
+		return []TracerouteHop{{Hop: 1, IP: "N/A", MS: "iOS 不支持"}}
+	}
 	// Try NextTrace first for best results (TCP mode, GeoIP, ASN)
 	hops := runNextTrace(ctx, ip)
 	if hops != nil {
@@ -850,6 +854,9 @@ type nextTraceResult struct {
 }
 
 func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
+	if runtime.GOOS == "ios" {
+		return nil
+	}
 	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "3", ip)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -893,6 +900,9 @@ func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
 }
 
 func classifyRouteByTrace(ctx context.Context, ip string) *RouteInfo {
+	if runtime.GOOS == "ios" {
+		return lookupRoute(ctx, ip)
+	}
 	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "5", ip)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
