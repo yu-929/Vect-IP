@@ -2,6 +2,7 @@ package main
 
 import (
 	"C"
+	"bufio"
 	"context"
 	"embed"
 	"encoding/json"
@@ -9,7 +10,11 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
+	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,6 +41,7 @@ type ScanRequest struct {
 	Budget          int      `json:"budget"`
 	Concurrency     int      `json:"concurrency"`
 	Heads           int      `json:"heads"`
+	Beam            int      `json:"beam"`
 	Timeout         string   `json:"timeout"`
 	Host            string   `json:"host"`
 	Path            string   `json:"path"`
@@ -48,6 +54,7 @@ type ScanRequest struct {
 	SplitStepV4     int      `json:"splitStepV4"`
 	SplitStepV6     int      `json:"splitStepV6"`
 	DiversityWeight float64  `json:"diversityWeight"`
+	IPVersion       int      `json:"ipVersion"`
 }
 
 type ScanStatus struct {
@@ -93,6 +100,8 @@ func StartVectServer(port C.int) C.int {
 	mux.HandleFunc("/api/scan/", handleScanByID)
 	mux.HandleFunc("/api/resolve-asn/", handleResolveASN)
 	mux.HandleFunc("/api/cancel/", handleCancel)
+	mux.HandleFunc("/api/local-ip", handleLocalIP)
+	mux.HandleFunc("/api/traceroute/", handleTraceroute)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", p),
@@ -129,12 +138,27 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	cidrs = append(cidrs, req.CIDRs...)
 
 	if req.ASN > 0 {
-		asnCIDRs, err := resolveASN(req.ASN)
+		asnCIDRs, err := resolveASN(req.ASN, req.IPVersion)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("resolve ASN %d: %v", req.ASN, err), 400)
 			return
 		}
 		cidrs = append(cidrs, asnCIDRs...)
+	}
+	// Filter by IP version
+	if req.IPVersion > 0 {
+		var filtered []string
+		for _, c := range cidrs {
+			prefix, err := netip.ParsePrefix(c)
+			if err != nil {
+				continue
+			}
+			if (req.IPVersion == 4 && prefix.Addr().Is4() || prefix.Addr().Is4In6()) ||
+				(req.IPVersion == 6 && prefix.Addr().Is6() && !prefix.Addr().Is4In6()) {
+				filtered = append(filtered, c)
+			}
+		}
+		cidrs = filtered
 	}
 
 	if len(cidrs) == 0 {
@@ -166,6 +190,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		TopN:            20,
 		Concurrency:     req.Concurrency,
 		Heads:           req.Heads,
+		Beam:            req.Beam,
 		SplitStepV4:     req.SplitStepV4,
 		SplitStepV6:     req.SplitStepV6,
 		DiversityWeight: req.DiversityWeight,
@@ -445,7 +470,9 @@ func handleResolveASN(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cidrs, err := resolveASN(asn)
+	ipVer, _ := strconv.Atoi(r.URL.Query().Get("version"))
+
+	cidrs, err := resolveASN(asn, ipVer)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -458,7 +485,7 @@ func handleResolveASN(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func resolveASN(asn int) ([]string, error) {
+func resolveASN(asn int, ipVersion int) ([]string, error) {
 	url := fmt.Sprintf("https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS%d", asn)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -487,6 +514,17 @@ func resolveASN(asn int) ([]string, error) {
 	var seen = make(map[string]bool)
 	for _, p := range result.Data.Prefixes {
 		if !seen[p.Prefix] {
+			// Filter by IP version if requested
+			if ipVersion > 0 {
+				prefix, err := netip.ParsePrefix(p.Prefix)
+				if err != nil {
+					continue
+				}
+				is4 := prefix.Addr().Is4() || prefix.Addr().Is4In6()
+				if (ipVersion == 4 && !is4) || (ipVersion == 6 && is4) {
+					continue
+				}
+			}
 			cidrs = append(cidrs, p.Prefix)
 			seen[p.Prefix] = true
 		}
@@ -498,6 +536,147 @@ func resolveASN(asn int) ([]string, error) {
 
 	sort.Strings(cidrs)
 	return cidrs, nil
+}
+
+type LocalIPInfo struct {
+	PublicIP  string   `json:"publicIP"`
+	LocalIPs  []string `json:"localIPs"`
+	Hostname  string   `json:"hostname"`
+	ISP       string   `json:"isp,omitempty"`
+	Location  string   `json:"location,omitempty"`
+}
+
+func handleLocalIP(w http.ResponseWriter, r *http.Request) {
+	info := LocalIPInfo{}
+
+	// Hostname
+	host, _ := os.Hostname()
+	info.Hostname = host
+
+	// Local IPs
+	ifaces, _ := net.Interfaces()
+	for _, iface := range ifaces {
+		addrs, _ := iface.Addrs()
+		for _, addr := range addrs {
+			ipnet, ok := addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+			if ipnet.IP.IsLoopback() || ipnet.IP.IsLinkLocalUnicast() {
+				continue
+			}
+			info.LocalIPs = append(info.LocalIPs, ipnet.IP.String())
+		}
+	}
+
+	// Public IP + ISP via ip-api.com (returns full info)
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/")
+	if err == nil {
+		defer resp.Body.Close()
+		var ipData struct {
+			Query    string `json:"query"`
+			ISP      string `json:"isp"`
+			Org      string `json:"org"`
+			City     string `json:"city"`
+			Country  string `json:"country"`
+			Region   string `json:"regionName"`
+		}
+		if json.NewDecoder(resp.Body).Decode(&ipData) == nil {
+			info.PublicIP = ipData.Query
+			info.ISP = ipData.ISP
+			if ipData.Org != "" && ipData.Org != ipData.ISP {
+				info.ISP = ipData.Org
+			}
+			info.Location = ipData.City + ", " + ipData.Region + ", " + ipData.Country
+		}
+	}
+	// Fallback to ipify if ip-api.com failed
+	if info.PublicIP == "" {
+		resp, err := client.Get("https://api.ipify.org?format=json")
+		if err == nil {
+			defer resp.Body.Close()
+			var ipData struct {
+				IP string `json:"ip"`
+			}
+			if json.NewDecoder(resp.Body).Decode(&ipData) == nil {
+				info.PublicIP = ipData.IP
+			}
+		}
+	}
+	if info.PublicIP == "" {
+		info.PublicIP = "unknown"
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(info)
+}
+
+type TracerouteHop struct {
+	Hop  int    `json:"hop"`
+	IP   string `json:"ip"`
+	MS   string `json:"ms"`
+	Lost bool   `json:"lost"`
+}
+
+func handleTraceroute(w http.ResponseWriter, r *http.Request) {
+	ip := strings.TrimPrefix(r.URL.Path, "/api/traceroute/")
+	if ip == "" {
+		http.Error(w, "missing IP", 400)
+		return
+	}
+
+	// Validate IP
+	if parsed := net.ParseIP(ip); parsed == nil {
+		http.Error(w, "invalid IP", 400)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	hops := runTraceroute(ctx, ip)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(hops)
+}
+
+func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
+	// Try traceroute first, fall back to tcptraceroute
+	cmd := exec.CommandContext(ctx, "traceroute", "-n", "-q", "1", "-w", "2", ip)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil
+	}
+	if err := cmd.Start(); err != nil {
+		return nil
+	}
+
+	var hops []TracerouteHop
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Fields(line)
+		if len(parts) < 2 {
+			continue
+		}
+		hopNum, err := strconv.Atoi(parts[0])
+		if err != nil {
+			continue
+		}
+		hopIP := parts[1]
+		if hopIP == "*" {
+			hops = append(hops, TracerouteHop{Hop: hopNum, Lost: true})
+			continue
+		}
+		ms := ""
+		if len(parts) >= 3 {
+			ms = strings.TrimSuffix(parts[2], "ms")
+		}
+		hops = append(hops, TracerouteHop{Hop: hopNum, IP: hopIP, MS: ms})
+	}
+	cmd.Wait()
+	return hops
 }
 
 func main() {}

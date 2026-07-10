@@ -97,8 +97,6 @@ textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(66,148,255,.1
 .stat-val.brand{color:var(--brand)}
 .stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:13px}
 .stat-lbl{font-size:10px;color:var(--muted);margin-top:2px}
-.copy-btn{display:inline-flex;align-items:center;gap:3px;cursor:pointer;transition:color .15s}
-.copy-btn:hover{color:var(--brand)}
 .spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -115,9 +113,13 @@ tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
 .badge-ok{background:rgba(52,199,89,.15);color:var(--success)}
 .badge-fail{background:rgba(255,95,87,.15);color:var(--danger)}
 .colo-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:5px;font-size:10px;font-weight:600;height:18px;background:rgba(66,148,255,.12);color:#93C5FD}
-.ip-cell{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;color:#A5B4FC}
+.ip-cell{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;color:#A5B4FC;cursor:pointer}
+.ip-cell:hover{color:var(--brand)}
 .score-num{font-weight:600;font-variant-numeric:tabular-nums}
 .score-unit{color:var(--muted);font-weight:400;font-size:11px}
+.route-premium{color:#34C759}
+.route-optimized{color:#FFD700}
+.route-normal{color:var(--muted)}
 
 /* Status */
 .status-bar{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--secondary);margin-top:10px;padding:8px 12px;background:var(--bg);border-radius:10px}
@@ -139,7 +141,22 @@ tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 18px;font-size:13px;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:200;transition:opacity .3s;opacity:0;pointer-events:none}
 .toast.show{opacity:1}
 
-@media(max-width:480px){.row{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(3,1fr)}.stage-header{flex-wrap:wrap;gap:4px}}
+/* Local IP card */
+.local-info{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.local-item{background:var(--bg);border-radius:10px;padding:10px}
+.local-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+.local-val{font-size:14px;font-weight:600;color:var(--text);font-family:'SF Mono',ui-monospace,monospace;word-break:break-all}
+.local-val.public{color:var(--brand)}
+
+/* Traceroute */
+.trace-wrap{margin-top:8px;padding:10px 12px;background:var(--bg);border-radius:10px;max-height:200px;overflow-y:auto}
+.trace-row{display:flex;gap:8px;font-size:11px;font-family:'SF Mono',ui-monospace,monospace;padding:2px 0}
+.trace-hop{color:var(--muted);width:24px;flex-shrink:0}
+.trace-ip{color:var(--secondary);flex:1}
+.trace-ms{color:#93C5FD;width:50px;text-align:right;flex-shrink:0}
+.trace-lost{color:var(--danger)}
+
+@media(max-width:480px){.row{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(3,1fr)}.stage-header{flex-wrap:wrap;gap:4px}.local-info{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -183,12 +200,26 @@ SJC 美西低延迟
 </div>
 </div>
 
+<!-- Local IP Info -->
+<div class="card" id="localIPCard">
+<div class="card-title">
+本地网络
+<span id="localRefresh" style="margin-left:auto;font-size:11px;cursor:pointer;color:var(--brand);text-transform:none;letter-spacing:0" onclick="fetchLocalIP()">刷新</span>
+</div>
+<div class="local-info" id="localInfo">
+<div class="local-item"><div class="local-label">公网 IP</div><div class="local-val public" id="liPublic">--</div></div>
+<div class="local-item"><div class="local-label">本地 IP</div><div class="local-val" id="liLocal">--</div></div>
+<div class="local-item"><div class="local-label">运营商</div><div class="local-val" id="liISP">--</div></div>
+<div class="local-item"><div class="local-label">地理位置</div><div class="local-val" id="liLocation">--</div></div>
+</div>
+</div>
+
 <!-- Scan Config -->
 <div class="card">
-<div class="card-title">扫描目标</div>
+<div class="card-title">扫描配置</div>
 <div class="segmented">
-<button class="seg-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="1000" data-concurrency="80">Cloudflare 快速</button>
-<button class="seg-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="3000" data-concurrency="100">Cloudflare 完整</button>
+<button class="seg-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="2000" data-concurrency="200">Cloudflare 快速</button>
+<button class="seg-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="5000" data-concurrency="200">Cloudflare 完整</button>
 </div>
 <div class="section">
 <div class="field">
@@ -212,17 +243,30 @@ SJC 美西低延迟
 
 <div class="section">
 <div class="row">
-<div class="field"><label>探测预算</label><input id="budget" type="number" value="2000"></div>
-<div class="field"><label>搜索头</label><input id="heads" type="number" value="4"></div>
-<div class="field"><label>超时 (s)</label><input id="timeout" type="number" value="3" step="0.5"></div>
-<div class="field"><label>下载测速</label><input id="downloadTop" type="number" value="5"></div>
-<div class="field"><label>并发数</label><input id="concurrency" type="number" value="100"></div>
-<div class="field"><label>测试轮次</label><input id="rounds" type="number" value="6"></div>
+<div class="field"><label>IP 版本</label>
+<select id="ipVersion"><option value="0">IPv4 + IPv6</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select>
+</div>
+<div class="field"><label>&nbsp;</label>
+<select id="ipVersion2"><option value="0">IPv4 + IPv6</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select>
+</div>
 </div>
 </div>
 
 <div class="section">
 <div class="row">
+<div class="field"><label>探测预算</label><input id="budget" type="number" value="2000"></div>
+<div class="field"><label>搜索头</label><input id="heads" type="number" value="4"></div>
+<div class="field"><label>波束宽度</label><input id="beam" type="number" value="32"></div>
+<div class="field"><label>并发数</label><input id="concurrency" type="number" value="200"></div>
+<div class="field"><label>保留 TOP</label><input id="topN" type="number" value="20"></div>
+<div class="field"><label>带宽测速 TOP</label><input id="downloadTop" type="number" value="5"></div>
+</div>
+</div>
+
+<div class="section">
+<div class="row">
+<div class="field"><label>超时 (s)</label><input id="timeout" type="number" value="3" step="0.5"></div>
+<div class="field"><label>测试轮次</label><input id="rounds" type="number" value="6"></div>
 <div class="field"><label>目标域名</label><input id="host" value="example.com"></div>
 <div class="field"><label>请求路径</label><input id="path" value="/cdn-cgi/trace"></div>
 </div>
@@ -298,7 +342,7 @@ SJC 美西低延迟
 <div class="stat-item"><div class="stat-val brand" id="pAvail">0</div><div class="stat-lbl">有效节点</div></div>
 <div class="stat-item"><div class="stat-val" id="pBestScore">-</div><div class="stat-lbl">最优延迟</div></div>
 <div class="stat-item"><div class="stat-val brand" id="pBudget">0</div><div class="stat-lbl">探测预算</div></div>
-<div class="stat-item"><div class="stat-val mono" id="pBestIP" style="font-size:12px;word-break:break-all">-<span class="copy-btn" id="copyIPBtn" onclick="copyBestIP()" style="margin-left:4px"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h8l3 3v9a2 2 0 01-2 2H5a2 2 0 01-2-2V3a2 2 0 012-2zm0 2v9a1 1 0 001 1h7a1 1 0 001-1V4.5L10.5 2H5a1 1 0 00-1 1z"/></svg></span></div><div class="stat-lbl">最优 IP</div></div>
+<div class="stat-item"><div class="stat-val mono" id="pBestIP" style="font-size:12px;word-break:break-all;cursor:pointer" onclick="copyBestIP()">-</div><div class="stat-lbl">最优 IP（点击复制）</div></div>
 <div class="stat-item"><div class="stat-val" id="pElapsed">0s</div><div class="stat-lbl">已用时间</div></div>
 <div class="stat-item"><div class="stat-val" id="pNodes">0</div><div class="stat-lbl">搜索节点</div></div>
 </div>
@@ -321,7 +365,7 @@ SJC 美西低延迟
 <div class="card-title">扫描结果</div>
 <div class="table-wrap">
 <table>
-<thead><tr><th>#</th><th>IP</th><th>延迟</th><th>状态</th><th>前缀</th><th>Colo</th><th>TCP</th><th>TLS</th><th>TTFB</th><th>下载</th></tr></thead>
+<thead><tr><th>#</th><th>IP</th><th>延迟</th><th>速度</th><th>机房</th><th>所属网段</th><th>路由类型</th><th>路由追踪</th></tr></thead>
 <tbody id="resultBody"></tbody>
 </table>
 </div>
@@ -340,6 +384,14 @@ const stageConfig=[
 {id:'s3',total:0,label:'并发探测'},
 {id:'s4',total:1,label:'过滤排序'}
 ];
+
+// Sync IP version selectors
+document.getElementById('ipVersion').addEventListener('change', function() {
+    document.getElementById('ipVersion2').value = this.value;
+});
+document.getElementById('ipVersion2').addEventListener('change', function() {
+    document.getElementById('ipVersion').value = this.value;
+});
 
 // Preset buttons
 document.querySelectorAll('.seg-btn').forEach(b=>{
@@ -363,9 +415,9 @@ if(!e.target.closest('.menu-wrap')) S('menuDrop').classList.remove('show');
 // Presets
 function applyPreset(name){
 const presets={
-sjc:{cidrs:'1.0.0.0/24\n1.1.1.0/24\n162.158.0.0/15',budget:800,concurrency:60,host:'sjc.example.com'},
-global:{cidrs:'1.0.0.0/16\n1.1.0.0/16\n162.158.0.0/15\n173.245.48.0/20',budget:5000,concurrency:150,host:'example.com'},
-hkg:{cidrs:'1.0.0.0/24\n1.1.1.0/24\n103.21.244.0/22',budget:600,concurrency:50,host:'hkg.example.com'}
+sjc:{cidrs:'1.0.0.0/24\n1.1.1.0/24\n162.158.0.0/15',budget:2000,concurrency:200,host:'sjc.example.com'},
+global:{cidrs:'1.0.0.0/16\n1.1.0.0/16\n162.158.0.0/15\n173.245.48.0/20',budget:5000,concurrency:200,host:'example.com'},
+hkg:{cidrs:'1.0.0.0/24\n1.1.1.0/24\n103.21.244.0/22',budget:2000,concurrency:200,host:'hkg.example.com'}
 };
 const p=presets[name];
 if(!p)return;
@@ -377,15 +429,30 @@ S('menuDrop').classList.remove('show');
 showToast('已加载 '+({sjc:'SJC 美西',global:'全球全量',hkg:'香港优化'}[name])+' 预设');
 }
 
+// Local IP
+async function fetchLocalIP(){
+try{
+S('liPublic').textContent='加载中...';
+const r=await fetch('/api/local-ip');
+const d=await r.json();
+S('liPublic').textContent=d.publicIP||'--';
+S('liLocal').textContent=d.localIPs&&d.localIPs.length?d.localIPs[0]:'--';
+S('liISP').textContent=d.isp||'--';
+S('liLocation').textContent=d.location||'--';
+}catch(e){S('liPublic').textContent='获取失败'}
+}
+fetchLocalIP();
+
 // ASN resolve
 async function resolveASN(){
 const asn=S('asn').value.trim();
 if(!asn)return;
 const btn=S('resolveBtn');
+const ver=S('ipVersion').value;
 btn.innerHTML='<div class="spinner" style="width:14px;height:14px;border-width:2px"></div>';
 btn.disabled=true;
 try{
-const r=await fetch('/api/resolve-asn/'+asn);
+const r=await fetch('/api/resolve-asn/'+asn+'?version='+ver);
 const d=await r.json();
 if(d.cidrs&&d.cidrs.length){
 const ex=S('cidrs').value.trim();
@@ -403,12 +470,14 @@ async function startScan(){
 const asn=S('asn').value.trim();
 if(asn)await resolveASN();
 const body={cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean),asn:parseInt(asn)||0,
-budget:parseInt(S('budget').value)||2000,concurrency:parseInt(S('concurrency').value)||100,
-heads:parseInt(S('heads').value)||4,timeout:(parseFloat(S('timeout').value)||3)+'s',
+budget:parseInt(S('budget').value)||2000,concurrency:parseInt(S('concurrency').value)||200,
+heads:parseInt(S('heads').value)||4,beam:parseInt(S('beam').value)||32,
+timeout:(parseFloat(S('timeout').value)||3)+'s',
 host:S('host').value||'example.com',path:S('path').value||'/cdn-cgi/trace',
 rounds:parseInt(S('rounds').value)||6,skipFirst:1,
-downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').value,
-coloAllow:S('coloAllow').value.trim(),coloExclude:S('coloExclude').value.trim()};
+downloadTop:parseInt(S('downloadTop').value)||5,downloadMode:S('downloadMode').value,
+coloAllow:S('coloAllow').value.trim(),coloExclude:S('coloExclude').value.trim(),
+ipVersion:parseInt(S('ipVersion').value)||0};
 if(!body.cidrs.length&&!body.asn){showError('请输入 CIDR 或 ASN');return;}
 hideError();
 S('startBtn').disabled=true;
@@ -468,34 +537,28 @@ function updateProgress(p){
 const stage=p.stage||3;
 const budget=p.budget||2000;
 const done=p.completed||0;
-// Update stages 1-2 as completed immediately
 if(stage>=1){S('s1Fill').style.width='100%';S('s1Count').textContent='1/1';S('s1Est').textContent='预计 <1s';S('s1Rem').textContent='已完成';document.getElementById('stage1').querySelector('.stage-dot').className='stage-dot';S('s1Fill').style.width='100%';}
 if(stage>=2){S('s2Fill').style.width='100%';S('s2Count').textContent='1/1';S('s2Est').textContent='预计 <1s';S('s2Rem').textContent='已完成';document.getElementById('stage2').querySelector('.stage-dot').className='stage-dot';S('s2Fill').style.width='100%';}
-// Stage 3 - probing
 if(stage===3){
 const pct=budget>0?Math.min(done/budget*100,100):0;
 S('s3Fill').style.width=pct+'%';
 S('s3Count').textContent=done+'/'+budget;
 document.getElementById('stage3').querySelector('.stage-dot').className='stage-dot active';
-// Estimate time
 const elapsed=(Date.now()-estStart)/1000;
 const rate=done>0?elapsed/done:0;
 const remain=rate*(budget-done);
 S('s3Est').textContent='预计 '+fmtDur(elapsed+remain);
 S('s3Rem').textContent='剩余 '+fmtDur(Math.max(0,remain));
-// Global
 const globalPct=Math.min(done/budget*75+25,100);
 S('globalFill').style.width=globalPct+'%';
 S('globalPct').textContent=Math.round(globalPct)+'%';
 S('globalTime').textContent='总预计 '+fmtDur(elapsed+remain);
-// Stats
 S('pAvail').textContent=p.nodes||done;
 S('pBestScore').textContent=p.bestScore>0?p.bestScore.toFixed(1)+'ms':'-';
-S('pBestIP').innerHTML=p.bestIP?p.bestIP+'<span class="copy-btn" onclick="copyBestIP()" style="margin-left:4px"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h8l3 3v9a2 2 0 01-2 2H5a2 2 0 01-2-2V3a2 2 0 012-2zm0 2v9a1 1 0 001 1h7a1 1 0 001-1V4.5L10.5 2H5a1 1 0 00-1 1z"/></svg></span>':'-<span class="copy-btn" onclick="copyBestIP()" style="margin-left:4px"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h8l3 3v9a2 2 0 01-2 2H5a2 2 0 01-2-2V3a2 2 0 012-2zm0 2v9a1 1 0 001 1h7a1 1 0 001-1V4.5L10.5 2H5a1 1 0 00-1 1z"/></svg></span>';
+S('pBestIP').textContent=p.bestIP||'-';
 S('pElapsed').textContent=fmtDur(elapsed);
 S('pNodes').textContent=p.nodes||0;
 }
-// Stage 4
 if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='预计 <1s';S('s4Rem').textContent='已完成';document.getElementById('stage4').querySelector('.stage-dot').className='stage-dot';S('s4Fill').style.width='100%';
 S('globalFill').style.width='100%';S('globalPct').textContent='100%';S('globalTime').textContent='预计 '+fmtDur((Date.now()-estStart)/1000);
@@ -536,35 +599,96 @@ S('statusLabel').textContent='已取消';
 S('statusSpinner').style.display='none';
 }
 
-// Copy
-function copyBestIP(){
-const ip=S('pBestIP').textContent.replace(/[<>\/]/g,'').trim()||'';
+// Copy IP - click IP text to copy
+function copyIP(ip){
 if(!ip)return;
 copyText(ip);
 }
+
+function copyBestIP(){
+const ip=S('pBestIP').textContent.trim();
+if(!ip||ip==='-')return;
+copyText(ip);
+}
 function copyText(t){
-if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('已复制到剪贴板'));}
-else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已复制到剪贴板');}
+if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('已复制: '+t));}
+else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已复制: '+t);}
 }
 function copyResults(){
 if(!results.length){showToast('无结果可导出');return;}
-const lines=results.map((r,i)=>(i+1)+','+r.ip+','+r.score_ms.toFixed(1)+','+(r.ok?'OK':'ERR')+(r.trace&&r.trace.colo?','+r.trace.colo:''));
-const txt='# Vect Scan Results\n# IP,Score,Status,Colo\n'+lines.join('\n');
+const lines=results.map((r,i)=>(i+1)+','+r.ip+','+r.score_ms.toFixed(1)+','+(r.trace&&r.trace.colo?','+r.trace.colo:''));
+const txt='# Vect Scan Results\n# IP,Score,Colo\n'+lines.join('\n');
 copyText(txt);
 showToast('已导出 '+results.length+' 条');
+}
+
+// Traceroute
+const tracerouteCache={};
+async function runTraceroute(ip,rowIdx){
+if(tracerouteCache[ip]){
+renderTraceroute(ip,tracerouteCache[ip],rowIdx);
+return;
+}
+const trEl=S('tr_'+rowIdx);
+if(trEl)trEl.innerHTML='<span style="color:var(--muted)">追踪中...</span>';
+try{
+const r=await fetch('/api/traceroute/'+ip);
+const hops=await r.json();
+tracerouteCache[ip]=hops;
+renderTraceroute(ip,hops,rowIdx);
+}catch(e){
+if(trEl)trEl.innerHTML='<span style="color:var(--danger)">失败</span>';
+}
+}
+
+function renderTraceroute(ip,hops,rowIdx){
+const trEl=S('tr_'+rowIdx);
+if(!trEl||!hops||!hops.length){if(trEl)trEl.innerHTML='<span style="color:var(--muted)">无路由</span>';return;}
+let html='<div class="trace-wrap">';
+hops.forEach(h=>{
+if(h.lost)html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-lost">*</span></div>';
+else html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-ip">'+h.ip+'</span><span class="trace-ms">'+(h.ms||'')+'</span></div>';
+});
+html+='</div>';
+trEl.innerHTML=html;
+}
+
+function getRouteClass(route){
+if(!route)return 'route-normal';
+const r=route.toLowerCase();
+if(r.includes('premium'))return 'route-premium';
+if(r.includes('optimized'))return 'route-optimized';
+return 'route-normal';
+}
+
+function formatRoute(route){
+if(!route)return '-';
+const parts=route.split('|');
+return parts[parts.length-1]||route;
 }
 
 function renderResults(r){
 results=r;
 const tb=S('resultBody');
-if(!r.length){tb.innerHTML='<tr><td colspan="10"><div class="empty-state">无结果</div></td></tr>';S('resultCard').classList.remove('hidden');return;}
+if(!r.length){tb.innerHTML='<tr><td colspan="8"><div class="empty-state">无结果</div></td></tr>';S('resultCard').classList.remove('hidden');return;}
 let html='';
 r.forEach((x,i)=>{
 const colo=x.trace&&x.trace.colo?x.trace.colo:'';
+const prefix=x.prefix||'';
 const dlOk=x.download_ok;
-const dl=dlOk?x.download_mbps.toFixed(1)+' Mbps':(x.download_error||'-');
-const sc=x.ok?'badge badge-ok':'badge badge-fail';
-html+='<tr><td style="color:var(--muted)">'+(i+1)+'</td><td class="ip-cell">'+x.ip+'</td><td class="score-num">'+x.score_ms.toFixed(1)+'<span class="score-unit">ms</span></td><td><span class="'+sc+'">'+(x.ok?'OK':(x.status||'ERR'))+'</span></td><td style="color:var(--muted);font-size:12px">'+x.prefix+'</td><td>'+(colo?'<span class="colo-badge">'+colo+'</span>':'<span style="color:var(--muted)">-</span>')+'</td><td>'+(x.connect_ms?x.connect_ms.toFixed(0)+'<span class="score-unit">ms</span>':'<span style="color:var(--muted)">-</span>')+'</td><td>'+(x.tls_ms?x.tls_ms.toFixed(0)+'<span class="score-unit">ms</span>':'<span style="color:var(--muted)">-</span>')+'</td><td>'+(x.ttfb_ms?x.ttfb_ms.toFixed(0)+'<span class="score-unit">ms</span>':'<span style="color:var(--muted)">-</span>')+'</td><td style="font-size:12px;font-weight:'+(dlOk?'600':'400')+';color:'+(dlOk?'#34C759':'var(--muted)')+'">'+dl+'</td></tr>';
+const dl=dlOk?x.download_mbps.toFixed(1)+' Mbps':'-';
+const latency=x.score_ms.toFixed(1)+'<span class="score-unit">ms</span>';
+const route=x.trace&&x.trace.route?x.trace.route:'';
+const routeLabel=formatRoute(route);
+const routeClass=getRouteClass(route);
+html+='<tr><td style="color:var(--muted)">'+(i+1)+'</td>'
++'<td class="ip-cell" onclick="copyIP(\''+x.ip+'\')" title="点击复制">'+x.ip+'</td>'
++'<td class="score-num">'+latency+'</td>'
++'<td style="font-size:12px;font-weight:'+(dlOk?'600':'400')+';color:'+(dlOk?'#34C759':'var(--muted)')+'">'+dl+'</td>'
++'<td>'+(colo?'<span class="colo-badge">'+colo+'</span>':'<span style="color:var(--muted)">-</span>')+'</td>'
++'<td style="color:var(--muted);font-size:12px;font-family:\'SF Mono\',ui-monospace,monospace">'+prefix+'</td>'
++'<td><span class="'+routeClass+'">'+routeLabel+'</span></td>'
++'<td><span style="color:var(--brand);cursor:pointer;font-size:11px" onclick="runTraceroute(\''+x.ip+'\','+i+')">追踪</span><div id="tr_'+i+'"></div></td></tr>';
 });
 tb.innerHTML=html;
 S('resultCard').classList.remove('hidden');
