@@ -762,10 +762,17 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 }
 
 type TracerouteHop struct {
-	Hop  int    `json:"hop"`
-	IP   string `json:"ip"`
-	MS   string `json:"ms"`
-	Lost bool   `json:"lost"`
+	Hop         int    `json:"hop"`
+	IP          string `json:"ip"`
+	MS          string `json:"ms"`
+	Lost        bool   `json:"lost"`
+	ASN         string `json:"asn,omitempty"`
+	Country     string `json:"country,omitempty"`
+	CountryCode string `json:"countryCode,omitempty"`
+	City        string `json:"city,omitempty"`
+	ISP         string `json:"isp,omitempty"`
+	RouteType   string `json:"routeType,omitempty"`
+	RouteLine   string `json:"routeLine,omitempty"`
 }
 
 func handleTraceroute(w http.ResponseWriter, r *http.Request) {
@@ -785,6 +792,7 @@ func handleTraceroute(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	hops := runTraceroute(ctx, ip)
+	hops = enrichHops(ctx, hops)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(hops)
@@ -847,6 +855,101 @@ func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
 	return hops
 }
 
+// enrichHops fills in ASN, Country, City, ISP for hops that lack them.
+func enrichHops(ctx context.Context, hops []TracerouteHop) []TracerouteHop {
+	type hopInfo struct {
+		ASN         string
+		Country     string
+		CountryCode string
+		City        string
+		ISP         string
+		RouteType   string
+		RouteLine   string
+	}
+	cache := make(map[string]*hopInfo)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5)
+
+	for i := range hops {
+		if hops[i].Lost || hops[i].IP == "" || hops[i].ASN != "" {
+			continue
+		}
+		ip := hops[i].IP
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			mu.Lock()
+			if cached, ok := cache[ip]; ok {
+				mu.Unlock()
+				if cached != nil {
+					hops[idx].ASN = cached.ASN
+					hops[idx].Country = cached.Country
+					hops[idx].CountryCode = cached.CountryCode
+					hops[idx].City = cached.City
+					hops[idx].ISP = cached.ISP
+					hops[idx].RouteType = cached.RouteType
+					hops[idx].RouteLine = cached.RouteLine
+				}
+				return
+			}
+			cache[ip] = nil
+			mu.Unlock()
+
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			client := &http.Client{Timeout: 3 * time.Second}
+			url := fmt.Sprintf("http://ip-api.com/json/%s?fields=query,as,asname,org,isp,country,countryCode,city", ip)
+			req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+			resp, err := client.Do(req)
+			if err != nil {
+				return
+			}
+			defer resp.Body.Close()
+			var data struct {
+				Query       string `json:"query"`
+				AS          string `json:"as"`
+				Org         string `json:"org"`
+				ISP         string `json:"isp"`
+				Country     string `json:"country"`
+				CountryCode string `json:"countryCode"`
+				City        string `json:"city"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+				return
+			}
+
+			asn := 0
+			fmt.Sscanf(data.AS, "AS%d", &asn)
+			routeType, routeLine := classifyRoute(asn)
+
+			info := &hopInfo{
+				ASN:         data.AS,
+				Country:     data.Country,
+				CountryCode: data.CountryCode,
+				City:        data.City,
+				ISP:         data.Org,
+				RouteType:   routeType,
+				RouteLine:   routeLine,
+			}
+
+			mu.Lock()
+			cache[ip] = info
+			hops[idx].ASN = info.ASN
+			hops[idx].Country = info.Country
+			hops[idx].CountryCode = info.CountryCode
+			hops[idx].City = info.City
+			hops[idx].ISP = info.ISP
+			hops[idx].RouteType = info.RouteType
+			hops[idx].RouteLine = info.RouteLine
+			mu.Unlock()
+		}(i)
+	}
+	wg.Wait()
+	return hops
+}
+
 type nextTraceGeo struct {
 	ASN     string `json:"ASN"`
 	Country string `json:"Country"`
@@ -903,6 +1006,17 @@ func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
 		} else {
 			hop.IP = *h.Address
 			hop.MS = fmt.Sprintf("%.2f", h.RTT)
+			if h.Geo != nil {
+				hop.ASN = h.Geo.ASN
+				hop.Country = h.Geo.Country
+				hop.City = h.Geo.City
+				hop.ISP = h.Geo.Owner
+				asn := 0
+				fmt.Sscanf(h.Geo.ASN, "AS%d", &asn)
+				if asn > 0 {
+					hop.RouteType, hop.RouteLine = classifyRoute(asn)
+				}
+			}
 		}
 		hops = append(hops, hop)
 	}

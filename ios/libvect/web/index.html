@@ -16,13 +16,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .hidden{display:none!important}
 
 /* ===== Top Nav ===== */
-.top-nav{position:sticky;top:0;z-index:50;padding:10px 16px;padding-top:calc(env(safe-area-inset-top) + 26px);background:var(--nav-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-bottom:0.5px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between}
-.nav-left{display:flex;align-items:baseline;gap:8px}
-.nav-title{font-size:22px;font-weight:650;letter-spacing:-0.3px;color:var(--text)}
-.nav-sub{font-size:13px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px}
-.nav-right{display:flex;align-items:center;gap:6px}
-.nav-sp{font-size:13px;font-weight:500;color:var(--primary);background:rgba(0,119,237,0.08);border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;transition:background .15s}
-.nav-sp:hover{background:rgba(0,119,237,0.15)}
+.top-nav{position:sticky;top:0;z-index:50;padding:10px 16px;padding-top:calc(env(safe-area-inset-top) + 26px);padding-bottom:20px;background:var(--nav-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-bottom:0.5px solid var(--glass-border);text-align:center}
+.nav-title{font-size:32px;font-weight:700;letter-spacing:-0.3px;color:var(--text)}
+.nav-sub{font-size:20px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px;margin-top:15px}
 
 /* ===== Glass Card ===== */
 .glass-card{background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid var(--glass-border);border-radius:var(--radius-card);padding:20px;margin-bottom:18px;box-shadow:var(--glass-shadow);transition:all .25s}
@@ -103,7 +99,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .btn-danger{background:var(--danger);color:#FFFFFF;box-shadow:0 4px 16px rgba(230,56,50,0.32)}
 .btn-danger:active{transform:scale(0.96);opacity:0.92}
 .btn-danger.hidden{display:none}
-.btn-spacer{margin-top:72px;margin-bottom:12px}
+.btn-spacer{margin-top:18px;margin-bottom:12px}
 
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
@@ -158,12 +154,18 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .history-empty{text-align:center;padding:36px 16px;color:var(--muted2);font-size:13px}
 
 /* ===== Traceroute ===== */
-.trace-wrap{background:var(--input-bg);border-radius:10px;padding:6px 10px;max-height:150px;overflow-y:auto;margin-top:6px}
-.trace-row{display:flex;gap:5px;font-size:10px;font-family:'SF Mono',ui-monospace,monospace;padding:2px 0}
-.trace-hop{color:var(--muted2);width:20px;flex-shrink:0}
-.trace-ip{color:var(--secondary);flex:1}
-.trace-ms{color:var(--primary);width:42px;text-align:right;flex-shrink:0}
+.trace-wrap{background:var(--input-bg);border-radius:10px;padding:6px 10px;max-height:180px;overflow-y:auto;margin-top:6px}
+.trace-row{display:flex;gap:4px;font-size:10px;font-family:'SF Mono',ui-monospace,monospace;padding:2px 0;align-items:center}
+.trace-hop{color:var(--muted2);width:18px;flex-shrink:0;text-align:right}
+.trace-ip{color:var(--secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trace-ms{color:var(--primary);width:40px;text-align:right;flex-shrink:0}
 .trace-lost{color:var(--danger)}
+.trace-asn{color:var(--muted2);font-size:9px;width:38px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trace-isp{color:var(--muted2);font-size:9px;max-width:50px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trace-flag{font-size:11px;width:14px;flex-shrink:0;text-align:center}
+.trace-badge{font-size:8px;font-weight:600;padding:1px 4px;border-radius:4px;flex-shrink:0;line-height:1.3}
+.trace-badge.premium{background:rgba(0,119,237,0.15);color:var(--primary)}
+.trace-badge.optimized{background:rgba(52,199,89,0.15);color:var(--success)}
 
 /* ===== History Expand ===== */
 .h-expand-bar{margin-top:6px;padding-top:6px;border-top:0.5px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between}
@@ -234,13 +236,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 
 <!-- Top Nav -->
 <div class="top-nav">
-<div class="nav-left">
-<div class="nav-title">Vect</div>
-<div class="nav-sub">Monte Carlo IP Selector</div>
-</div>
-<div class="nav-right">
-<button class="nav-sp" onclick="showSPPreset()" id="spBtn">SP</button>
-</div>
+<div class="nav-title">小钱盲盒店</div>
+<div class="nav-sub">能不能低延迟高带宽全凭运气</div>
 </div>
 
 <!-- Page Content -->
@@ -356,14 +353,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 
 <!-- Action Button -->
 <div class="btn-spacer">
-<button class="btn btn-primary" id="startBtn" onclick="startScan()">
-<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3v14l12-7z"/></svg>
-开始扫描
-</button>
-<button class="btn btn-danger hidden" id="cancelBtn" onclick="cancelScan()">
-<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5l10 10M15 5L5 15"/></svg>
-停止扫描
-</button>
+<button class="btn btn-primary" id="startBtn" onclick="startScan()">开始扫描</button>
+<button class="btn btn-danger hidden" id="cancelBtn" onclick="cancelScan()">停止扫描</button>
 </div>
 
 <!-- Status Panel (inline in scan tab) -->
@@ -911,10 +902,16 @@ const trEl=S('tr_hist_'+hi);
 if(!trEl)return;
 if(!hops||!hops.length){trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">无路由</span>';return;}
 if(hops.length===1&&hops[0].ip==='N/A'){trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">iOS 不支持</span>';return;}
+function flagEmoji(c){if(!c||c.length!==2)return'';return String.fromCodePoint(c.codePointAt(0)-0x41+0x1F1E6,c.codePointAt(1)-0x41+0x1F1E6)}
+function badge(hh){if(hh.routeType==='Premium')return'<span class="trace-badge premium">'+hh.routeLine+'</span>';if(hh.routeType==='Optimized')return'<span class="trace-badge optimized">'+hh.routeLine+'</span>';return''}
 let html='<div class="trace-wrap">';
 hops.forEach(h=>{
 if(h.lost)html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-lost">*</span></div>';
-else html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-ip">'+h.ip+'</span><span class="trace-ms">'+(h.ms||'')+'</span></div>';
+else{
+const flag=flagEmoji(h.countryCode||h.country);
+html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-flag">'+flag+'</span><span class="trace-ip">'+h.ip+'</span><span class="trace-asn">'+(h.asn||'')+'</span><span class="trace-ms">'+(h.ms||'')+'</span>'+badge(h)+'</div>';
+if(h.isp)html+='<div class="trace-row" style="padding-left:36px;font-size:9px;color:var(--muted2)">'+h.isp+(h.city?' · '+h.city:'')+'</div>';
+}
 });
 html+='</div>';
 trEl.innerHTML=html;
