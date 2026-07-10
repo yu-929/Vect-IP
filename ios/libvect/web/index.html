@@ -9,14 +9,14 @@
 <link rel="manifest" href="/manifest.json">
 <title>Vect - Monte Carlo IP Selector</title>
 <style>
-:root{--bg:#F8F8FA;--glass-bg:rgba(255,255,255,0.72);--glass-border:rgba(0,0,0,0.06);--glass-shadow:0 2px 20px rgba(0,0,0,0.04),0 0 0 0.5px rgba(0,0,0,0.02);--primary:#0077ED;--danger:#E53935;--success:#34C759;--text:#1C1C1E;--secondary:#8E8E93;--muted:#C7C7CC;--muted2:#8E8E93;--input-bg:rgba(118,118,128,0.10);--segment-bg:rgba(118,118,128,0.10);--tabbar-bg:rgba(248,248,250,0.82);--tabbar-border:rgba(0,0,0,0.08);--nav-bg:rgba(248,248,250,0.82);--progress-track:rgba(118,118,128,0.12);--progress-fill:#0077ED;--overlay:rgba(0,0,0,0.15);--radius-card:20px;--radius-btn:18px;--radius-input:10px;--radius-seg:12px}
-[data-theme="dark"]{--bg:#121419;--glass-bg:rgba(30,34,44,0.68);--glass-border:rgba(255,255,255,0.06);--glass-shadow:0 2px 24px rgba(0,0,0,0.3),0 0 0 0.5px rgba(255,255,255,0.04);--primary:#4294FF;--danger:#FF5F57;--text:#FFFFFF;--secondary:#8E8E93;--muted:#636366;--input-bg:rgba(118,118,128,0.20);--segment-bg:rgba(118,118,128,0.18);--tabbar-bg:rgba(18,20,25,0.80);--tabbar-border:rgba(255,255,255,0.08);--nav-bg:rgba(18,20,25,0.80);--progress-track:rgba(118,118,128,0.20);--overlay:rgba(0,0,0,0.5)}
+:root{--bg:#F8F8FA;--glass-bg:rgba(255,255,255,0.72);--glass-border:rgba(0,0,0,0.06);--glass-shadow:0 2px 20px rgba(0,0,0,0.04),0 0 0 0.5px rgba(0,0,0,0.02);--primary:#0077ED;--danger:#E63832;--success:#34C759;--text:#1C1C1E;--secondary:#8E8E93;--muted:#C7C7CC;--muted2:#8E8E93;--input-bg:rgba(118,118,128,0.10);--segment-bg:rgba(118,118,128,0.10);--tabbar-bg:rgba(248,248,250,0.82);--tabbar-border:rgba(0,0,0,0.08);--nav-bg:rgba(248,248,250,0.82);--progress-track:rgba(118,118,128,0.12);--progress-fill-start:#0077ED;--progress-fill-end:#00A3FF;--overlay:rgba(0,0,0,0.15);--radius-card:20px;--radius-btn:18px;--radius-input:16px;--radius-seg:14px}
+[data-theme="dark"]{--bg:#121419;--glass-bg:rgba(30,34,44,0.68);--glass-border:rgba(255,255,255,0.06);--glass-shadow:0 2px 24px rgba(0,0,0,0.3),0 0 0 0.5px rgba(255,255,255,0.04);--primary:#4294FF;--danger:#FF5F57;--text:#FFFFFF;--secondary:#8E8E93;--muted:#636366;--input-bg:rgba(118,118,128,0.20);--segment-bg:rgba(118,118,128,0.18);--tabbar-bg:rgba(18,20,25,0.80);--tabbar-border:rgba(255,255,255,0.08);--nav-bg:rgba(18,20,25,0.80);--progress-track:rgba(118,118,128,0.20)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','SF Pro',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;touch-action:manipulation}
 .hidden{display:none!important}
 
 /* ===== Top Nav ===== */
-.top-nav{position:sticky;top:0;z-index:50;padding:12px 16px 10px;padding-top:calc(env(safe-area-inset-top) + 12px);background:var(--nav-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-bottom:0.5px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between}
+.top-nav{position:sticky;top:0;z-index:50;padding:10px 16px;padding-top:calc(env(safe-area-inset-top) + 26px);background:var(--nav-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-bottom:0.5px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between}
 .nav-left{display:flex;align-items:baseline;gap:8px}
 .nav-title{font-size:22px;font-weight:650;letter-spacing:-0.3px;color:var(--text)}
 .nav-sub{font-size:13px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px}
@@ -25,11 +25,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .nav-sp:hover{background:rgba(0,119,237,0.15)}
 
 /* ===== Glass Card ===== */
-.glass-card{background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid var(--glass-border);border-radius:var(--radius-card);padding:16px 16px 18px;margin-bottom:14px;box-shadow:var(--glass-shadow);transition:all .25s}
+.glass-card{background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid var(--glass-border);border-radius:var(--radius-card);padding:20px;margin-bottom:18px;box-shadow:var(--glass-shadow);transition:all .25s}
 .card-title{font-size:17px;font-weight:600;letter-spacing:-0.2px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 
 /* ===== Page Content ===== */
-.page-content{padding:14px 16px;padding-bottom:calc(env(safe-area-inset-bottom) + 90px);max-width:375px;margin:0 auto}
+.page-content{padding:20px 16px;padding-bottom:calc(env(safe-area-inset-bottom) + 90px);max-width:375px;margin:0 auto}
 
 /* ===== Tabs ===== */
 .tab-content{display:none}
@@ -44,11 +44,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .tab-item .tab-label{font-size:10px;font-weight:500;letter-spacing:0.2px}
 .tab-item.active .tab-label{color:var(--primary)}
 
-/* ===== Segmented Capsule ===== */
-.segmented{display:flex;background:var(--segment-bg);border-radius:var(--radius-seg);padding:2px;margin-bottom:12px;gap:2px}
-.seg-btn{flex:1;padding:7px 8px;border:none;border-radius:10px;background:transparent;color:var(--secondary);font-size:14px;font-weight:500;cursor:pointer;transition:all .25s cubic-bezier(0.25,0.1,0.25,1);font-family:inherit;line-height:1.3;letter-spacing:-0.1px}
-.seg-btn.active{background:var(--primary);color:#FFFFFF;font-weight:600;box-shadow:0 2px 8px rgba(0,119,237,0.25)}
-.seg-btn:hover:not(.active){color:var(--text)}
+/* ===== Segmented Capsule Frosted ===== */
+.segmented{display:flex;background:var(--segment-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:var(--radius-seg);padding:3px;margin-bottom:14px;gap:3px}
+.seg-btn{flex:1;padding:8px 8px;border:none;border-radius:11px;background:transparent;color:var(--secondary);font-size:14px;font-weight:500;cursor:pointer;transition:all .3s cubic-bezier(0.25,0.1,0.25,1);font-family:inherit;line-height:1.3;letter-spacing:-0.1px}
+.seg-btn:active{transform:scale(0.96)}
+.seg-btn.active{background:var(--primary);color:#FFFFFF;font-weight:600;box-shadow:0 2px 10px rgba(0,119,237,0.30)}
 
 /* ===== Inputs ===== */
 .field{margin-bottom:10px}
@@ -62,8 +62,10 @@ textarea{width:100%;min-height:58px;padding:9px 12px;background:var(--input-bg);
 textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0.12)}
 .input-group{display:flex;gap:5px}
 .input-group input{flex:1}
-.input-group .btn-icon{height:40px;width:40px;border-radius:var(--radius-input);border:0.5px solid rgba(0,0,0,0.04);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-.input-group .btn-icon:hover{color:var(--primary);background:rgba(0,119,237,0.08)}
+.input-group .btn-icon{height:40px;width:40px;border-radius:20px;border:0.5px solid rgba(0,0,0,0.04);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.input-group .btn-icon:active{color:var(--primary);background:rgba(0,119,237,0.10);transform:scale(0.92)}
+.btn-icon-sm{height:30px;width:30px;border-radius:15px;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.btn-icon-sm:active{color:var(--primary);background:rgba(0,119,237,0.10);transform:scale(0.92)}
 
 /* ===== Row (dual column) ===== */
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
@@ -94,14 +96,14 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .colo-dropdown .manual-input input{width:100%;height:30px;padding:0 8px;background:var(--input-bg);border:0.5px solid transparent;border-radius:6px;color:var(--text);font-size:11px;outline:none;font-family:inherit}
 
 /* ===== Button ===== */
-.btn{display:flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:var(--radius-btn);font-size:17px;font-weight:590;cursor:pointer;transition:all .25s cubic-bezier(0.25,0.1,0.25,1);font-family:inherit;height:54px;width:100%;letter-spacing:0.2px}
-.btn-primary{background:var(--primary);color:#FFFFFF;box-shadow:0 4px 14px rgba(0,119,237,0.30)}
-.btn-primary:active{transform:scale(0.97);opacity:0.9}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:var(--radius-btn);font-size:17px;font-weight:590;cursor:pointer;transition:all .25s cubic-bezier(0.25,0.1,0.25,1);font-family:inherit;height:58px;width:100%;letter-spacing:0.2px}
+.btn-primary{background:var(--primary);color:#FFFFFF;box-shadow:0 4px 16px rgba(0,119,237,0.32)}
+.btn-primary:active{transform:scale(0.96);opacity:0.92}
 .btn-primary:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none;transform:none}
-.btn-danger{background:var(--danger);color:#FFFFFF;box-shadow:0 4px 14px rgba(229,57,53,0.30)}
-.btn-danger:active{transform:scale(0.97);opacity:0.9}
+.btn-danger{background:var(--danger);color:#FFFFFF;box-shadow:0 4px 16px rgba(230,56,50,0.32)}
+.btn-danger:active{transform:scale(0.96);opacity:0.92}
 .btn-danger.hidden{display:none}
-.btn-spacer{margin-top:64px;margin-bottom:12px}
+.btn-spacer{margin-top:72px;margin-bottom:12px}
 
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
@@ -119,12 +121,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .stage-item .stage-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .stage-item .stage-name{font-size:12px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:5px}
 .stage-item .stage-count{font-size:11px;color:var(--muted2);font-variant-numeric:tabular-nums}
-.stage-item .stage-bar{height:4px;background:var(--progress-track);border-radius:2px;overflow:hidden;margin-bottom:3px}
-.stage-item .stage-fill{height:100%;border-radius:2px;background:var(--progress-fill);transition:width .5s ease;width:0%}
+.stage-item .stage-bar{height:5px;background:var(--progress-track);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.stage-item .stage-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--progress-fill-start),var(--progress-fill-end));transition:width .5s ease;width:0%}
 .stage-item .stage-footer{display:flex;justify-content:space-between;font-size:10px;color:var(--muted2)}
 
 /* ===== Error ===== */
-.error-box{display:flex;align-items:center;gap:6px;padding:10px 12px;background:rgba(229,57,53,0.06);border:0.5px solid rgba(229,57,53,0.15);border-radius:12px;color:var(--danger);font-size:12px;margin-bottom:10px}
+.error-box{display:flex;align-items:center;gap:6px;padding:10px 14px;background:rgba(230,56,50,0.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(230,56,50,0.15);border-radius:12px;color:var(--danger);font-size:12px;margin-bottom:12px}
 .error-box.hidden{display:none}
 .error-box svg{width:14px;height:14px;flex-shrink:0}
 
@@ -136,18 +138,18 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .local-val.public{color:var(--primary)}
 
 /* ===== History ===== */
-.history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px}
+.history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0}
 .history-header .count{font-size:12px;color:var(--muted2)}
-.history-header .clear-btn{font-size:12px;color:var(--danger);cursor:pointer;background:none;border:none;font-family:inherit;font-weight:500;padding:4px 8px;border-radius:6px;transition:background .15s}
-.history-header .clear-btn:hover{background:rgba(229,57,53,0.08)}
-.history-list{display:flex;flex-direction:column;gap:10px}
-.history-item{padding:12px 14px}
-.history-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.history-header .clear-btn{font-size:12px;color:#FFFFFF;cursor:pointer;background:var(--danger);border:none;font-family:inherit;font-weight:500;padding:5px 14px;border-radius:14px;transition:all .15s}
+.history-header .clear-btn:active{transform:scale(0.94);opacity:0.85}
+.history-list{display:flex;flex-direction:column;gap:12px}
+.history-item{padding:14px 16px}
+.history-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .history-item .h-time{font-size:11px;color:var(--muted2)}
-.history-item .ip{font-size:20px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px}
+.history-item .ip{font-size:20px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px;user-select:none;-webkit-user-select:none}
 .history-item .ip:active{opacity:0.7}
-.history-item .del-btn{width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-.history-item .del-btn:active{background:rgba(229,57,53,0.12);color:var(--danger)}
+.history-item .del-btn{width:32px;height:32px;border-radius:16px;border:none;background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.history-item .del-btn:active{background:rgba(230,56,50,0.15);color:var(--danger);transform:scale(0.9)}
 .history-metrics{display:flex;flex-wrap:wrap;gap:4px 14px}
 .history-metrics .hm{font-size:12px;color:var(--secondary);letter-spacing:-0.1px}
 .history-metrics .hm strong{font-weight:590;color:var(--text)}
@@ -199,6 +201,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .toggle-input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:2}
 .settings-btn-theme{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;border:0.5px solid var(--glass-border);border-radius:12px;background:var(--glass-bg);backdrop-filter:blur(10px);color:var(--text);font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
 .settings-btn-theme:active{background:var(--input-bg)}
+.theme-opt{flex:1;padding:8px;border:0.5px solid var(--glass-border);border-radius:10px;background:var(--input-bg);color:var(--secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s}
+.theme-opt:active{transform:scale(0.96)}
+.theme-opt.active{background:var(--primary);color:#FFF;border-color:var(--primary)}
 
 /* ===== SP Preset ===== */
 .sp-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
@@ -212,6 +217,10 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 /* ===== Section divider inside glass card ===== */
 .section{border-top:0.5px solid var(--glass-border);padding-top:10px;margin-top:10px}
 .section:first-child{border-top:none;padding-top:0;margin-top:0}
+
+/* ===== Loading Ring ===== */
+.loading-ring{display:inline-block;width:16px;height:16px;border:2px solid var(--glass-border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== Responsive ===== */
 @media(max-width:420px){.page-content{max-width:100%;padding-left:14px;padding-right:14px}.row{grid-template-columns:1fr}.colo-filter{grid-template-columns:1fr}}
@@ -262,7 +271,17 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 <div class="section">
 <div class="field">
 <label>CIDR 前缀（每行一个）</label>
-<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32"></textarea>
+<div class="input-group" style="margin-bottom:5px">
+<button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
+</button>
+<button class="btn-icon-sm" onclick="S('cidrs').value=''" title="清空">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+</button>
+<span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
+</div>
+<input type="file" id="cidrFile" accept=".txt,.csv" style="display:none" onchange="importCidrFile(event)">
+<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" oninput="updateCidrCount()"></textarea>
 </div>
 </div>
 
@@ -409,10 +428,17 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 
 <div class="settings-group">
 <div class="sg-title">外观</div>
-<button class="settings-btn-theme" onclick="toggleTheme()">
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="themeIcon"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-<span id="themeLabel">深色模式</span>
-</button>
+<div class="settings-row">
+<div style="flex:1">
+<div class="sl-label">深色模式</div>
+<div class="sl-desc">跟随系统、浅色或深色</div>
+</div>
+</div>
+<div style="display:flex;gap:6px;margin-top:4px">
+<button class="theme-opt" data-theme="system" onclick="setTheme('system')">跟随系统</button>
+<button class="theme-opt" data-theme="light" onclick="setTheme('light')">浅色</button>
+<button class="theme-opt" data-theme="dark" onclick="setTheme('dark')">深色</button>
+</div>
 </div>
 
 <div class="settings-group">
@@ -456,15 +482,15 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 <!-- Bottom TabBar -->
 <div class="tab-bar">
 <button class="tab-item active" data-tab="scan" onclick="switchTab('scan')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
 <span class="tab-label">扫描</span>
 </button>
 <button class="tab-item" data-tab="history" onclick="switchTab('history')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3M8 3l-4 4M16 3l4 4"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3M8 3l-4 4M16 3l4 4"/></svg>
 <span class="tab-label">历史</span>
 </button>
 <button class="tab-item" data-tab="settings" onclick="switchTab('settings')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
 <span class="tab-label">设置</span>
 </button>
 </div>
@@ -489,21 +515,21 @@ document.querySelector('.tab-item[data-tab="'+name+'"]').classList.add('active')
 }
 
 // Theme
-const storedTheme=localStorage.getItem('vect-theme')||'light';
-document.documentElement.setAttribute('data-theme',storedTheme);
-updateThemeIcon(storedTheme);
-function toggleTheme(){
-const cur=document.documentElement.getAttribute('data-theme');
-const next=cur==='light'?'dark':'light';
-document.documentElement.setAttribute('data-theme',next);
-localStorage.setItem('vect-theme',next);
-updateThemeIcon(next);
+const systemDark=window.matchMedia('(prefers-color-scheme:dark)');
+const storedTheme=localStorage.getItem('vect-theme')||'system';
+function applyTheme(theme){
+if(theme==='system'){theme=systemDark.matches?'dark':'light';document.documentElement.setAttribute('data-theme',theme);}
+else{document.documentElement.setAttribute('data-theme',theme);}
+updateThemeOpts();
 }
-function updateThemeIcon(theme){
-const icon=S('themeIcon');
-const label=S('themeLabel');
-if(theme==='light'){if(icon)icon.innerHTML='<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';if(label)label.textContent='深色模式';}
-else{if(icon)icon.innerHTML='<path d="M4 12a8 8 0 1016 0 8 8 0 00-16 0zm6-9v2m0 14v2m-5-3l1.5-1.5M16.5 7.5L18 6m-12 0l1.5 1.5M16.5 16.5L18 18"/>';if(label)label.textContent='浅色模式';}
+function setTheme(theme){
+localStorage.setItem('vect-theme',theme);
+applyTheme(theme);
+if(theme==='system'){systemDark.addEventListener('change',()=>applyTheme('system'));}
+}
+applyTheme(storedTheme);
+function updateThemeOpts(){
+document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('active',b.dataset.theme===localStorage.getItem('vect-theme')||'system'));
 }
 
 // Traceroute toggle
@@ -570,7 +596,7 @@ const asn=S('asn').value.trim();
 if(!asn)return;
 const btn=S('resolveBtn');
 const ver=S('ipVersion').value;
-btn.innerHTML='<div class="spinner" style="width:14px;height:14px;border:2px solid var(--glass-border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div>';
+btn.innerHTML='<div class="loading-ring"></div>';
 btn.disabled=true;
 try{
 const r=await fetch('/api/resolve-asn/'+asn+'?version='+ver);
@@ -592,7 +618,7 @@ const cidrs=S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean);
 if(!cidrs.length){showError('请先输入 CIDR 或解析 ASN');return;}
 const btn=S('discoverBtn');
 btn.disabled=true;
-btn.innerHTML='<div class="spinner" style="width:10px;height:10px;border:1.5px solid var(--glass-border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;margin-right:4px"></div>发现中...';
+btn.innerHTML='<div class="loading-ring" style="width:10px;height:10px;margin-right:4px;display:inline-block"></div>发现中...';
 try{
 const r=await fetch('/api/colo-discover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cidrs})});
 const list=await r.json();
@@ -809,7 +835,7 @@ const r0=h.results[0];
 const total=h.results.length;
 html+='<div class="glass-card history-item">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><button class="del-btn" onclick="deleteHistory('+hi+')" title="删除"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg></button></div>';
-html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')">'+(r0?r0.ip:'')+'</div>';
+html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
 html+='<div class="history-metrics">';
 if(r0)html+='<span class="hm">期望带宽: <strong>'+(r0.prefix?r0.prefix:'-')+'</strong></span>';
 if(r0)html+='<span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span>';
@@ -900,8 +926,8 @@ if(!ip||ip==='-')return;
 copyText(ip);
 }
 function copyText(t){
-if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('已复制: '+t));}
-else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已复制: '+t);}
+if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('已复制: '+t));haptic();}
+else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已复制: '+t);haptic();}
 }
 function copyAllResults(hi){
 const history=loadHistory();
@@ -909,6 +935,24 @@ const h=history[hi];
 if(!h||!h.results||!h.results.length)return;
 const text=h.results.map(r=>r.ip+'#'+(r.colo||'')).join('\n');
 copyText(text);
+}
+function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
+function updateCidrCount(){
+const v=S('cidrs').value.split('\n').filter(s=>s.trim()).length;
+S('cidrCount').textContent=v+' 条';
+}
+function importCidrFile(e){
+const file=e.target.files[0];if(!file)return;
+const reader=new FileReader();
+reader.onload=()=>{
+const existing=S('cidrs').value;
+const lines=reader.result.split('\n').filter(s=>s.trim());
+S('cidrs').value=existing+(existing?'\n':'')+lines.join('\n');
+updateCidrCount();
+showToast('已导入 '+lines.length+' 条');
+};
+reader.readAsText(file);
+e.target.value='';
 }
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.add('show');
@@ -921,12 +965,17 @@ function hideError(){
 S('error-msg').classList.add('hidden');
 }
 
+let longPressTimer=null;
+function ipTouchStart(ip,e){
+longPressTimer=setTimeout(()=>{copyText(ip);longPressTimer=null;haptic();},500);
+}
+function ipTouchEnd(){if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}}
+
 // Init
 renderHistory();
 updateTracerouteUI();
-const style=document.createElement('style');
-style.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
-document.head.appendChild(style);
+updateCidrCount();
+updateThemeOpts();
 </script>
 </body>
 </html>
