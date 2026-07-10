@@ -455,8 +455,7 @@ try{
 const r=await fetch('/api/resolve-asn/'+asn+'?version='+ver);
 const d=await r.json();
 if(d.cidrs&&d.cidrs.length){
-const ex=S('cidrs').value.trim();
-S('cidrs').value=ex?ex+'\n'+d.cidrs.join('\n'):d.cidrs.join('\n');
+S('cidrs').value=d.cidrs.join('\n');
 S('cidrs').scrollTop=S('cidrs').scrollHeight;
 btn.innerHTML='<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#34C759" stroke-width="2"><path d="M4 10l4 4 8-8"/></svg>';
 showToast('已添加 '+d.cidrs.length+' 条前缀');
