@@ -790,7 +790,18 @@ func handleTraceroute(w http.ResponseWriter, r *http.Request) {
 
 func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
 	if runtime.GOOS == "ios" {
-		return []TracerouteHop{{Hop: 1, IP: "N/A", MS: "iOS 不支持"}}
+		client := &http.Client{Timeout: 30 * time.Second}
+		url := fmt.Sprintf("http://127.0.0.1:8091/traceroute/%s", ip)
+		resp, err := client.Get(url)
+		if err != nil {
+			return nil
+		}
+		defer resp.Body.Close()
+		var hops []TracerouteHop
+		if err := json.NewDecoder(resp.Body).Decode(&hops); err != nil {
+			return nil
+		}
+		return hops
 	}
 	// Try NextTrace first for best results (TCP mode, GeoIP, ASN)
 	hops := runNextTrace(ctx, ip)
