@@ -163,6 +163,21 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .trace-ms{color:var(--primary);width:42px;text-align:right;flex-shrink:0}
 .trace-lost{color:var(--danger)}
 
+/* ===== History Expand ===== */
+.h-expand-bar{margin-top:6px;padding-top:6px;border-top:0.5px solid var(--glass-border)}
+.expand-btn{display:flex;align-items:center;gap:4px;width:100%;padding:6px 0;border:none;background:transparent;color:var(--primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.expand-btn:active{opacity:0.6}
+.expand-btn svg{transition:transform .2s ease;width:12px;height:12px}
+.h-detail{padding:4px 0 0}
+.h-detail-row{display:grid;grid-template-columns:24px 1fr 52px 44px 44px 36px;gap:4px;align-items:center;padding:5px 2px;border-bottom:0.5px solid var(--glass-border);font-size:11px}
+.h-detail-row:last-child{border-bottom:none}
+.h-detail-rank{color:var(--muted2);font-weight:500;text-align:center}
+.h-detail-ip{font-family:'SF Mono',ui-monospace,monospace;color:var(--text);cursor:pointer;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h-detail-ip:active{opacity:0.6}
+.h-detail-score{color:var(--secondary);text-align:right;font-variant-numeric:tabular-nums}
+.h-detail-colo{color:var(--muted2);text-align:center;font-size:10px}
+.h-detail-dl{color:var(--success);text-align:right;font-variant-numeric:tabular-nums}
+
 /* ===== Settings Tab ===== */
 .settings-group{margin-bottom:16px}
 .settings-group:last-child{margin-bottom:0}
@@ -785,6 +800,7 @@ if(!history.length){list.innerHTML='<div class="history-empty">暂无扫描记�
 let html='';
 history.forEach((h,hi)=>{
 const r0=h.results[0];
+const total=h.results.length;
 html+='<div class="glass-card history-item">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><button class="del-btn" onclick="deleteHistory('+hi+')" title="删除"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg></button></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')">'+(r0?r0.ip:'')+'</div>';
@@ -797,9 +813,35 @@ if(r0)html+='<span class="hm">数据中心: <strong>'+(r0.colo||'-')+'</strong><
 if(tracerouteEnabled&&r0)html+='<span class="hm"><span style="color:var(--primary);cursor:pointer;font-size:12px" onclick="runTracerouteHist(\''+r0.ip+'\',\''+hi+'\')">路由追踪</span></span>';
 html+='</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
+if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 '+total+' 个结果</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button></div>';
+html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
+h.results.forEach((r,ri)=>{
+if(ri===0)return;
+html+='<div class="h-detail-row">';
+html+='<span class="h-detail-rank">#'+(ri+1)+'</span>';
+html+='<span class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</span>';
+html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
+html+='<span class="h-detail-colo">'+(r.colo||'-')+'</span>';
+html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+'M':'--')+'</span>';
+
+if(tracerouteEnabled)html+='<span class="h-detail-tr"><span style="color:var(--primary);cursor:pointer;font-size:10px" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span></span>';
+if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'_'+ri+'" style="grid-column:1/-1"></div>';
+html+='</div>';
+});
+html+='</div>';
 html+='</div>';
 });
 list.innerHTML=html;
+}
+
+function toggleHistoryExpand(hi){
+const detail=S('hDetail_'+hi);
+const btn=S('expandBtn_'+hi);
+if(!detail||!btn)return;
+const isHidden=detail.style.display==='none';
+detail.style.display=isHidden?'':'none';
+if(isHidden){btn.querySelector('span').textContent='收起';btn.querySelector('svg').style.transform='rotate(90deg)';}
+else{const total=btn.querySelector('span').textContent='展开全部 '+(detail.querySelectorAll('.h-detail-row').length+1)+' 个结果';btn.querySelector('svg').style.transform='';}
 }
 
 function deleteHistory(idx){
