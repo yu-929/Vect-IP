@@ -105,6 +105,8 @@ func StartVectServer(port C.int) C.int {
 	mux.HandleFunc("/api/traceroute/", handleTraceroute)
 	mux.HandleFunc("/api/route-type/", handleRouteType)
 	mux.HandleFunc("/api/route-type", handleBatchRouteType)
+	mux.HandleFunc("/api/health", handleHealth)
+	mux.HandleFunc("/api/colo-discover", handleColoDiscover)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", p),
@@ -1055,4 +1057,79 @@ func handleBatchRouteType(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func handleColoDiscover(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+	var req struct {
+		CIDRs []string `json:"cidrs"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	if len(req.CIDRs) == 0 {
+		http.Error(w, "no CIDRs", 400)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cfg := engine.Config{
+		Budget:      100,
+		TopN:        100,
+		Concurrency: 100,
+		Heads:       4,
+		Beam:        32,
+		OnProgress:  func(info engine.ProgressInfo) {},
+	}
+	probeCfg := probe.Config{
+		Timeout:    3 * time.Second,
+		SNI:        "example.com",
+		HostHeader: "example.com",
+		Path:       "/cdn-cgi/trace",
+		Rounds:     1,
+	}
+	engReq := engine.Request{
+		CIDRs: req.CIDRs,
+		Probe: probeCfg,
+	}
+
+	eng := engine.New(cfg, probeCfg)
+	resp, err := eng.Run(ctx, engReq)
+	if err != nil {
+		http.Error(w, "scan failed: "+err.Error(), 500)
+		return
+	}
+
+	coloCount := make(map[string]int)
+	for _, r := range resp.Top {
+		if r.Trace != nil {
+			if c, ok := r.Trace["colo"]; ok && c != "" {
+				coloCount[c]++
+			}
+		}
+	}
+
+	type coloEntry struct {
+		Colo  string `json:"colo"`
+		Count int    `json:"count"`
+	}
+	var entries []coloEntry
+	for c, n := range coloCount {
+		entries = append(entries, coloEntry{c, n})
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Count > entries[j].Count })
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(entries)
 }
