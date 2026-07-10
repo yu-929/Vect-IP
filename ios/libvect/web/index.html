@@ -837,7 +837,7 @@ html+='<div class="glass-card history-item">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><button class="del-btn" onclick="deleteHistory('+hi+')" title="删除"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg></button></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
 html+='<div class="history-metrics">';
-if(r0)html+='<span class="hm">期望带宽: <strong>'+(r0.prefix?r0.prefix:'-')+'</strong></span>';
+if(r0)html+='<span class="hm">所属网段: <strong>'+(r0.prefix?r0.prefix:'-')+'</strong></span>';
 if(r0)html+='<span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span>';
 if(r0)html+='<span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span>';
 if(r0)html+='<span class="hm">峰值速度: <strong>'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span>';
