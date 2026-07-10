@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/cidr"
+	"github.com/yu-929/Vect-IP/internal/cidr"
 )
 
 // ArmTree manages a hierarchical tree of arm nodes organized by CIDR prefixes.

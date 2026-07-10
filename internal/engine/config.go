@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/bandit"
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/probe"
+	"github.com/yu-929/Vect-IP/internal/bandit"
+	"github.com/yu-929/Vect-IP/internal/probe"
 )
 
 // Config holds all configuration for the search engine.

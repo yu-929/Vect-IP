@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/dns"
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/engine"
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/output"
-	"github.com/Leo-Mu/montecarlo-ip-searcher/internal/probe"
+	"github.com/yu-929/Vect-IP/internal/dns"
+	"github.com/yu-929/Vect-IP/internal/engine"
+	"github.com/yu-929/Vect-IP/internal/output"
+	"github.com/yu-929/Vect-IP/internal/probe"
 )
 
 type repeatStringFlag []string

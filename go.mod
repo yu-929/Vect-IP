@@ -1,3 +1,3 @@
-module github.com/Leo-Mu/montecarlo-ip-searcher
+module github.com/yu-929/Vect-IP
 
 go 1.22

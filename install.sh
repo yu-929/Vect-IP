@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO="Leo-Mu/montecarlo-ip-searcher"
+REPO="yu-929/Vect-IP"
 BIN="vect"
 INSTALL_DIR="/usr/local/bin"
 BIN_PATH="${INSTALL_DIR}/${BIN}"

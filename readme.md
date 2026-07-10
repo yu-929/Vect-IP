@@ -35,18 +35,18 @@
 
 ```bash
 # 安装
-curl -sL https://raw.githubusercontent.com/Leo-Mu/montecarlo-ip-searcher/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash
 
 # 更新到最新版
-curl -sL https://raw.githubusercontent.com/Leo-Mu/montecarlo-ip-searcher/main/install.sh | bash -s update
+curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s update
 
 # 卸载
-curl -sL https://raw.githubusercontent.com/Leo-Mu/montecarlo-ip-searcher/main/install.sh | bash -s uninstall
+curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s uninstall
 ```
 
 ### GitHub Release
 
-[Release](https://github.com/Leo-Mu/montecarlo-ip-searcher/releases/latest) 下载解压后即可运行。
+[Release](https://github.com/yu-929/Vect-IP/releases/latest) 下载解压后即可运行。
 
 ## 推荐配置
 
