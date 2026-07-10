@@ -40,8 +40,16 @@ do_install() {
   echo "Downloading..."
   curl -#L "$URL" | tar -xz -C "$TMP_DIR"
 
+  # Auto-detect binary in extracted archive
+  FOUND=$(find "$TMP_DIR" -maxdepth 1 -type f ! -name "*.txt" ! -name "*.md" ! -name "LICENSE*" 2>/dev/null | head -1)
+  if [ -z "$FOUND" ]; then
+    echo "Error: no binary found in release archive"
+    ls -la "$TMP_DIR"
+    exit 1
+  fi
+
   echo "Installing to ${BIN_PATH}..."
-  install -m 755 "$TMP_DIR/${BIN}" "$BIN_PATH"
+  install -m 755 "$FOUND" "$BIN_PATH"
 
   if command -v $BIN &>/dev/null; then
     echo "Installed: $(command -v $BIN)"
