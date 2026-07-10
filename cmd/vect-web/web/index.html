@@ -636,6 +636,7 @@ timeout:(parseFloat(S('timeout').value)||3)+'s',
 host:S('host').value||'example.com',path:S('path').value||'/cdn-cgi/trace',
 rounds:parseInt(S('rounds').value)||6,skipFirst:1,
 downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').value,
+topN:parseInt(S('topN').value)||20,
 coloAllow:coloMode==='allow'?coloSelected.join(','):'',
 coloExclude:coloMode==='exclude'?coloSelected.join(','):'',
 ipVersion:parseInt(S('ipVersion').value)||0};
