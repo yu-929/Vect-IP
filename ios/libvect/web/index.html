@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vect IP 优选器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid #1e293b;margin-bottom:24px}
+header h1{font-size:24px;font-weight:700;background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+header span{color:#64748b;font-size:14px}
+.card{background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #334155}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px;color:#94a3b8}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.field{flex:1;min-width:180px}
+.field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:4px}
+.field input,.field select{width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:#38bdf8}
+textarea{width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px;font-family:'SF Mono','Cascadia Code',monospace;resize:vertical;outline:none;min-height:80px}
+textarea:focus{border-color:#38bdf8}
+.btn{padding:10px 28px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#38bdf8,#818cf8);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(56,189,248,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.actions{display:flex;gap:12px;align-items:center;margin-top:16px}
+.progress-bar{width:100%;height:8px;background:#0f172a;border-radius:4px;overflow:hidden;margin-top:12px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8);border-radius:4px;transition:width .3s;width:0%}
+.stat-row{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px}
+.stat{text-align:center;min-width:80px}
+.stat-value{font-size:22px;font-weight:700;color:#38bdf8}
+.stat-label{font-size:11px;color:#64748b;margin-top:2px}
+.table-wrap{overflow-x:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0f172a;color:#94a3b8;font-weight:600;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid #334155}
+td{padding:8px 12px;border-bottom:1px solid #1e293b;white-space:nowrap}
+tr:hover td{background:#0f172a}
+.status-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600}
+.status-ok{background:#065f46;color:#6ee7b7}
+.status-fail{background:#7f1d1d;color:#fca5a5}
+.colo-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#1e3a5f;color:#93c5fd}
+.score{font-weight:600}
+.ip-text{font-family:'SF Mono','Cascadia Code',monospace;font-size:12px;color:#a5b4fc}
+.hidden{display:none}
+#error-msg{color:#fca5a5;background:#7f1d1d;padding:10px 16px;border-radius:8px;margin-top:12px}
+#presets{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.preset-btn{padding:4px 14px;border:1px solid #334155;border-radius:16px;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;transition:all .2s}
+.preset-btn:hover{border-color:#38bdf8;color:#38bdf8}
+.preset-btn.active{border-color:#38bdf8;background:rgba(56,189,248,.1);color:#38bdf8}
+@media(max-width:768px){.row{flex-direction:column}.field{min-width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>Vect</h1>
+<span>IP 优选器 · 蒙特卡洛搜索</span>
+</header>
+
+<div class="card">
+<h2>扫描目标</h2>
+<div id="presets">
+<button class="preset-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="1000" data-concurrency="80">Cloudflare 快速测试</button>
+<button class="preset-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="3000" data-concurrency="100">Cloudflare 完整扫描</button>
+</div>
+<div class="field">
+<label>CIDR（每行一个）</label>
+<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32"></textarea>
+</div>
+<div class="row">
+<div class="field">
+<label>或输入 ASN（自动解析）</label>
+<input id="asn" type="number" placeholder="如 13335">
+</div>
+<div class="field">
+<label>探测预算</label>
+<input id="budget" type="number" value="2000">
+</div>
+<div class="field">
+<label>并发数</label>
+<input id="concurrency" type="number" value="100">
+</div>
+<div class="field">
+<label>搜索头</label>
+<input id="heads" type="number" value="4">
+</div>
+</div>
+<div class="row">
+<div class="field">
+<label>目标域名</label>
+<input id="host" value="example.com">
+</div>
+<div class="field">
+<label>请求路径</label>
+<input id="path" value="/cdn-cgi/trace">
+</div>
+<div class="field">
+<label>超时（秒）</label>
+<input id="timeout" type="number" value="3" step="0.5">
+</div>
+<div class="field">
+<label>测试轮次</label>
+<input id="rounds" type="number" value="6">
+</div>
+</div>
+<div class="row">
+<div class="field">
+<label>下载测速（0=关闭）</label>
+<input id="downloadTop" type="number" value="5">
+</div>
+<div class="field">
+<label>测速模式</label>
+<select id="downloadMode">
+<option value="all">All（固定数量）</option>
+<option value="sequential" selected>Sequential（直到 N 个成功）</option>
+</select>
+</div>
+<div class="field">
+<label>机房白名单（逗号分隔）</label>
+<input id="coloAllow" placeholder="HKG,SJC">
+</div>
+<div class="field">
+<label>机房黑名单</label>
+<input id="coloExclude" placeholder="LAX,DFW">
+</div>
+</div>
+<div class="actions">
+<button class="btn btn-primary" id="startBtn" onclick="startScan()">开始扫描</button>
+<button class="btn btn-danger hidden" id="cancelBtn" onclick="cancelScan()">取消</button>
+<span id="scanId" style="color:#64748b;font-size:12px"></span>
+</div>
+</div>
+
+<div id="progressCard" class="card hidden">
+<h2>扫描进度</h2>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="stat-row">
+<div class="stat"><div class="stat-value" id="pCompleted">0</div><div class="stat-label">已完成</div></div>
+<div class="stat"><div class="stat-value" id="pBudget">0</div><div class="stat-label">总预算</div></div>
+<div class="stat"><div class="stat-value" id="pBestScore">-</div><div class="stat-label">最优延迟</div></div>
+<div class="stat"><div class="stat-value" id="pBestIP">-</div><div class="stat-label">最优 IP</div></div>
+<div class="stat"><div class="stat-value" id="pElapsed">0s</div><div class="stat-label">已用时间</div></div>
+<div class="stat"><div class="stat-value" id="pNodes">0</div><div class="stat-label">搜索节点</div></div>
+</div>
+<div id="statusMsg" style="margin-top:8px;font-size:13px;color:#94a3b8"></div>
+</div>
+
+<div id="error-msg" class="hidden"></div>
+
+<div id="resultCard" class="card hidden">
+<h2>扫描结果</h2>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>#</th><th>IP</th><th>延迟</th><th>状态</th><th>前缀</th><th>Colo</th><th>TCP</th><th>TLS</th><th>TTFB</th><th>下载</th>
+</tr></thead>
+<tbody id="resultBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<script>
+let currentScanId = null;
+let eventSource = null;
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+const cidrs = btn.dataset.cidrs;
+if (cidrs) document.getElementById('cidrs').value = cidrs;
+if (btn.dataset.budget) document.getElementById('budget').value = btn.dataset.budget;
+if (btn.dataset.concurrency) document.getElementById('concurrency').value = btn.dataset.concurrency;
+});
+});
+
+async function resolveASN() {
+const asn = document.getElementById('asn').value.trim();
+if (!asn) return;
+try {
+const r = await fetch('/api/resolve-asn/' + asn);
+const d = await r.json();
+if (d.cidrs && d.cidrs.length) {
+const existing = document.getElementById('cidrs').value.trim();
+document.getElementById('cidrs').value = existing ? existing + '\n' + d.cidrs.join('\n') : d.cidrs.join('\n');
+}
+} catch(e) {
+showError('ASN 解析失败: ' + e.message);
+}
+}
+
+async function startScan() {
+const asn = document.getElementById('asn').value.trim();
+if (asn) await resolveASN();
+
+const body = {
+cidrs: document.getElementById('cidrs').value.split('\n').map(s => s.trim()).filter(Boolean),
+asn: parseInt(asn) || 0,
+budget: parseInt(document.getElementById('budget').value) || 2000,
+concurrency: parseInt(document.getElementById('concurrency').value) || 100,
+heads: parseInt(document.getElementById('heads').value) || 4,
+timeout: (parseFloat(document.getElementById('timeout').value) || 3) + 's',
+host: document.getElementById('host').value || 'example.com',
+path: document.getElementById('path').value || '/cdn-cgi/trace',
+rounds: parseInt(document.getElementById('rounds').value) || 6,
+skipFirst: 1,
+downloadTop: parseInt(document.getElementById('downloadTop').value) || 0,
+downloadMode: document.getElementById('downloadMode').value,
+coloAllow: document.getElementById('coloAllow').value.trim(),
+coloExclude: document.getElementById('coloExclude').value.trim(),
+};
+
+if (!body.cidrs.length && !body.asn) {
+showError('请输入 CIDR 或 ASN');
+return;
+}
+
+hideError();
+document.getElementById('startBtn').disabled = true;
+document.getElementById('cancelBtn').classList.remove('hidden');
+document.getElementById('resultCard').classList.add('hidden');
+document.getElementById('resultBody').innerHTML = '';
+
+try {
+const r = await fetch('/api/scan', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+const d = await r.json();
+if (!d.id) { showError('启动失败'); return; }
+
+currentScanId = d.id;
+document.getElementById('scanId').textContent = 'ID: ' + d.id;
+document.getElementById('progressCard').classList.remove('hidden');
+document.getElementById('pBudget').textContent = body.budget;
+document.getElementById('statusMsg').textContent = '扫描中...';
+
+eventSource = new EventSource('/api/scan/' + d.id + '?subscribe');
+eventSource.onmessage = (e) => {
+if (!e.data) return;
+const p = JSON.parse(e.data);
+document.getElementById('pCompleted').textContent = p.completed;
+document.getElementById('progressFill').style.width = (p.budget > 0 ? (p.completed / p.budget * 100) : 0) + '%';
+document.getElementById('pBestScore').textContent = p.bestScore > 0 ? p.bestScore.toFixed(1) + 'ms' : '-';
+document.getElementById('pBestIP').textContent = p.bestIP || '-';
+document.getElementById('pElapsed').textContent = (p.elapsedMS / 1000).toFixed(1) + 's';
+document.getElementById('pNodes').textContent = p.nodes;
+};
+eventSource.addEventListener('done', () => {
+eventSource.close();
+pollResult(d.id);
+});
+} catch(e) {
+showError('请求失败: ' + e.message);
+document.getElementById('startBtn').disabled = false;
+document.getElementById('cancelBtn').classList.add('hidden');
+}
+}
+
+async function pollResult(id) {
+document.getElementById('statusMsg').textContent = '下载测速中...';
+try {
+const r = await fetch('/api/scan/' + id);
+const d = await r.json();
+if (d.status === 'completed') {
+renderResults(d.result || []);
+document.getElementById('startBtn').disabled = false;
+document.getElementById('cancelBtn').classList.add('hidden');
+document.getElementById('statusMsg').textContent = '完成';
+} else if (d.status === 'failed') {
+showError(d.error || '扫描失败');
+document.getElementById('startBtn').disabled = false;
+document.getElementById('cancelBtn').classList.add('hidden');
+document.getElementById('statusMsg').textContent = '失败';
+} else {
+setTimeout(() => pollResult(id), 1000);
+}
+} catch(e) {
+showError('获取结果失败: ' + e.message);
+document.getElementById('startBtn').disabled = false;
+document.getElementById('cancelBtn').classList.add('hidden');
+}
+}
+
+function cancelScan() {
+if (!currentScanId) return;
+fetch('/api/cancel/' + currentScanId);
+if (eventSource) eventSource.close();
+document.getElementById('startBtn').disabled = false;
+document.getElementById('cancelBtn').classList.add('hidden');
+document.getElementById('statusMsg').textContent = '已取消';
+}
+
+function renderResults(results) {
+const tbody = document.getElementById('resultBody');
+if (!results.length) {
+tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#64748b">无结果</td></tr>';
+document.getElementById('resultCard').classList.remove('hidden');
+return;
+}
+
+let html = '';
+results.forEach((r, i) => {
+const colo = r.trace && r.trace.colo ? r.trace.colo : '';
+const dlInfo = r.download_ok ? r.download_mbps.toFixed(1) + ' Mbps' : (r.download_error || '-');
+const statusClass = r.ok ? 'status-ok' : 'status-fail';
+html += '<tr>' +
+'<td>' + (i+1) + '</td>' +
+'<td class="ip-text">' + r.ip + '</td>' +
+'<td class="score">' + r.score_ms.toFixed(1) + 'ms</td>' +
+'<td><span class="status-badge ' + statusClass + '">' + (r.ok ? 'OK' : (r.status || 'ERR')) + '</span></td>' +
+'<td style="font-size:12px;color:#94a3b8">' + r.prefix + '</td>' +
+'<td>' + (colo ? '<span class="colo-badge">' + colo + '</span>' : '-') + '</td>' +
+'<td>' + (r.connect_ms || '-') + '</td>' +
+'<td>' + (r.tls_ms || '-') + '</td>' +
+'<td>' + (r.ttfb_ms || '-') + '</td>' +
+'<td style="font-size:12px;font-weight:' + (r.download_ok ? '600' : '400') + ';color:' + (r.download_ok ? '#6ee7b7' : '#94a3b8') + '">' + dlInfo + '</td>' +
+'</tr>';
+});
+tbody.innerHTML = html;
+document.getElementById('resultCard').classList.remove('hidden');
+}
+
+function showError(msg) {
+const el = document.getElementById('error-msg');
+el.textContent = msg;
+el.classList.remove('hidden');
+}
+
+function hideError() {
+document.getElementById('error-msg').classList.add('hidden');
+}
+</script>
+</body>
+</html>

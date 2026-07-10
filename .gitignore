@@ -1,7 +1,7 @@
 # Binaries
-vect
-vect.exe
-vect-*
+/vect
+/vect.exe
+/vect-*
 
 # Test binaries
 *.test

@@ -10,6 +10,17 @@ import (
 	"github.com/yu-929/Vect-IP/internal/probe"
 )
 
+// ProgressInfo holds progress information for callbacks.
+type ProgressInfo struct {
+	Completed int
+	Budget    int
+	BestScore float64
+	BestIP    string
+	BestPrefix string
+	Elapsed   time.Duration
+	Nodes     int
+}
+
 // Config holds all configuration for the search engine.
 type Config struct {
 	// Budget is the total number of probes to perform.
@@ -59,6 +70,10 @@ type Config struct {
 
 	// ColoBlock is a blacklist of CDN colo codes; results with colo in this list do not enter TopN. Empty = no filter.
 	ColoBlock []string
+
+	// OnProgress is called periodically during the search with progress info.
+	// Can be nil. Not called concurrently.
+	OnProgress func(info ProgressInfo)
 }
 
 // Request holds the input for a search run.

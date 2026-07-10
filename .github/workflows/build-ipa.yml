@@ -1,0 +1,39 @@
+name: Build IPA
+on:
+  push:
+    branches: [main]
+    paths: ['ios/**', 'internal/**', 'cmd/**', 'web/**', 'go.mod', 'go.sum']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Go static library for iOS
+        run: cd ios && ./build-libvect.sh
+
+      - name: Archive IPA
+        run: |
+          xcodebuild archive \
+            -project ios/VectApp.xcodeproj \
+            -scheme VectApp \
+            -configuration Release \
+            -archivePath build/VectApp.xcarchive
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/VectApp.xcarchive \
+            -exportPath build/VectApp.ipa \
+            -exportOptionsPlist ios/exportOptions.plist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VectApp
+          path: build/VectApp.ipa

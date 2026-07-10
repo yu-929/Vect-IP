@@ -119,6 +119,7 @@ func (e *Engine) schedule(ctx context.Context, timeoutMS float64) error {
 	start := time.Now()
 	lastLog := time.Now()
 	lastSplit := int64(0)
+	lastProgress := time.Now()
 
 	// Initial fill - submit initial batch of tasks
 	initialBatch := e.cfg.Concurrency * 2
@@ -168,6 +169,21 @@ func (e *Engine) schedule(ctx context.Context, timeoutMS float64) error {
 				fmt.Fprintf(os.Stderr, "progress: %d/%d done, best=%.1fms ip=%s prefix=%s elapsed=%s nodes=%d\n",
 					completed, e.cfg.Budget, best.ScoreMS, best.IP.String(), best.Prefix.String(), elapsed, e.tree.Size())
 				lastLog = time.Now()
+			}
+
+			// Progress callback for web UI
+			if e.cfg.OnProgress != nil && time.Since(lastProgress) > 200*time.Millisecond {
+				best := e.topN.Best()
+				e.cfg.OnProgress(ProgressInfo{
+					Completed:  int(completed),
+					Budget:     e.cfg.Budget,
+					BestScore:  best.ScoreMS,
+					BestIP:     best.IP.String(),
+					BestPrefix: best.Prefix.String(),
+					Elapsed:    time.Since(start),
+					Nodes:      e.tree.Size(),
+				})
+				lastProgress = time.Now()
 			}
 		}
 	}
