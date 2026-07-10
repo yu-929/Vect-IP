@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -424,10 +425,10 @@ func handleResolveASN(w http.ResponseWriter, r *http.Request) {
 }
 
 func resolveASN(asn int) ([]string, error) {
-	url := fmt.Sprintf("https://api.bgpview.io/asn/%d/prefixes", asn)
+	url := fmt.Sprintf("https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS%d", asn)
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("bgpview API: %w", err)
+		return nil, fmt.Errorf("RIPE API: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -437,27 +438,30 @@ func resolveASN(asn int) ([]string, error) {
 	}
 
 	var result struct {
-		Status string `json:"status"`
-		Data   struct {
-			IPv4Prefixes []struct {
+		Data struct {
+			Prefixes []struct {
 				Prefix string `json:"prefix"`
-			} `json:"ipv4_prefixes"`
-			IPv6Prefixes []struct {
-				Prefix string `json:"prefix"`
-			} `json:"ipv6_prefixes"`
+			} `json:"prefixes"`
 		} `json:"data"`
 	}
 
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("parse bgpview response: %w", err)
+		return nil, fmt.Errorf("parse RIPE response: %w", err)
 	}
 
 	var cidrs []string
-	for _, p := range result.Data.IPv4Prefixes {
-		cidrs = append(cidrs, p.Prefix)
+	var seen = make(map[string]bool)
+	for _, p := range result.Data.Prefixes {
+		if !seen[p.Prefix] {
+			cidrs = append(cidrs, p.Prefix)
+			seen[p.Prefix] = true
+		}
 	}
-	for _, p := range result.Data.IPv6Prefixes {
-		cidrs = append(cidrs, p.Prefix)
+
+	if len(cidrs) == 0 {
+		return nil, fmt.Errorf("no prefixes found for AS%d", asn)
 	}
+
+	sort.Strings(cidrs)
 	return cidrs, nil
 }

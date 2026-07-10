@@ -2,78 +2,121 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vect IP">
+<link rel="manifest" href="/manifest.json">
 <title>Vect IP 优选器</title>
 <style>
+:root{--bg:#0b1120;--surface:#141d31;--border:#1e2a45;--text:#e2e8f0;--muted:#64748b;--accent:#38bdf8;--accent2:#818cf8;--success:#10b981;--danger:#ef4444;--warning:#f59e0b}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
-.container{max-width:1200px;margin:0 auto;padding:20px}
-header{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid #1e293b;margin-bottom:24px}
-header h1{font-size:24px;font-weight:700;background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-header span{color:#64748b;font-size:14px}
-.card{background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #334155}
-.card h2{font-size:16px;font-weight:600;margin-bottom:16px;color:#94a3b8}
-.row{display:flex;gap:16px;flex-wrap:wrap}
-.field{flex:1;min-width:180px}
-.field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:4px}
-.field input,.field select{width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;outline:none;transition:border-color .2s}
-.field input:focus,.field select:focus{border-color:#38bdf8}
-textarea{width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px;font-family:'SF Mono','Cascadia Code',monospace;resize:vertical;outline:none;min-height:80px}
-textarea:focus{border-color:#38bdf8}
-.btn{padding:10px 28px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,#38bdf8,#818cf8);color:#fff}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(56,189,248,.3)}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-danger{background:#ef4444;color:#fff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.container{max-width:1100px;margin:0 auto;padding:16px 20px 40px}
+.hero{text-align:center;padding:32px 0 28px;position:relative}
+.hero h1{font-size:32px;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,#38bdf8 0%,#818cf8 50%,#c084fc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--muted);font-size:14px;margin-top:6px}
+.hero::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:120px;height:2px;border-radius:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.card{background:var(--surface);border-radius:16px;padding:24px;margin-bottom:16px;border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.section{border-top:1px solid var(--border);padding-top:16px;margin-top:16px}
+.section:first-child{border-top:none;padding-top:0;margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.field{position:relative}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px;letter-spacing:0.3px}
+.field input,.field select{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+.field input::placeholder{color:#334155}
+textarea{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'SF Mono',ui-monospace,monospace;resize:vertical;outline:none;min-height:88px;line-height:1.5;transition:border-color .2s,box-shadow .2s}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 24px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(56,189,248,.25)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-danger{background:var(--danger);color:#fff}
 .btn-danger:hover{background:#dc2626}
-.actions{display:flex;gap:12px;align-items:center;margin-top:16px}
-.progress-bar{width:100%;height:8px;background:#0f172a;border-radius:4px;overflow:hidden;margin-top:12px}
-.progress-fill{height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8);border-radius:4px;transition:width .3s;width:0%}
-.stat-row{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px}
-.stat{text-align:center;min-width:80px}
-.stat-value{font-size:22px;font-weight:700;color:#38bdf8}
-.stat-label{font-size:11px;color:#64748b;margin-top:2px}
-.table-wrap{overflow-x:auto;margin-top:12px}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.preset-btn{padding:5px 14px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit}
+.preset-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(56,189,248,.06)}
+.preset-btn.active{border-color:var(--accent);background:rgba(56,189,248,.12);color:var(--accent)}
+.progress-wrap{background:var(--bg);border-radius:12px;padding:16px}
+.progress-bar{width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));background-size:200% 100%;transition:width .4s ease;width:0%}
+.progress-fill.active{animation:shimmer 2s linear infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:12px}
+.stat{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+.stat-value{font-size:20px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+.table-wrap{overflow-x:auto;margin-top:12px;border-radius:10px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#0f172a;color:#94a3b8;font-weight:600;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid #334155}
-td{padding:8px 12px;border-bottom:1px solid #1e293b;white-space:nowrap}
-tr:hover td{background:#0f172a}
-.status-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600}
-.status-ok{background:#065f46;color:#6ee7b7}
-.status-fail{background:#7f1d1d;color:#fca5a5}
-.colo-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#1e3a5f;color:#93c5fd}
-.score{font-weight:600}
-.ip-text{font-family:'SF Mono','Cascadia Code',monospace;font-size:12px;color:#a5b4fc}
-.hidden{display:none}
-#error-msg{color:#fca5a5;background:#7f1d1d;padding:10px 16px;border-radius:8px;margin-top:12px}
-#presets{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.preset-btn{padding:4px 14px;border:1px solid #334155;border-radius:16px;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;transition:all .2s}
-.preset-btn:hover{border-color:#38bdf8;color:#38bdf8}
-.preset-btn.active{border-color:#38bdf8;background:rgba(56,189,248,.1);color:#38bdf8}
-@media(max-width:768px){.row{flex-direction:column}.field{min-width:100%}}
+th{background:var(--bg);color:var(--muted);font-weight:600;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0}
+td{padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .15s}
+tbody tr:hover td{background:rgba(56,189,248,.04)}
+tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+tbody tr:nth-child(even):hover td{background:rgba(56,189,248,.05)}
+.badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;line-height:1.4}
+.badge-ok{background:rgba(16,185,129,.15);color:var(--success)}
+.badge-fail{background:rgba(239,68,68,.15);color:var(--danger)}
+.colo-badge{display:inline-flex;align-items:center;padding:1px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(56,189,248,.12);color:#93c5fd}
+.ip-text{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;color:#a5b4fc}
+.score{font-weight:600;font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+.error-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5;padding:12px 16px;border-radius:10px;margin-top:12px;font-size:14px;display:flex;align-items:center;gap:8px}
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-state svg{width:48px;height:48px;opacity:.3;margin-bottom:12px}
+.empty-state p{font-size:14px}
+.status-text{font-size:13px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;animation:pulse 1.5s ease-in-out infinite}
+.dot-running{background:var(--accent)}
+.dot-done{background:var(--success);animation:none}
+.dot-fail{background:var(--danger);animation:none}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@media(max-width:640px){.container{padding:12px}.card{padding:16px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.hero h1{font-size:26px}}
 </style>
 </head>
 <body>
 <div class="container">
-<header>
+<div class="hero">
 <h1>Vect</h1>
-<span>IP 优选器 · 蒙特卡洛搜索</span>
-</header>
+<p>蒙特卡洛搜索 · CDN IP 优选</p>
+</div>
 
 <div class="card">
-<h2>扫描目标</h2>
-<div id="presets">
-<button class="preset-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="1000" data-concurrency="80">Cloudflare 快速测试</button>
-<button class="preset-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="3000" data-concurrency="100">Cloudflare 完整扫描</button>
+<div class="card-title">
+<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0z"/><path d="M10 4.5V10l3.5 2"/></svg>
+扫描配置
 </div>
-<div class="field">
-<label>CIDR（每行一个）</label>
+
+<div class="presets">
+<button class="preset-btn" data-cidrs="1.1.1.0/24&#10;1.0.0.0/24&#10;1.2.0.0/16&#10;1.3.0.0/16" data-budget="1000" data-concurrency="80">Cloudflare 快速</button>
+<button class="preset-btn" data-cidrs="1.1.0.0/16&#10;1.0.0.0/16&#10;1.2.0.0/16&#10;1.3.0.0/16&#10;162.158.0.0/15&#10;173.245.48.0/20" data-budget="3000" data-concurrency="100">Cloudflare 完整</button>
+</div>
+
+<div class="section">
+<div class="grid">
+<div class="field" style="grid-column:1/-1">
+<label>CIDR 前缀（每行一个）</label>
 <textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32"></textarea>
 </div>
-<div class="row">
+</div>
+</div>
+
+<div class="section">
+<div class="grid">
 <div class="field">
-<label>或输入 ASN（自动解析）</label>
-<input id="asn" type="number" placeholder="如 13335">
+<label>或输入 ASN 自动解析</label>
+<div style="display:flex;gap:6px">
+<input id="asn" type="number" placeholder="如 13335" style="flex:1">
+<button class="btn btn-sm btn-outline" id="resolveBtn" onclick="resolveASN()">解析</button>
+</div>
 </div>
 <div class="field">
 <label>探测预算</label>
@@ -88,7 +131,10 @@ tr:hover td{background:#0f172a}
 <input id="heads" type="number" value="4">
 </div>
 </div>
-<div class="row">
+</div>
+
+<div class="section">
+<div class="grid">
 <div class="field">
 <label>目标域名</label>
 <input id="host" value="example.com">
@@ -98,7 +144,7 @@ tr:hover td{background:#0f172a}
 <input id="path" value="/cdn-cgi/trace">
 </div>
 <div class="field">
-<label>超时（秒）</label>
+<label>探测超时 (s)</label>
 <input id="timeout" type="number" value="3" step="0.5">
 </div>
 <div class="field">
@@ -106,7 +152,10 @@ tr:hover td{background:#0f172a}
 <input id="rounds" type="number" value="6">
 </div>
 </div>
-<div class="row">
+</div>
+
+<div class="section">
+<div class="grid">
 <div class="field">
 <label>下载测速（0=关闭）</label>
 <input id="downloadTop" type="number" value="5">
@@ -114,44 +163,66 @@ tr:hover td{background:#0f172a}
 <div class="field">
 <label>测速模式</label>
 <select id="downloadMode">
-<option value="all">All（固定数量）</option>
-<option value="sequential" selected>Sequential（直到 N 个成功）</option>
+<option value="all">固定数量</option>
+<option value="sequential" selected>Sequential</option>
 </select>
 </div>
 <div class="field">
-<label>机房白名单（逗号分隔）</label>
-<input id="coloAllow" placeholder="HKG,SJC">
+<label>Colo 白名单</label>
+<input id="coloAllow" placeholder="HKG,SJC,NRT">
 </div>
 <div class="field">
-<label>机房黑名单</label>
+<label>Colo 黑名单</label>
 <input id="coloExclude" placeholder="LAX,DFW">
 </div>
 </div>
+</div>
+
 <div class="actions">
-<button class="btn btn-primary" id="startBtn" onclick="startScan()">开始扫描</button>
-<button class="btn btn-danger hidden" id="cancelBtn" onclick="cancelScan()">取消</button>
-<span id="scanId" style="color:#64748b;font-size:12px"></span>
+<button class="btn btn-primary" id="startBtn" onclick="startScan()">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg>
+开始扫描
+</button>
+<button class="btn btn-danger hidden" id="cancelBtn" onclick="cancelScan()">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3l10 10M13 3L3 13"/></svg>
+取消
+</button>
+<span id="scanId" style="color:var(--muted);font-size:12px"></span>
 </div>
 </div>
 
 <div id="progressCard" class="card hidden">
-<h2>扫描进度</h2>
+<div class="card-title">
+<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a8 8 0 100 16 8 8 0 000-16z"/><path d="M10 6v4l3 3"/></svg>
+扫描进度
+</div>
+<div class="progress-wrap">
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-<div class="stat-row">
+<div class="stats">
 <div class="stat"><div class="stat-value" id="pCompleted">0</div><div class="stat-label">已完成</div></div>
 <div class="stat"><div class="stat-value" id="pBudget">0</div><div class="stat-label">总预算</div></div>
 <div class="stat"><div class="stat-value" id="pBestScore">-</div><div class="stat-label">最优延迟</div></div>
-<div class="stat"><div class="stat-value" id="pBestIP">-</div><div class="stat-label">最优 IP</div></div>
-<div class="stat"><div class="stat-value" id="pElapsed">0s</div><div class="stat-label">已用时间</div></div>
+<div class="stat"><div class="stat-value" id="pBestIP" style="font-size:14px;word-break:break-all">-</div><div class="stat-label">最优 IP</div></div>
+<div class="stat"><div class="stat-value" id="pElapsed">0s</div><div class="stat-label">耗时</div></div>
 <div class="stat"><div class="stat-value" id="pNodes">0</div><div class="stat-label">搜索节点</div></div>
 </div>
-<div id="statusMsg" style="margin-top:8px;font-size:13px;color:#94a3b8"></div>
+<div class="status-text" id="statusMsg">
+<span class="dot dot-running" id="statusDot"></span>
+<span id="statusLabel">等待开始...</span>
+</div>
+</div>
 </div>
 
-<div id="error-msg" class="hidden"></div>
+<div id="error-msg" class="hidden error-box">
+<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11a1 1 0 110-2 1 1 0 010 2zm-1-7h2v4H9V6z"/></svg>
+<span id="errorText"></span>
+</div>
 
 <div id="resultCard" class="card hidden">
-<h2>扫描结果</h2>
+<div class="card-title">
+<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10h16M2 6h16M2 14h16"/></svg>
+扫描结果
+</div>
 <div class="table-wrap">
 <table>
 <thead><tr>
@@ -164,15 +235,13 @@ tr:hover td{background:#0f172a}
 </div>
 
 <script>
-let currentScanId = null;
-let eventSource = null;
+let currentScanId = null, eventSource = null;
 
 document.querySelectorAll('.preset-btn').forEach(btn => {
 btn.addEventListener('click', () => {
 document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
 btn.classList.add('active');
-const cidrs = btn.dataset.cidrs;
-if (cidrs) document.getElementById('cidrs').value = cidrs;
+if (btn.dataset.cidrs) document.getElementById('cidrs').value = btn.dataset.cidrs;
 if (btn.dataset.budget) document.getElementById('budget').value = btn.dataset.budget;
 if (btn.dataset.concurrency) document.getElementById('concurrency').value = btn.dataset.concurrency;
 });
@@ -181,14 +250,25 @@ if (btn.dataset.concurrency) document.getElementById('concurrency').value = btn.
 async function resolveASN() {
 const asn = document.getElementById('asn').value.trim();
 if (!asn) return;
+const btn = document.getElementById('resolveBtn');
+btn.textContent = '解析中...';
+btn.disabled = true;
 try {
 const r = await fetch('/api/resolve-asn/' + asn);
 const d = await r.json();
 if (d.cidrs && d.cidrs.length) {
 const existing = document.getElementById('cidrs').value.trim();
 document.getElementById('cidrs').value = existing ? existing + '\n' + d.cidrs.join('\n') : d.cidrs.join('\n');
+document.getElementById('cidrs').scrollTop = document.getElementById('cidrs').scrollHeight;
+btn.textContent = '✓ ' + d.cidrs.length + ' 条';
+setTimeout(() => { btn.textContent = '解析'; btn.disabled = false; }, 2000);
+} else {
+btn.textContent = '无结果';
+setTimeout(() => { btn.textContent = '解析'; btn.disabled = false; }, 1500);
 }
 } catch(e) {
+btn.textContent = '✗ 失败';
+setTimeout(() => { btn.textContent = '解析'; btn.disabled = false; }, 2000);
 showError('ASN 解析失败: ' + e.message);
 }
 }
@@ -214,16 +294,15 @@ coloAllow: document.getElementById('coloAllow').value.trim(),
 coloExclude: document.getElementById('coloExclude').value.trim(),
 };
 
-if (!body.cidrs.length && !body.asn) {
-showError('请输入 CIDR 或 ASN');
-return;
-}
+if (!body.cidrs.length && !body.asn) { showError('请输入 CIDR 或 ASN'); return; }
 
 hideError();
 document.getElementById('startBtn').disabled = true;
 document.getElementById('cancelBtn').classList.remove('hidden');
 document.getElementById('resultCard').classList.add('hidden');
 document.getElementById('resultBody').innerHTML = '';
+document.getElementById('statusLabel').textContent = '启动中...';
+document.getElementById('progressFill').classList.add('active');
 
 try {
 const r = await fetch('/api/scan', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -231,17 +310,18 @@ const d = await r.json();
 if (!d.id) { showError('启动失败'); return; }
 
 currentScanId = d.id;
-document.getElementById('scanId').textContent = 'ID: ' + d.id;
+document.getElementById('scanId').textContent = '#' + d.id.slice(-6);
 document.getElementById('progressCard').classList.remove('hidden');
 document.getElementById('pBudget').textContent = body.budget;
-document.getElementById('statusMsg').textContent = '扫描中...';
+document.getElementById('statusLabel').textContent = '扫描中...';
 
 eventSource = new EventSource('/api/scan/' + d.id + '?subscribe');
 eventSource.onmessage = (e) => {
 if (!e.data) return;
 const p = JSON.parse(e.data);
 document.getElementById('pCompleted').textContent = p.completed;
-document.getElementById('progressFill').style.width = (p.budget > 0 ? (p.completed / p.budget * 100) : 0) + '%';
+const pct = p.budget > 0 ? Math.min(p.completed / p.budget * 100, 100) : 0;
+document.getElementById('progressFill').style.width = pct + '%';
 document.getElementById('pBestScore').textContent = p.bestScore > 0 ? p.bestScore.toFixed(1) + 'ms' : '-';
 document.getElementById('pBestIP').textContent = p.bestIP || '-';
 document.getElementById('pElapsed').textContent = (p.elapsedMS / 1000).toFixed(1) + 's';
@@ -249,17 +329,20 @@ document.getElementById('pNodes').textContent = p.nodes;
 };
 eventSource.addEventListener('done', () => {
 eventSource.close();
+document.getElementById('progressFill').classList.remove('active');
+document.getElementById('statusLabel').textContent = '下载测速中...';
 pollResult(d.id);
 });
 } catch(e) {
 showError('请求失败: ' + e.message);
 document.getElementById('startBtn').disabled = false;
 document.getElementById('cancelBtn').classList.add('hidden');
+document.getElementById('statusLabel').textContent = '失败';
+document.getElementById('progressFill').classList.remove('active');
 }
 }
 
 async function pollResult(id) {
-document.getElementById('statusMsg').textContent = '下载测速中...';
 try {
 const r = await fetch('/api/scan/' + id);
 const d = await r.json();
@@ -267,12 +350,14 @@ if (d.status === 'completed') {
 renderResults(d.result || []);
 document.getElementById('startBtn').disabled = false;
 document.getElementById('cancelBtn').classList.add('hidden');
-document.getElementById('statusMsg').textContent = '完成';
+document.getElementById('statusLabel').textContent = '完成';
+document.getElementById('statusDot').className = 'dot dot-done';
 } else if (d.status === 'failed') {
 showError(d.error || '扫描失败');
 document.getElementById('startBtn').disabled = false;
 document.getElementById('cancelBtn').classList.add('hidden');
-document.getElementById('statusMsg').textContent = '失败';
+document.getElementById('statusLabel').textContent = '失败';
+document.getElementById('statusDot').className = 'dot dot-fail';
 } else {
 setTimeout(() => pollResult(id), 1000);
 }
@@ -289,33 +374,36 @@ fetch('/api/cancel/' + currentScanId);
 if (eventSource) eventSource.close();
 document.getElementById('startBtn').disabled = false;
 document.getElementById('cancelBtn').classList.add('hidden');
-document.getElementById('statusMsg').textContent = '已取消';
+document.getElementById('statusLabel').textContent = '已取消';
+document.getElementById('statusDot').className = 'dot dot-fail';
+document.getElementById('progressFill').classList.remove('active');
 }
 
 function renderResults(results) {
 const tbody = document.getElementById('resultBody');
 if (!results.length) {
-tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#64748b">无结果</td></tr>';
+tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><p>暂无结果</p></div></td></tr>';
 document.getElementById('resultCard').classList.remove('hidden');
 return;
 }
-
 let html = '';
 results.forEach((r, i) => {
 const colo = r.trace && r.trace.colo ? r.trace.colo : '';
-const dlInfo = r.download_ok ? r.download_mbps.toFixed(1) + ' Mbps' : (r.download_error || '-');
-const statusClass = r.ok ? 'status-ok' : 'status-fail';
+const dlOk = r.download_ok;
+const dlInfo = dlOk ? r.download_mbps.toFixed(1) + ' Mbps' : (r.download_error || '-');
+const dlColor = dlOk ? '#10b981' : '#64748b';
+const statusClass = r.ok ? 'badge badge-ok' : 'badge badge-fail';
 html += '<tr>' +
-'<td>' + (i+1) + '</td>' +
+'<td style="color:var(--muted)">' + (i+1) + '</td>' +
 '<td class="ip-text">' + r.ip + '</td>' +
-'<td class="score">' + r.score_ms.toFixed(1) + 'ms</td>' +
-'<td><span class="status-badge ' + statusClass + '">' + (r.ok ? 'OK' : (r.status || 'ERR')) + '</span></td>' +
-'<td style="font-size:12px;color:#94a3b8">' + r.prefix + '</td>' +
-'<td>' + (colo ? '<span class="colo-badge">' + colo + '</span>' : '-') + '</td>' +
-'<td>' + (r.connect_ms || '-') + '</td>' +
-'<td>' + (r.tls_ms || '-') + '</td>' +
-'<td>' + (r.ttfb_ms || '-') + '</td>' +
-'<td style="font-size:12px;font-weight:' + (r.download_ok ? '600' : '400') + ';color:' + (r.download_ok ? '#6ee7b7' : '#94a3b8') + '">' + dlInfo + '</td>' +
+'<td class="score">' + r.score_ms.toFixed(1) + '<span style="color:var(--muted);font-weight:400;font-size:11px">ms</span></td>' +
+'<td><span class="' + statusClass + '">' + (r.ok ? 'OK' : (r.status || 'ERR')) + '</span></td>' +
+'<td style="font-size:12px;color:var(--muted)">' + r.prefix + '</td>' +
+'<td>' + (colo ? '<span class="colo-badge">' + colo + '</span>' : '<span style="color:var(--muted)">-</span>') + '</td>' +
+'<td>' + (r.connect_ms ? r.connect_ms.toFixed(0) + '<span style="color:var(--muted);font-size:11px">ms</span>' : '<span style="color:var(--muted)">-</span>') + '</td>' +
+'<td>' + (r.tls_ms ? r.tls_ms.toFixed(0) + '<span style="color:var(--muted);font-size:11px">ms</span>' : '<span style="color:var(--muted)">-</span>') + '</td>' +
+'<td>' + (r.ttfb_ms ? r.ttfb_ms.toFixed(0) + '<span style="color:var(--muted);font-size:11px">ms</span>' : '<span style="color:var(--muted)">-</span>') + '</td>' +
+'<td style="font-size:12px;font-weight:' + (dlOk ? '600' : '400') + ';color:' + dlColor + '">' + dlInfo + '</td>' +
 '</tr>';
 });
 tbody.innerHTML = html;
@@ -323,11 +411,9 @@ document.getElementById('resultCard').classList.remove('hidden');
 }
 
 function showError(msg) {
-const el = document.getElementById('error-msg');
-el.textContent = msg;
-el.classList.remove('hidden');
+document.getElementById('errorText').textContent = msg;
+document.getElementById('error-msg').classList.remove('hidden');
 }
-
 function hideError() {
 document.getElementById('error-msg').classList.add('hidden');
 }
