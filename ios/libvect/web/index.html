@@ -169,14 +169,18 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0
 .expand-btn:active{opacity:0.6}
 .expand-btn svg{transition:transform .2s ease;width:12px;height:12px}
 .h-detail{padding:4px 0 0}
-.h-detail-row{display:grid;grid-template-columns:20px 1fr 46px 38px 38px 30px;gap:3px;align-items:center;padding:4px 2px;border-bottom:0.5px solid var(--glass-border);font-size:10px}
+.h-detail-row{padding:6px 2px;border-bottom:0.5px solid var(--glass-border);display:flex;flex-wrap:wrap;gap:2px 0}
 .h-detail-row:last-child{border-bottom:none}
-.h-detail-rank{color:var(--muted2);font-weight:500;text-align:center}
-.h-detail-ip{font-family:'SF Mono',ui-monospace,monospace;color:var(--text);cursor:pointer;font-weight:500;word-break:break-all;font-size:10px}
+.h-detail-rank{color:var(--muted2);font-weight:500;font-size:10px;width:20px;flex-shrink:0;padding-top:1px}
+.h-detail-ip{font-family:'SF Mono',ui-monospace,monospace;color:var(--text);cursor:pointer;font-weight:500;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-0.2px}
 .h-detail-ip:active{opacity:0.6}
-.h-detail-score{color:var(--secondary);text-align:right;font-variant-numeric:tabular-nums}
-.h-detail-colo{color:var(--muted2);text-align:center;font-size:10px}
-.h-detail-dl{color:var(--success);text-align:right;font-variant-numeric:tabular-nums}
+.h-detail-meta{display:flex;align-items:center;gap:8px;margin-left:20px;font-size:10px;width:calc(100% - 20px)}
+.h-detail-score{color:var(--secondary);font-variant-numeric:tabular-nums}
+.h-detail-colo{color:var(--muted2)}
+.h-detail-dl{color:var(--success);font-variant-numeric:tabular-nums}
+.h-detail-tr{color:var(--primary);cursor:pointer;font-weight:500}
+.h-detail-tr:active{opacity:0.6}
+.h-detail-tr-wrap{width:100%}
 
 /* ===== Settings Tab ===== */
 .settings-group{margin-bottom:16px}
@@ -818,14 +822,15 @@ html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
 if(ri===0)return;
 html+='<div class="h-detail-row">';
-html+='<span class="h-detail-rank">#'+(ri+1)+'</span>';
-html+='<span class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</span>';
+html+='<div class="h-detail-rank">#'+(ri+1)+'</div>';
+html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</div>';
+html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-colo">'+(r.colo||'-')+'</span>';
-html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+'M':'--')+'</span>';
-
-if(tracerouteEnabled)html+='<span class="h-detail-tr"><span style="color:var(--primary);cursor:pointer;font-size:10px" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span></span>';
-if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'_'+ri+'" style="grid-column:1/-1"></div>';
+html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
+if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
+html+='</div>';
+if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'_'+ri+'" class="h-detail-tr-wrap"></div>';
 html+='</div>';
 });
 html+='</div>';
