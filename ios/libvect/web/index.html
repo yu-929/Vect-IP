@@ -1020,8 +1020,8 @@ S('statusLabel').textContent='已取消';
 // History
 function loadHistory(){
 try{
-const x=new XMLHttpRequest();x.open('GET','/api/history',false);x.send();
-if(x.status===200)return JSON.parse(x.responseText)||[];
+const stored=localStorage.getItem('vect-history');
+if(stored)return JSON.parse(stored)||[];
 }catch(e){}
 return[];
 }
