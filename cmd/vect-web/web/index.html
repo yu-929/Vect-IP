@@ -131,11 +131,19 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .error-box svg{width:14px;height:14px;flex-shrink:0}
 
 /* ===== Local Network ===== */
-.local-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}
-.local-item{padding:4px 0}
-.local-label{font-size:11px;color:var(--muted2);margin-bottom:1px;letter-spacing:-0.1px}
-.local-val{font-size:18px;font-weight:650;color:var(--text);letter-spacing:-0.3px}
-.local-val.public{color:var(--primary)}
+.local-grid{display:flex;flex-direction:column}
+.local-row{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 0;border-bottom:0.5px solid var(--glass-border);gap:8px}
+.local-row:last-child{border-bottom:none}
+.local-row .local-label{font-size:13px;color:var(--secondary);letter-spacing:-0.1px;flex-shrink:0;min-width:56px}
+.local-row .local-val{font-size:15px;font-weight:500;color:var(--text);letter-spacing:-0.2px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local-row .local-val.public{color:var(--primary);font-weight:600}
+.local-row .local-copy{width:28px;height:28px;border-radius:14px;border:none;background:var(--input-bg);color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.local-row .local-copy:active{background:rgba(0,119,237,0.18);transform:scale(0.9)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0}
+.card-header .card-title{margin-bottom:0}
+.card-header .refresh-btn{width:32px;height:32px;border-radius:16px;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.card-header .refresh-btn:active{color:var(--primary);background:rgba(0,119,237,0.10);transform:scale(0.9)}
+#localIPCard{padding:24px 20px;border-radius:20px}
 
 /* ===== History ===== */
 .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0}
@@ -270,12 +278,17 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <!-- Status Overview -->
 <div class="glass-card" id="localIPCard">
+<div class="card-header">
 <div class="card-title">本地网络</div>
+<button class="refresh-btn" onclick="fetchLocalIP()" title="刷新">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 10a7 7 0 01-7 7M3 10a7 7 0 017-7"/><path d="M17 4v6h-6M3 16v-6h6"/></svg>
+</button>
+</div>
 <div class="local-grid" id="localInfo">
-<div class="local-item"><div class="local-label">公网 IP</div><div class="local-val public" id="liPublic">--</div></div>
-<div class="local-item"><div class="local-label">本地 IP</div><div class="local-val" id="liLocal">--</div></div>
-<div class="local-item"><div class="local-label">运营商</div><div class="local-val" id="liISP">--</div></div>
-<div class="local-item"><div class="local-label">地理位置</div><div class="local-val" id="liLocation">--</div></div>
+<div class="local-row"><span class="local-label">公网IP</span><span class="local-val public" id="liPublic">--</span><button class="local-copy" onclick="copyText(document.getElementById('liPublic').textContent)" title="复制公网IP"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 3V2a1 1 0 011-1h4a1 1 0 011 1v1"/></svg></button></div>
+<div class="local-row"><span class="local-label">本地IP</span><span class="local-val" id="liLocal">--</span></div>
+<div class="local-row"><span class="local-label">运营商</span><span class="local-val" id="liISP">--</span></div>
+<div class="local-row"><span class="local-label">位置</span><span class="local-val" id="liLocation">--</span></div>
 </div>
 </div>
 
