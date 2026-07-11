@@ -53,6 +53,8 @@ type ScanRequest struct {
 	TopN                int      `json:"topN"`
 	CustomDownloadUrl   string   `json:"customDownloadUrl"`
 	CustomDownloadEnabled bool   `json:"customDownloadEnabled"`
+	DownloadBytes   int64    `json:"downloadBytes"`
+	DownloadTimeout int      `json:"downloadTimeout"`
 }
 
 type ScanStatus struct {
@@ -485,9 +487,17 @@ go func() {
 				dlTop = len(session.result)
 			}
 
+			dlBytes := req.DownloadBytes
+			if dlBytes <= 0 {
+				dlBytes = 1_000_000
+			}
+			dlTimeout := req.DownloadTimeout
+			if dlTimeout <= 0 {
+				dlTimeout = 3
+			}
 			dlCfg := probe.DownloadConfig{
-				Timeout: 3 * time.Second,
-				Bytes:   1_000_000,
+				Timeout: time.Duration(dlTimeout) * time.Second,
+				Bytes:   dlBytes,
 			}
 			if req.CustomDownloadEnabled && req.CustomDownloadUrl != "" {
 				dlCfg.Path = req.CustomDownloadUrl

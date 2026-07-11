@@ -162,7 +162,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .history-item{padding:14px 16px}
 .history-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .history-item .h-time{font-size:11px;color:var(--muted2);letter-spacing:-0.1px}
-.history-item .ip{font-size:18px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px;user-select:none;-webkit-user-select:none}
+.history-item .ip{font-size:18px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .history-item .ip:active{opacity:0.7}
 .history-item .del-btn{width:30px;height:30px;border-radius:15px;border:none;background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .history-item .del-btn:active{background:rgba(230,56,50,0.15);color:var(--danger);transform:scale(0.9)}
@@ -348,7 +348,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="section">
 <div class="row">
 <div class="field"><label>IP 版本</label>
-<select id="ipVersion"><option value="0">IPv4 + IPv6</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select>
+<select id="ipVersion"><option value="4">IPv4</option><option value="6">IPv6</option></select>
 </div>
 <div class="field"><label>探测预算</label><input id="budget" type="number" value="2000"></div>
 </div>
@@ -361,6 +361,10 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>测速模式</label>
 <select id="downloadMode"><option value="all">默认模式</option><option value="sequential" selected>顺序模式</option></select>
 </div>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="field"><label>测速文件大小</label><input id="downloadBytes" type="number" value="1"> MB</div>
+<div class="field"><label>单次超时</label><input id="downloadTimeout" type="number" value="3"> s</div>
 </div>
 </div>
 
@@ -870,7 +874,9 @@ downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').v
 topN:parseInt(S('topN').value)||20,
 coloAllow:coloMode==='allow'?coloSelected.join(','):'',
 coloExclude:coloMode==='exclude'?coloSelected.join(','):'',
-ipVersion:parseInt(S('ipVersion').value)||0,
+ipVersion:parseInt(S('ipVersion').value)||4,
+downloadBytes:parseInt(S('downloadBytes').value)*1024*1024||0,
+downloadTimeout:parseInt(S('downloadTimeout').value)||0,
 customDownloadUrl:S('customDlUrl').value||'',
 customDownloadEnabled:S('customDlToggle').checked};
 if(!body.cidrs.length&&!body.asn){showError('请输入 CIDR 或 ASN');return;}
