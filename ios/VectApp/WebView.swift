@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import UserNotifications
 
 struct WebView: UIViewRepresentable {
     let url: URL
@@ -11,6 +12,9 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
+        let userContent = WKUserContentController()
+        userContent.add(context.coordinator, name: "vectNotify")
+        config.userContentController = userContent
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.scrollView.bounces = false
@@ -26,10 +30,23 @@ struct WebView: UIViewRepresentable {
         webView.load(request)
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         private var retryCount = 0
         private let maxRetries = 10
         private let retryDelay: UInt64 = 500_000_000
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "vectNotify", let body = message.body as? [String: String] {
+                let title = body["title"] ?? "Vect"
+                let msgBody = body["body"] ?? ""
+                let content = UNMutableNotificationContent()
+                content.title = title
+                content.body = msgBody
+                content.sound = .default
+                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+                UNUserNotificationCenter.current().add(request)
+            }
+        }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             let nsError = error as NSError

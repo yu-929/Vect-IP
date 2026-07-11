@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct VectApp: App {
@@ -9,6 +10,9 @@ struct VectApp: App {
         let ret = StartVectServer(8080)
         if ret != 0 {
             print("Failed to start Vect server")
+        }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            if granted { print("Notification permission granted") }
         }
     }
 

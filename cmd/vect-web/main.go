@@ -338,6 +338,15 @@ go func() {
 				if req.DownloadMode == "sequential" && successCount >= dlTop {
 					break
 				}
+				// Send download progress
+				session.mu.Lock()
+				session.progress.Stage = 5
+				session.progress.Completed = i + 1
+				session.progress.Budget = maxTests
+				subs := make([]chan ProgressData, len(session.subs))
+				copy(subs, session.subs)
+				session.mu.Unlock()
+				sendProgress(session.progress, subs)
 			}
 		}
 
