@@ -297,6 +297,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request: "+err.Error(), 400)
 		return
 	}
+	log.Printf("scan request: downloadTop=%d budget=%d cidrs=%d", req.DownloadTop, req.Budget, len(req.CIDRs))
 
 	// Resolve ASN if provided
 	var cidrs []string
@@ -465,6 +466,7 @@ go func() {
 
 		// Run download tests if requested (keep SSE open during download)
 		if req.DownloadTop > 0 && len(session.result) > 0 {
+			log.Printf("download: starting %d tests on %d results", req.DownloadTop, len(session.result))
 			session.mu.Lock()
 			session.status = "downloading"
 			session.mu.Unlock()
