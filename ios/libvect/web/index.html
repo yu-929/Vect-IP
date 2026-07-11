@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vect">
 <link rel="manifest" href="/manifest.json">
@@ -905,10 +906,10 @@ function resetStages(){
 S('skeletonPanel').style.display='';
 S('progressContent').style.display='none';
 [1,2,3,4,5].forEach(i=>{
-S('s'+i+'Fill').style.width='0%';
-S('s'+i+'Count').textContent='--';
-S('s'+i+'Est').textContent='预计 --';
-S('s'+i+'Rem').textContent='--';
+const fill=S('s'+i+'Fill');if(fill)fill.style.width='0%';
+const cnt=S('s'+i+'Count');if(cnt)cnt.textContent='--';
+const est=S('s'+i+'Est');if(est)est.textContent='预计 --';
+const rem=S('s'+i+'Rem');if(rem)rem.textContent='--';
 });
 S('stage5Item').style.display='none';
 S('s5Status').textContent='';
