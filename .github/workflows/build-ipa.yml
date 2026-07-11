@@ -7,6 +7,9 @@ on:
     types: [created]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -52,6 +55,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ github.ref_name }} build/VectApp.ipa --clobber
+
+      - name: Publish latest IPA
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --cleanup-tag --yes 2>/dev/null || true
+          gh release create latest \
+            --title "Latest Build (${{ github.sha }})" \
+            --notes "Auto-built from commit ${{ github.sha }} on $(date -u)" \
+            --target ${{ github.sha }} \
+            build/VectApp.ipa
 
       - name: Verify IPA
         run: |
