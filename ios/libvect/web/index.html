@@ -1019,14 +1019,13 @@ function saveHistory(h){localStorage.setItem('vect-history',JSON.stringify(h))}
 function renderResults(r){
 	results=r;
 	if(!r||!r.length)return;
-	const valid=r.filter(x=>x.score_ms<6000||x.download_ok);
 	const history=loadHistory();
 	const entry={
 		time:new Date().toLocaleString(),
 		cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean).join(', '),
 		asn:S('asn').value.trim(),
 		budget:S('budget').value,
-		results:valid.map(x=>({
+		results:r.map(x=>({
 			ip:x.ip,
 			score:x.score_ms,
 			colo:x.trace&&x.trace.colo?x.trace.colo:'',
@@ -1038,7 +1037,6 @@ function renderResults(r){
 			dlError:x.download_error
 		}))
 	};
-	if(!entry.results.length){showToast('所有结果均超时');return;}
 	history.unshift(entry);
 	if(history.length>50)history.length=50;
 	saveHistory(history);
