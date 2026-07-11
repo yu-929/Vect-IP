@@ -893,9 +893,12 @@ S('pBestScore').textContent='-';
 es=new EventSource('/api/scan/'+d.id+'?subscribe');
 es.onmessage=e=>{
 if(!e.data)return;
+try{
 const p=JSON.parse(e.data);
 updateProgress(p);
+}catch(e){console.error('SSE parse error',e);}
 };
+es.onerror=function(){console.error('EventSource error',this.readyState);};
 es.addEventListener('done',()=>{
 es.close();
 pollResult(d.id);
@@ -946,7 +949,6 @@ S('pElapsed').textContent=fmtDur(elapsed);
 }
 if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='<1s';S('s4Rem').textContent='已完成';
-S('statusLabel').textContent='完成';
 }
 if(stage===5){
 S('stage5Item').style.display='';
@@ -959,9 +961,11 @@ S('statusLabel').textContent='下载测速中...';
 
 function fmtDur(s){if(s<60)return Math.round(s)+'s';const m=Math.floor(s/60);const sec=Math.round(s%60);return m+':'+(sec<10?'0':'')+sec;}
 
-async function pollResult(id){
+async function pollResult(id,attempt){
+if(!attempt)attempt=1;
 try{
 const r=await fetch('/api/scan/'+id);
+if(!r.ok){setTimeout(()=>pollResult(id,attempt+1),1000*attempt);return;}
 const d=await r.json();
 if(d.status==='completed'){
 renderResults(d.result||[]);
@@ -975,8 +979,10 @@ resetButtons();
 S('statusLabel').textContent='失败';
 showToast('扫描失败');
 }else{setTimeout(()=>pollResult(id),1000);}
-}catch(e){showError('获取结果失败');resetButtons();}
-}
+}catch(e){
+if(attempt<5){setTimeout(()=>pollResult(id,attempt+1),1000*attempt);return;}
+showError('获取结果失败');resetButtons();
+}}
 
 function notifyComplete(results){
 if(!results||!results.length)return;
