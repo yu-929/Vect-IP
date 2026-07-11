@@ -1104,10 +1104,11 @@ const detail=S('hDetail_'+hi);
 const btn=S('expandBtn_'+hi);
 if(!detail||!btn)return;
 const isHidden=detail.style.display==='none';
+const top=btn.getBoundingClientRect().top;
 detail.style.display=isHidden?'':'none';
 if(isHidden){btn.querySelector('span').textContent='收起';btn.querySelector('svg').style.transform='rotate(90deg)';}
-else{const total=btn.querySelector('span').textContent='展开全部 '+(detail.querySelectorAll('.h-detail-row').length+1)+' 个结果';btn.querySelector('svg').style.transform='';}
-requestAnimationFrame(()=>btn.scrollIntoView({block:'nearest',behavior:'smooth'}));
+else{btn.querySelector('span').textContent='展开全部 '+(detail.querySelectorAll('.h-detail-row').length+1)+' 个结果';btn.querySelector('svg').style.transform='';}
+window.scrollBy(0,btn.getBoundingClientRect().top-top);
 }
 
 function deleteHistory(idx){
