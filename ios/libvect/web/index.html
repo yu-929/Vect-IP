@@ -575,8 +575,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>请求路径</label><input id="path" value="/cdn-cgi/trace"></div>
 </div>
 </div>
-</div>
-</div>
 
 <div class="settings-group">
 <div class="sg-title">下载测速</div>
@@ -600,38 +598,52 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="settings-group">
 <div class="sg-title">DNS 上传</div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">服务商</div>
+</div>
 <select id="dnsProvider" class="settings-select">
 <option value="cloudflare">Cloudflare</option>
 <option value="vercel">Vercel</option>
 </select>
 </div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">API Token</div>
-<input id="dnsToken" type="password" class="settings-input" placeholder="API Token" style="flex:1;max-width:200px;text-align:right">
+</div>
+<input id="dnsToken" type="password" class="settings-input" placeholder="API Token" style="max-width:200px;text-align:right">
 </div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">Zone / Domain</div>
-<input id="dnsZone" type="text" class="settings-input" placeholder="Zone ID 或域名" style="flex:1;max-width:200px;text-align:right">
+</div>
+<input id="dnsZone" type="text" class="settings-input" placeholder="Zone ID 或域名" style="max-width:200px;text-align:right">
 </div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">子域名前缀</div>
-<input id="dnsSubdomain" type="text" class="settings-input" placeholder="例: cf" style="flex:1;max-width:200px;text-align:right">
+</div>
+<input id="dnsSubdomain" type="text" class="settings-input" placeholder="例: cf" style="max-width:200px;text-align:right">
 </div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">上传数量</div>
-<input id="dnsCount" type="number" class="settings-input" value="3" style="flex:1;max-width:80px;text-align:right">
+</div>
+<input id="dnsCount" type="number" class="settings-input" value="3" style="max-width:80px;text-align:right">
 </div>
 </div>
 
 <div class="settings-group">
 <div class="sg-title">关于</div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">作者</div>
 <div class="sl-desc">小钱</div>
 </div>
+</div>
 <div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">仓库</div>
+</div>
 <a class="sl-desc repo-link" href="https://github.com/yu-929/Vect-IP" target="_blank">github.com/yu-929/Vect-IP</a>
 </div>
 </div>
