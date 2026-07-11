@@ -354,7 +354,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="row" style="margin-top:8px">
 <div class="field"><label>带宽测速 TOP</label><input id="downloadTop" type="number" value="5"></div>
 <div class="field"><label>测速模式</label>
-<select id="downloadMode"><option value="all" selected>固定数量</option><option value="sequential">Sequential</option></select>
+<select id="downloadMode"><option value="all">默认模式</option><option value="sequential" selected>顺序模式</option></select>
 </div>
 </div>
 </div>
@@ -456,11 +456,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="stage-top"><span class="stage-name">筛选排序</span><span class="stage-count" id="s4Count">--</span></div>
 <div class="stage-bar"><div class="stage-fill" id="s4Fill"></div></div>
 <div class="stage-footer"><span id="s4Est">预计 --</span><span id="s4Rem">--</span></div>
-</div>
-<div class="stage-item">
-<div class="stage-top"><span class="stage-name">带宽测速</span><span class="stage-count" id="s5Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s5Fill"></div></div>
-<div class="stage-footer"><span id="s5Est">预计 --</span><span id="s5Rem">--</span></div>
 </div>
 </div>
 
@@ -843,19 +838,6 @@ S('pElapsed').textContent=fmtDur(elapsed);
 if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='<1s';S('s4Rem').textContent='已完成';
 S('statusLabel').textContent='完成';
-}
-if(stage===5){
-const total=p.budget||1;
-const done=p.completed||0;
-const pct=Math.min(done/total*100,100);
-S('s5Fill').style.width=pct+'%';
-S('s5Count').textContent=done+'/'+total;
-const elapsed=(Date.now()-estStart)/1000;
-const rate=done>0?elapsed/done:0;
-const remain=rate*(total-done);
-S('s5Est').textContent='预计 '+fmtDur(elapsed+remain);
-S('s5Rem').textContent='剩余 '+fmtDur(Math.max(0,remain));
-S('statusLabel').textContent='下载测速中...';
 }
 }
 
