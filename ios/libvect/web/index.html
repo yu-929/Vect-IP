@@ -114,8 +114,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .stat-val{font-size:18px;font-weight:650;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
 .stat-val.brand{color:var(--primary)}
 .stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:13px}
-.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;display:flex;align-items:center;gap:4px;max-width:100%}
-.stat-val.ip span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;font-size:13px;word-break:break-all;line-height:1.3;cursor:pointer}
+.stat-val.ip.v6{font-size:10px;line-height:1.25}
 .stat-lbl{font-size:11px;color:var(--muted2);margin-top:1px;letter-spacing:-0.1px}
 .copy-btn{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:6px;border:none;background:rgba(0,119,237,0.10);color:var(--primary);font-size:9px;cursor:pointer;font-family:inherit;margin-left:4px;vertical-align:middle;font-weight:500}
 .copy-btn:hover{background:rgba(0,119,237,0.18)}
@@ -459,7 +459,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="status-grid">
 <div class="stat-item"><div class="stat-val brand" id="pAvail">0</div><div class="stat-lbl">已完成</div></div>
 <div class="stat-item"><div class="stat-val" id="pBestScore">-</div><div class="stat-lbl">最优延迟</div></div>
-<div class="stat-item"><div class="stat-val ip" id="pBestIP"><span>--</span><button class="copy-btn" onclick="copyBestIP()">复制</button></div><div class="stat-lbl">最优 IP</div></div>
+<div class="stat-item"><div class="stat-val ip" id="pBestIP" onclick="copyBestIP()" style="cursor:pointer"><span>--</span></div><div class="stat-lbl">最优 IP</div></div>
 <div class="stat-item"><div class="stat-val" id="pElapsed">0s</div><div class="stat-lbl">总用时</div></div>
 </div>
 
@@ -1050,8 +1050,9 @@ const v=S('cidrs').value.split('\n').filter(s=>s.trim()).length;
 S('cidrCount').textContent=v+' 条';
 }
 function setBestIP(ip){
-const span=S('pBestIP').querySelector('span');
-span.textContent=ip||'-';
+const el=S('pBestIP');
+el.querySelector('span').textContent=ip||'--';
+el.classList.toggle('v6',ip&&ip.includes(':'));
 }
 function importCidrFile(e){
 const file=e.target.files[0];if(!file)return;
