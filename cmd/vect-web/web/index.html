@@ -315,7 +315,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
 </button>
-<button class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();S('cidrs').dispatchEvent(new Event('input'))" title="清空">
+<button type="button" class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();" title="清空">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
 </button>
 <span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
@@ -634,6 +634,7 @@ function applySP(budget,concurrency,cidrs){
 S('budget').value=budget;
 S('concurrency').value=concurrency;
 S('cidrs').value=cidrs;
+updateCidrCount();
 switchTab('scan');
 showToast('已应用预设');
 }
@@ -643,7 +644,7 @@ document.querySelectorAll('.seg-btn').forEach(b=>{
 b.addEventListener('click',()=>{
 document.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
 b.classList.add('active');
-if(b.dataset.cidrs) S('cidrs').value=b.dataset.cidrs;
+if(b.dataset.cidrs){S('cidrs').value=b.dataset.cidrs;updateCidrCount();}
 if(b.dataset.budget) S('budget').value=b.dataset.budget;
 if(b.dataset.concurrency) S('concurrency').value=b.dataset.concurrency;
 });
@@ -1093,10 +1094,6 @@ renderHistory();
 updateTracerouteUI();
 updateCidrCount();
 updateThemeOpts();
-
-// WKWebView 页面缓存会恢复 textarea 旧值，强制清除
-window.addEventListener('pageshow',function(e){if(e.persisted)S('cidrs').value='';});
-
 // Nav large title collapse on scroll
 let navTicking=false;
 window.addEventListener('scroll',function(){if(!navTicking){requestAnimationFrame(function(){const nav=document.querySelector('.top-nav');if(nav)nav.classList.toggle('compact',window.scrollY>8);navTicking=false;});navTicking=true;}},{passive:true});
