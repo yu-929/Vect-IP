@@ -204,8 +204,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .h-detail-score{color:var(--secondary);font-variant-numeric:tabular-nums}
 .h-detail-colo{color:var(--muted2)}
 .h-detail-dl{color:var(--success);font-variant-numeric:tabular-nums}
-.h-detail-peak{color:var(--secondary);font-size:9px;position:relative;padding-left:8px}
-.h-detail-peak::before{content:"峰";position:absolute;left:0;font-size:8px;opacity:0.7}
 .h-detail-tr{color:var(--primary);cursor:pointer;font-weight:500}
 .h-detail-tr:active{opacity:0.6}
 .h-detail-tr-wrap{width:100%}
@@ -217,6 +215,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:8px 2px;min-height:44px}
 .settings-row .sl-label{font-size:15px;font-weight:400;color:var(--text)}
 .settings-row .sl-desc{font-size:11px;color:var(--muted2);margin-top:1px}
+.settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:11px;margin-top:1px;cursor:pointer}
+.settings-row .repo-link:hover{text-decoration:underline}
 .toggle-wrap{position:relative;width:44px;height:28px;flex-shrink:0;margin-left:12px}
 .toggle-track{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:14px;background:var(--muted);cursor:pointer;transition:background .25s}
 .toggle-track.on{background:var(--primary)}
@@ -547,6 +547,20 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 </div>
+</div>
+
+<div class="settings-group">
+<div class="sg-title">关于</div>
+<div class="settings-row">
+<div class="sl-label">作者</div>
+<div class="sl-desc">小钱</div>
+</div>
+<div class="settings-row">
+<div class="sl-label">仓库</div>
+<a class="sl-desc repo-link" href="https://github.com/yu-929/Vect-IP" target="_blank">github.com/yu-929/Vect-IP</a>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -961,8 +975,7 @@ html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-colo">'+(r.colo||'-')+'</span>';
 html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
-html+='<span class="h-detail-dl h-detail-peak">'+(r.dlOk&&r.dlPeakMbps>0?r.dlPeakMbps.toFixed(1)+' Mbps':'')+'</span>';
-if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
+				if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
 html+='</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'_'+ri+'" class="h-detail-tr-wrap"></div>';
 html+='</div>';
