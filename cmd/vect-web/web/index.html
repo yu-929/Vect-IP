@@ -219,10 +219,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .settings-row .sl-desc{font-size:11px;color:var(--muted2);margin-top:1px}
 .settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:11px;margin-top:1px;cursor:pointer}
 .settings-row .repo-link:hover{text-decoration:underline}
-.settings-input{background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none}
-.settings-input:focus{border-color:var(--primary)}
-.settings-select{background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer}
-.settings-select:focus{border-color:var(--primary)}
 .toggle-wrap{position:relative;width:44px;height:28px;flex-shrink:0;margin-left:12px}
 .toggle-track{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:14px;background:var(--muted);cursor:pointer;transition:background .25s}
 .toggle-track.on{background:var(--primary)}
@@ -276,27 +272,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 /* ===== Discover button ===== */
 .discover-chip{padding:6px 10px;border-radius:8px;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
 .discover-chip:active{background:rgba(0,119,237,0.10)}
-
-/* ===== Password Lock ===== */
-.lock-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px;transition:opacity .3s}
-.lock-overlay.hidden{opacity:0;pointer-events:none}
-.lock-title{font-size:22px;font-weight:700;color:var(--text)}
-.lock-input{width:200px;padding:12px 16px;border:0.5px solid var(--glass-border);border-radius:var(--radius-input);background:var(--input-bg);color:var(--text);font-size:16px;text-align:center;font-family:inherit;outline:none}
-.lock-input:focus{border-color:var(--primary)}
-.lock-btn{width:200px;padding:12px;border:none;border-radius:var(--radius-btn);background:var(--primary);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
-.lock-btn:active{opacity:0.8}
-.lock-error{font-size:13px;color:var(--danger);min-height:18px}
 </style>
 </head>
 <body>
-
-<!-- Password Lock -->
-<div class="lock-overlay" id="lockOverlay">
-<div class="lock-title">请输入密码</div>
-<input class="lock-input" id="lockInput" type="password" placeholder="密码" autocomplete="off" onkeydown="if(event.key==='Enter')checkPassword()">
-<div class="lock-error" id="lockError"></div>
-<button class="lock-btn" onclick="checkPassword()">进入</button>
-</div>
 
 <!-- Top Nav -->
 <div class="top-nav">
@@ -591,7 +569,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="customDlUrlRow" style="display:none;margin-top:6px">
-<input id="customDlUrl" type="text" class="settings-input" placeholder="https://example.com/100mb.bin" style="width:100%">
+<input id="customDlUrl" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="https://example.com/100mb.bin">
 </div>
 </div>
 
@@ -599,36 +577,32 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="sg-title">DNS 上传</div>
 <div class="settings-row">
 <div style="flex:1">
-<div class="sl-label">服务商</div>
+<div class="sl-label">启用 DNS 上传</div>
+<div class="sl-desc">开启后在历史记录显示上传按钮</div>
 </div>
-<select id="dnsProvider" class="settings-select">
-<option value="cloudflare">Cloudflare</option>
-<option value="vercel">Vercel</option>
-</select>
+<div class="toggle-wrap">
+<div class="toggle-track" id="dnsEnableTrack" onclick="toggleDnsEnable()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="dnsEnableToggle" aria-label="启用 DNS 上传">
 </div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">API Token</div>
 </div>
-<input id="dnsToken" type="password" class="settings-input" placeholder="API Token" style="max-width:200px;text-align:right">
 </div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">Zone / Domain</div>
+<div id="dnsConfigFields" style="display:none">
+<div class="row" style="margin-top:8px">
+<div class="field"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
 </div>
-<input id="dnsZone" type="text" class="settings-input" placeholder="Zone ID 或域名" style="max-width:200px;text-align:right">
+<div class="row" style="margin-top:8px">
+<div class="field"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="API Token"></div>
 </div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">子域名前缀</div>
+<div class="row" style="margin-top:8px">
+<div class="field"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="Zone ID 或域名"></div>
 </div>
-<input id="dnsSubdomain" type="text" class="settings-input" placeholder="例: cf" style="max-width:200px;text-align:right">
+<div class="row" style="margin-top:8px">
+<div class="field"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="例: cf"></div>
 </div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">上传数量</div>
+<div class="row" style="margin-top:8px">
+<div class="field"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%"></div>
 </div>
-<input id="dnsCount" type="number" class="settings-input" value="3" style="max-width:80px;text-align:right">
 </div>
 </div>
 
@@ -726,10 +700,17 @@ S('customDlToggle').checked=on;
 S('customDlUrlRow').style.display=on?'':'none';
 }
 
+function toggleDnsEnable(){
+const on=S('dnsEnableTrack').classList.toggle('on');
+S('dnsEnableToggle').checked=on;
+S('dnsConfigFields').style.display=on?'':'none';
+localStorage.setItem('vect-dns-enabled',on?'1':'0');
+}
+
 function validateForm(){
 const cidrs=S('cidrs').value.trim();
 const budget=parseInt(S('budget').value);
-if(!cidrs&&!S('asn').value.trim()&&S('scanMode').value!=='quick'&&S('scanMode').value!=='full'){showToast('请输入 CIDR 或 ASN');return false;}
+if(!cidrs&&!S('asn').value.trim()){showToast('请输入 CIDR 或 ASN');return false;}
 if(isNaN(budget)||budget<1){showToast('请输入有效的预算值');return false;}
 return true;
 }
@@ -1135,6 +1116,7 @@ showToast('已清空');
 }
 
 function dnsUploadFromHistory(idx){
+if(!S('dnsEnableToggle').checked){showToast('请先在设置中启用 DNS 上传');switchTab('settings');return;}
 const h=loadHistory();
 if(!h[idx])return;
 const r0=h[idx].results[0];
@@ -1242,35 +1224,19 @@ longPressTimer=setTimeout(()=>{copyText(ip);longPressTimer=null;haptic();},500);
 }
 function ipTouchEnd(){if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}}
 
-// Password lock
-function checkPassword(){
-const input=S('lockInput');
-const err=S('lockError');
-if(input.value==='qian'){
-sessionStorage.setItem('vect-auth','1');
-S('lockOverlay').classList.add('hidden');
-err.textContent='';
-input.value='';
-}else{
-err.textContent='密码错误';
-input.value='';
-input.focus();
-}
-}
-
 // Init
-if(sessionStorage.getItem('vect-auth')==='1'){
-S('lockOverlay').classList.add('hidden');
 bootApp();
-}else{
-S('lockInput').focus();
-bootApp();
-}
 function bootApp(){
 renderHistory();
 updateTracerouteUI();
 updateCidrCount();
 updateThemeOpts();
+// Init DNS toggle from storage
+if(localStorage.getItem('vect-dns-enabled')==='1'){
+S('dnsEnableTrack').classList.add('on');
+S('dnsEnableToggle').checked=true;
+S('dnsConfigFields').style.display='';
+}
 // Nav large title collapse on scroll
 let navTicking=false;
 window.addEventListener('scroll',function(){if(!navTicking){requestAnimationFrame(function(){const nav=document.querySelector('.top-nav');if(nav)nav.classList.toggle('compact',window.scrollY>8);navTicking=false;});navTicking=true;}},{passive:true});
