@@ -83,13 +83,13 @@ jobs:
           name: Vect-APK
           path: android/app/build/outputs/apk/release/Vect.apk
 
-      - name: Publish APK
+      - name: Publish to latest release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete latest-apk --cleanup-tag --yes 2>/dev/null || true
-          gh release create latest-apk \
-            --title "Latest APK Build (${{ github.sha }})" \
+          gh release upload latest android/app/build/outputs/apk/release/Vect.apk --clobber 2>/dev/null || \
+          gh release create latest \
+            --title "Latest Build (${{ github.sha }})" \
             --notes "Auto-built from commit ${{ github.sha }} on $(date -u)" \
             --target ${{ github.sha }} \
             android/app/build/outputs/apk/release/Vect.apk

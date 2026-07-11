@@ -56,12 +56,12 @@ jobs:
         run: |
           gh release upload ${{ github.ref_name }} build/VectApp.ipa --clobber
 
-      - name: Publish latest IPA
+      - name: Publish to latest release
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete latest --cleanup-tag --yes 2>/dev/null || true
+          gh release upload latest build/VectApp.ipa --clobber 2>/dev/null || \
           gh release create latest \
             --title "Latest Build (${{ github.sha }})" \
             --notes "Auto-built from commit ${{ github.sha }} on $(date -u)" \
