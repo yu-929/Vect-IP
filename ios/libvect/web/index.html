@@ -110,13 +110,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
-.stat-item{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;height:72pt;padding:4px 8px;background:rgba(118,118,128,0.03);border-radius:12px;box-sizing:border-box}
+.stat-item{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:60pt;padding:4px 8px;background:rgba(118,118,128,0.03);border-radius:12px;box-sizing:border-box}
 .stat-val{font-size:18px;font-weight:650;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
 .stat-val.brand{color:var(--primary)}
 .stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:13px}
-.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
-.stat-val.ip.shrink{font-size:11px}
-.stat-val.ip.shrink-more{font-size:9px}
+.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;display:flex;align-items:center;gap:4px;max-width:100%}
+.stat-val.ip span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .stat-lbl{font-size:11px;color:var(--muted2);margin-top:1px;letter-spacing:-0.1px}
 .copy-btn{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:6px;border:none;background:rgba(0,119,237,0.10);color:var(--primary);font-size:9px;cursor:pointer;font-family:inherit;margin-left:4px;vertical-align:middle;font-weight:500}
 .copy-btn:hover{background:rgba(0,119,237,0.18)}
@@ -414,8 +413,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div id="skeletonPanel">
 <div class="skeleton-card" style="border:none;backdrop-filter:none;background:transparent;padding:0;margin:0">
 <div class="skeleton-stage">
-<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
-<div class="skeleton-line w80 h10" style="margin-bottom:8px"></div>
 <div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
 <div class="skeleton-line w80 h10" style="margin-bottom:8px"></div>
 <div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
@@ -1053,12 +1050,8 @@ const v=S('cidrs').value.split('\n').filter(s=>s.trim()).length;
 S('cidrCount').textContent=v+' 条';
 }
 function setBestIP(ip){
-const el=S('pBestIP');
-const span=el.querySelector('span');
+const span=S('pBestIP').querySelector('span');
 span.textContent=ip||'-';
-span.className='';
-if(ip&&ip.length>18)span.classList.add('shrink');
-if(ip&&ip.length>28)span.classList.add('shrink-more');
 }
 function importCidrFile(e){
 const file=e.target.files[0];if(!file)return;
