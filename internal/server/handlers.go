@@ -297,7 +297,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			close(ch)
 		}
 
-		if req.DownloadTop > 0 && len(session.result) > 0 {
+		if req.DownloadTop > 0 && len(session.result) > 0 && session.result[0].ScoreMS < 6000 {
 			session.mu.Lock()
 			session.status = "downloading"
 			session.mu.Unlock()
@@ -369,6 +369,13 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			}
 			session.mu.Unlock()
 		}
+
+		// Re-sort by comprehensive score: latency + bandwidth + route type
+		session.mu.Lock()
+		sort.SliceStable(session.result, func(i, j int) bool {
+			return compositeScore(&session.result[i]) < compositeScore(&session.result[j])
+		})
+		session.mu.Unlock()
 
 		session.mu.Lock()
 		session.status = "completed"
@@ -597,6 +604,34 @@ func classifyRoute(asn int) (routeType, routeLine string) {
 		return "Optimized", line
 	}
 	return "Normal", ""
+}
+
+// compositeScore computes a comprehensive score for ranking results.
+// Lower is better. Considers latency, download speed, and route type.
+func compositeScore(r *engine.TopResult) float64 {
+	score := r.ScoreMS
+
+	// Download speed bonus: reduce score for high bandwidth
+	if r.DownloadOK && r.DownloadMbps > 0 {
+		dlBonus := r.DownloadMbps * 0.5
+		if dlBonus > 100 {
+			dlBonus = 100
+		}
+		score -= dlBonus
+	}
+
+	// Route type bonus
+	if r.Trace != nil {
+		if route, ok := r.Trace["route"]; ok {
+			if strings.Contains(route, "Premium") {
+				score -= 50
+			} else if strings.Contains(route, "Optimized") {
+				score -= 20
+			}
+		}
+	}
+
+	return score
 }
 
 var hopPrefixPatterns = []struct {

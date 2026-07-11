@@ -309,6 +309,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <label>ASN 自动解析</label>
 <div class="input-group">
 <input id="asn" type="number" placeholder="例如 13335">
+<button class="btn-icon" onclick="S('asn').value=''" aria-label="清空 ASN">
+<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5l10 10M15 5L5 15"/></svg>
+</button>
 <button class="btn-icon" id="resolveBtn" onclick="resolveASN()" aria-label="解析 ASN">
 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3l6 6-6 6M4 9h12"/></svg>
 </button>
@@ -657,8 +660,9 @@ try{
 const r=await fetch('/api/resolve-asn/'+asn+'?version='+ver);
 const d=await r.json();
 if(d.cidrs&&d.cidrs.length){
-S('cidrs').value=d.cidrs.join('\n');
-S('cidrs').scrollTop=S('cidrs').scrollHeight;
+			S('cidrs').value=d.cidrs.join('\n');
+			S('cidrs').scrollTop=S('cidrs').scrollHeight;
+			updateCidrCount();
 btn.innerHTML='<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#34C759" stroke-width="2"><path d="M4 10l4 4 8-8"/></svg>';
 showToast('已添加 '+d.cidrs.length+' 条前缀');
 S('coloDiscoverSection').style.display='';
@@ -808,7 +812,7 @@ const remain=rate*(budget-done);
 S('s3Est').textContent='预计 '+fmtDur(elapsed+remain);
 S('s3Rem').textContent='剩余 '+fmtDur(Math.max(0,remain));
 S('pAvail').textContent=done;
-S('pBestScore').textContent=p.bestScore>0?p.bestScore.toFixed(1)+'ms':'-';
+S('pBestScore').textContent=p.bestScore>0&&p.bestScore<6000?p.bestScore.toFixed(1)+'ms':'-';
 S('pBestIP').textContent=p.bestIP||'-';
 S('pElapsed').textContent=fmtDur(elapsed);
 }
@@ -887,29 +891,31 @@ try{return JSON.parse(localStorage.getItem('vect-history')||'[]');}catch{return[
 function saveHistory(h){localStorage.setItem('vect-history',JSON.stringify(h))}
 
 function renderResults(r){
-results=r;
-if(!r||!r.length)return;
-const history=loadHistory();
-const entry={
-time:new Date().toLocaleString(),
-cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean).join(', '),
-asn:S('asn').value.trim(),
-budget:S('budget').value,
-results:r.map(x=>({
-ip:x.ip,
-score:x.score_ms,
-colo:x.trace&&x.trace.colo?x.trace.colo:'',
-prefix:x.prefix||'',
-route:x.trace&&x.trace.route?x.trace.route:'',
-dlOk:x.download_ok,
-dlMbps:x.download_mbps,
-dlError:x.download_error
-}))
-};
-history.unshift(entry);
-if(history.length>50)history.length=50;
-saveHistory(history);
-renderHistory();
+	results=r;
+	if(!r||!r.length)return;
+	const valid=r.filter(x=>x.score_ms<6000);
+	const history=loadHistory();
+	const entry={
+		time:new Date().toLocaleString(),
+		cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean).join(', '),
+		asn:S('asn').value.trim(),
+		budget:S('budget').value,
+		results:valid.map(x=>({
+			ip:x.ip,
+			score:x.score_ms,
+			colo:x.trace&&x.trace.colo?x.trace.colo:'',
+			prefix:x.prefix||'',
+			route:x.trace&&x.trace.route?x.trace.route:'',
+			dlOk:x.download_ok,
+			dlMbps:x.download_mbps,
+			dlError:x.download_error
+		}))
+	};
+	if(!entry.results.length){showToast('所有结果均超时');return;}
+	history.unshift(entry);
+	if(history.length>50)history.length=50;
+	saveHistory(history);
+	renderHistory();
 }
 
 function renderHistory(){
