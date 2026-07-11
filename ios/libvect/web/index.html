@@ -318,7 +318,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
 </div>
 <input type="file" id="cidrFile" accept=".txt,.csv" style="display:none" onchange="importCidrFile(event)">
-<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" oninput="updateCidrCount()"></textarea>
+<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" autocomplete="off" oninput="updateCidrCount()"></textarea>
 </div>
 </div>
 

@@ -312,13 +312,13 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
 </button>
-<button class="btn-icon-sm" onclick="S('cidrs').value=''" title="清空">
+<button class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();S('cidrs').dispatchEvent(new Event('input'))" title="清空">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
 </button>
 <span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
 </div>
 <input type="file" id="cidrFile" accept=".txt,.csv" style="display:none" onchange="importCidrFile(event)">
-<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" oninput="updateCidrCount()"></textarea>
+<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" autocomplete="off" oninput="updateCidrCount()"></textarea>
 </div>
 </div>
 
