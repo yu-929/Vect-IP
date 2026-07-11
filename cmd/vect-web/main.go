@@ -497,9 +497,6 @@ go func() {
 
 			dlp := probe.NewDownloadProber(dlCfg)
 			maxTests := dlTop
-			if req.DownloadMode == "sequential" {
-				maxTests = len(session.result)
-			}
 
 			successCount := 0
 			for i := 0; i < maxTests && successCount < dlTop; i++ {
@@ -516,9 +513,6 @@ go func() {
 				if dr.OK {
 					successCount++
 				}
-				if req.DownloadMode == "sequential" && successCount >= dlTop {
-					break
-				}
 				// Send download progress with per-IP details
 				session.mu.Lock()
 				session.progress.Stage = 5
@@ -532,6 +526,10 @@ go func() {
 				sendProgress(session.progress, dlSubs)
 			}
 		}
+
+		session.mu.Lock()
+		session.status = "completed"
+		session.mu.Unlock()
 
 		// Close SSE channels after all processing is done
 		session.mu.Lock()
@@ -573,10 +571,6 @@ go func() {
 			}
 			session.mu.Unlock()
 		}
-
-		session.mu.Lock()
-		session.status = "completed"
-		session.mu.Unlock()
 	}()
 
 	w.Header().Set("Content-Type", "application/json")

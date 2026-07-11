@@ -312,9 +312,6 @@ session.progress.Stage = 4
 
 			dlp := probe.NewDownloadProber(dlCfg)
 			maxTests := dlTop
-			if req.DownloadMode == "sequential" {
-				maxTests = len(session.result)
-			}
 
 			successCount := 0
 			for i := 0; i < maxTests && successCount < dlTop; i++ {
@@ -331,9 +328,6 @@ session.progress.Stage = 4
 				if dr.OK {
 					successCount++
 				}
-				if req.DownloadMode == "sequential" && successCount >= dlTop {
-					break
-				}
 				// Send download progress with per-IP details
 				session.mu.Lock()
 				session.progress.Stage = 5
@@ -347,6 +341,14 @@ session.progress.Stage = 4
 				sendProgress(session.progress, dlSubs)
 			}
 		}
+
+		// Re-sort by comprehensive score: latency + bandwidth + download speed
+		session.mu.Lock()
+		sort.SliceStable(session.result, func(i, j int) bool {
+			return compositeScore(&session.result[i]) < compositeScore(&session.result[j])
+		})
+		session.status = "completed"
+		session.mu.Unlock()
 
 		// Close SSE channels after all processing is done
 		session.mu.Lock()
@@ -387,17 +389,6 @@ session.progress.Stage = 4
 			}
 			session.mu.Unlock()
 		}
-
-		// Re-sort by comprehensive score: latency + bandwidth + route type
-		session.mu.Lock()
-		sort.SliceStable(session.result, func(i, j int) bool {
-			return compositeScore(&session.result[i]) < compositeScore(&session.result[j])
-		})
-		session.mu.Unlock()
-
-		session.mu.Lock()
-		session.status = "completed"
-		session.mu.Unlock()
 	}()
 
 	w.Header().Set("Content-Type", "application/json")
