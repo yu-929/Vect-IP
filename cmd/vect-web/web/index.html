@@ -108,6 +108,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .btn-danger:active{transform:scale(0.97);opacity:0.9}
 .btn-danger.hidden{display:none}
 .btn-spacer{margin-top:18px;margin-bottom:12px}
+.section{margin-bottom:14px}
+.section:last-child{margin-bottom:0}
 
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
@@ -218,7 +220,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:8px 2px;min-height:44px}
 .settings-row .sl-label{font-size:15px;font-weight:400;color:var(--text)}
 .settings-row .sl-desc{font-size:11px;color:var(--muted2);margin-top:1px}
-.settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:11px;margin-top:1px;cursor:pointer}
+.settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:11px;cursor:pointer}
 .settings-row .repo-link:hover{text-decoration:underline}
 .toggle-wrap{position:relative;width:44px;height:28px;flex-shrink:0;margin-left:12px}
 .toggle-track{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:14px;background:var(--muted);cursor:pointer;transition:background .25s}
@@ -517,7 +519,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="sl-desc">跟随系统、浅色或深色</div>
 </div>
 </div>
-<div style="display:flex;gap:6px;margin-top:4px">
+<div style="display:flex;gap:6px;margin-top:8px">
 <button class="theme-opt" data-theme="system" onclick="setTheme('system')">跟随系统</button>
 <button class="theme-opt" data-theme="light" onclick="setTheme('light')">浅色</button>
 <button class="theme-opt" data-theme="dark" onclick="setTheme('dark')">深色</button>
@@ -570,7 +572,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 </div>
-<div id="customDlUrlRow" style="display:none;margin-top:6px">
+<div id="customDlUrlRow" style="display:none;margin-top:8px">
 <input id="customDlUrl" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="https://example.com/100mb.bin">
 </div>
 <div class="row" style="margin-top:8px">
@@ -594,21 +596,11 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="dnsConfigFields" style="display:none">
-<div class="row" style="margin-top:8px">
-<div class="field"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
-</div>
-<div class="row" style="margin-top:8px">
-<div class="field"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="API Token"></div>
-</div>
-<div class="row" style="margin-top:8px">
-<div class="field"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="Zone ID 或域名"></div>
-</div>
-<div class="row" style="margin-top:8px">
-<div class="field"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="例: cf"></div>
-</div>
-<div class="row" style="margin-top:8px">
-<div class="field"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%"></div>
-</div>
+<div class="field" style="margin-top:8px"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
+<div class="field" style="margin-top:8px"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="API Token"></div>
+<div class="field" style="margin-top:8px"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="Zone ID 或域名"></div>
+<div class="field" style="margin-top:8px"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%" placeholder="例: cf"></div>
+<div class="field" style="margin-top:8px"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%"></div>
 </div>
 </div>
 
