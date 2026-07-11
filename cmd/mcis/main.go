@@ -321,6 +321,7 @@ func main() {
 			r.DownloadBytes = dr.Bytes
 			r.DownloadMS = dr.TotalMS
 			r.DownloadMbps = dr.Mbps
+			r.DownloadPeakMbps = dr.PeakMbps
 			r.DownloadError = dr.Error
 			testCount++
 			if dr.OK {

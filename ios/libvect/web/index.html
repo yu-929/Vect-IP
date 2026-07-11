@@ -165,8 +165,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .history-item .ip:active{opacity:0.7}
 .history-item .del-btn{width:30px;height:30px;border-radius:15px;border:none;background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .history-item .del-btn:active{background:rgba(230,56,50,0.15);color:var(--danger);transform:scale(0.9)}
-.history-metrics{display:flex;flex-direction:column;gap:3px}
+.history-metrics{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px}
 .history-metrics .hm{font-size:12px;color:var(--secondary);letter-spacing:-0.1px}
+.history-metrics .hm-full{grid-column:1/-1}
 .history-metrics .hm strong{font-weight:590;color:var(--text)}
 .history-metrics .hm .ok{color:var(--success)}
 .history-metrics .hm .fail{color:var(--muted2)}
@@ -203,6 +204,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .h-detail-score{color:var(--secondary);font-variant-numeric:tabular-nums}
 .h-detail-colo{color:var(--muted2)}
 .h-detail-dl{color:var(--success);font-variant-numeric:tabular-nums}
+.h-detail-peak{color:var(--secondary);font-size:9px;position:relative;padding-left:8px}
+.h-detail-peak::before{content:"峰";position:absolute;left:0;font-size:8px;opacity:0.7}
 .h-detail-tr{color:var(--primary);cursor:pointer;font-weight:500}
 .h-detail-tr:active{opacity:0.6}
 .h-detail-tr-wrap{width:100%}
@@ -914,6 +917,7 @@ function renderResults(r){
 			route:x.trace&&x.trace.route?x.trace.route:'',
 			dlOk:x.download_ok,
 			dlMbps:x.download_mbps,
+			dlPeakMbps:x.download_peak_mbps||0,
 			dlError:x.download_error
 		}))
 	};
@@ -938,11 +942,12 @@ html+='<div class="glass-card history-item">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><button class="del-btn" onclick="deleteHistory('+hi+')" title="删除"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg></button></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
 html+='<div class="history-metrics">';
-if(r0)html+='<span class="hm">所属网段: <strong>'+(r0.prefix?r0.prefix:'-')+'</strong></span>';
+if(r0)html+='<span class="hm hm-full">所属网段: <strong>'+(r0.prefix?r0.prefix:'-')+'</strong></span>';
 if(r0)html+='<span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span>';
+if(r0)html+='<span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?r0.dlPeakMbps.toFixed(1)+' Mbps':'-')+'</strong></span>';
 if(r0)html+='<span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span>';
 if(r0)html+='<span class="hm">数据中心: <strong>'+(r0.colo||'-')+'</strong></span>';
-if(tracerouteEnabled&&r0)html+='<span class="hm"><span style="color:var(--primary);cursor:pointer;font-size:12px" onclick="runTracerouteHist(\''+r0.ip+'\',\''+hi+'\')">路由追踪</span></span>';
+if(tracerouteEnabled&&r0)html+='<span class="hm hm-full" style="text-align:center"><span style="color:var(--primary);cursor:pointer;font-size:12px" onclick="runTracerouteHist(\''+r0.ip+'\',\''+hi+'\')">路由追踪</span></span>';
 html+='</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 '+total+' 个结果</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button><button class="h-copy-all-btn" onclick="copyAllResults('+hi+')" title="复制全部">复制全部</button></div>';
@@ -956,6 +961,7 @@ html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-colo">'+(r.colo||'-')+'</span>';
 html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
+html+='<span class="h-detail-dl h-detail-peak">'+(r.dlOk&&r.dlPeakMbps>0?r.dlPeakMbps.toFixed(1)+' Mbps':'')+'</span>';
 if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
 html+='</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'_'+ri+'" class="h-detail-tr-wrap"></div>';

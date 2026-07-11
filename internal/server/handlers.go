@@ -328,6 +328,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 				r.DownloadBytes = dr.Bytes
 				r.DownloadMS = dr.TotalMS
 				r.DownloadMbps = dr.Mbps
+r.DownloadPeakMbps = dr.PeakMbps
 				r.DownloadError = dr.Error
 				if dr.OK {
 					successCount++

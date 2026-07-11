@@ -26,14 +26,15 @@ type DownloadConfig struct {
 }
 
 type DownloadResult struct {
-	IP      netip.Addr `json:"ip"`
-	OK      bool       `json:"ok"`
-	Status  int        `json:"status"`
-	Error   string     `json:"error,omitempty"`
-	Bytes   int64      `json:"bytes"`
-	TotalMS int64      `json:"total_ms"`
-	Mbps    float64    `json:"mbps"`
-	When    time.Time  `json:"when"`
+	IP       netip.Addr `json:"ip"`
+	OK       bool       `json:"ok"`
+	Status   int        `json:"status"`
+	Error    string     `json:"error,omitempty"`
+	Bytes    int64      `json:"bytes"`
+	TotalMS  int64      `json:"total_ms"`
+	Mbps     float64    `json:"mbps"`
+	PeakMbps float64    `json:"peak_mbps"`
+	When     time.Time  `json:"when"`
 }
 
 type DownloadProber struct {
@@ -137,19 +138,60 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 	}
 
 	var n int64
-	if p.cfg.Bytes == 0 {
-		// No limit: read until EOF (custom URL only).
-		n, err = io.Copy(io.Discard, resp.Body)
-	} else {
-		// Read at most cfg.Bytes.
-		n, err = io.CopyN(io.Discard, resp.Body, p.cfg.Bytes)
+	buf := make([]byte, 64*1024)
+	peakStart := time.Now()
+	peakBytes := int64(0)
+	peakMbps := 0.0
+	recordPeak := func() {
+		seg := time.Since(peakStart)
+		if seg > 50*time.Millisecond && peakBytes > 0 {
+			m := (float64(peakBytes) * 8) / seg.Seconds() / 1e6
+			if m > peakMbps {
+				peakMbps = m
+			}
+		}
 	}
+	readFn := func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+			now := time.Now()
+			afterPeak := now.Sub(peakStart)
+			if afterPeak >= 200*time.Millisecond {
+				recordPeak()
+				peakStart = now
+				peakBytes = 0
+			}
+			limit := p.cfg.Bytes
+			if limit > 0 && n >= limit {
+				return nil
+			}
+			maxRead := len(buf)
+			if limit > 0 && n+int64(maxRead) > limit {
+				maxRead = int(limit - n)
+			}
+			nr, er := resp.Body.Read(buf[:maxRead])
+			if nr > 0 {
+				n += int64(nr)
+				peakBytes += int64(nr)
+			}
+			if er != nil {
+				return er
+			}
+		}
+	}
+	err = readFn()
+	recordPeak()
 	elapsed := time.Since(start)
 	out.TotalMS = elapsed.Milliseconds()
 	out.Bytes = n
 	if elapsed > 0 {
 		out.Mbps = (float64(n) * 8) / elapsed.Seconds() / 1e6
 	}
+	out.PeakMbps = peakMbps
 
 	if err != nil && !errors.Is(err, io.EOF) {
 		// Normalize common timeout/cancel signals so output is stable.
