@@ -901,6 +901,7 @@ updateProgress(p);
 es.onerror=function(){console.error('EventSource error',this.readyState);};
 es.addEventListener('done',()=>{
 es.close();
+S('progressContent').style.display='none';
 pollResult(d.id);
 });
 }catch(e){showError('请求失败');resetButtons();}
