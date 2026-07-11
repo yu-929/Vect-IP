@@ -110,11 +110,14 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
-.stat-item{text-align:center;padding:8px 4px;background:rgba(118,118,128,0.03);border-radius:12px}
-.stat-val{font-size:18px;font-weight:650;color:var(--text);line-height:1.3;letter-spacing:-0.3px}
+.stat-item{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;height:72pt;padding:4px 8px;background:rgba(118,118,128,0.03);border-radius:12px;box-sizing:border-box}
+.stat-val{font-size:18px;font-weight:650;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
 .stat-val.brand{color:var(--primary)}
 .stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:13px}
-.stat-lbl{font-size:11px;color:var(--muted2);margin-top:2px;letter-spacing:-0.1px}
+.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.stat-val.ip.shrink{font-size:11px}
+.stat-val.ip.shrink-more{font-size:9px}
+.stat-lbl{font-size:11px;color:var(--muted2);margin-top:1px;letter-spacing:-0.1px}
 .copy-btn{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:6px;border:none;background:rgba(0,119,237,0.10);color:var(--primary);font-size:9px;cursor:pointer;font-family:inherit;margin-left:4px;vertical-align:middle;font-weight:500}
 .copy-btn:hover{background:rgba(0,119,237,0.18)}
 
@@ -464,7 +467,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="status-grid">
 <div class="stat-item"><div class="stat-val brand" id="pAvail">0</div><div class="stat-lbl">已完成</div></div>
 <div class="stat-item"><div class="stat-val" id="pBestScore">-</div><div class="stat-lbl">最优延迟</div></div>
-<div class="stat-item"><div class="stat-val mono" id="pBestIP" style="font-size:13px;word-break:break-all;cursor:pointer">-<button class="copy-btn" onclick="copyBestIP()">复制</button></div><div class="stat-lbl">最优 IP</div></div>
+<div class="stat-item"><div class="stat-val ip" id="pBestIP"><span>--</span><button class="copy-btn" onclick="copyBestIP()">复制</button></div><div class="stat-lbl">最优 IP</div></div>
 <div class="stat-item"><div class="stat-val" id="pElapsed">0s</div><div class="stat-lbl">总用时</div></div>
 </div>
 
@@ -809,7 +812,7 @@ S('s'+i+'Rem').textContent='--';
 });
 S('pAvail').textContent='0';
 S('pBestScore').textContent='-';
-S('pBestIP').textContent='-';
+setBestIP('-');
 S('pElapsed').textContent='0s';
 S('statusLabel').textContent='扫描中...';
 }
@@ -834,7 +837,7 @@ S('s3Est').textContent='预计 '+fmtDur(elapsed+remain);
 S('s3Rem').textContent='剩余 '+fmtDur(Math.max(0,remain));
 S('pAvail').textContent=done;
 S('pBestScore').textContent=p.bestScore>0&&p.bestScore<6000?p.bestScore.toFixed(1)+'ms':'-';
-S('pBestIP').textContent=p.bestIP||'-';
+setBestIP(p.bestIP||'-');
 S('pElapsed').textContent=fmtDur(elapsed);
 }
 if(stage>=4){
@@ -1043,7 +1046,7 @@ trEl.innerHTML=html;
 }
 
 function copyBestIP(){
-const ip=S('pBestIP').textContent.trim();
+const ip=S('pBestIP').querySelector('span').textContent.trim();
 if(!ip||ip==='-')return;
 copyText(ip);
 }
@@ -1064,6 +1067,15 @@ function updateCidrCount(){
 const v=S('cidrs').value.split('\n').filter(s=>s.trim()).length;
 S('cidrCount').textContent=v+' 条';
 }
+function setBestIP(ip){
+const el=S('pBestIP');
+const span=el.querySelector('span');
+span.textContent=ip||'-';
+span.className='';
+if(ip&&ip.length>18)span.classList.add('shrink');
+if(ip&&ip.length>28)span.classList.add('shrink-more');
+}
+
 function importCidrFile(e){
 const file=e.target.files[0];if(!file)return;
 const reader=new FileReader();
