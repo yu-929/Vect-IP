@@ -799,7 +799,7 @@ pollResult(d.id);
 function resetStages(){
 S('skeletonPanel').style.display='';
 S('progressContent').style.display='none';
-[1,2,3,4,5].forEach(i=>{
+[1,2,3,4].forEach(i=>{
 S('s'+i+'Fill').style.width='0%';
 S('s'+i+'Count').textContent='--';
 S('s'+i+'Est').textContent='预计 --';
@@ -1093,6 +1093,9 @@ renderHistory();
 updateTracerouteUI();
 updateCidrCount();
 updateThemeOpts();
+
+// WKWebView 页面缓存会恢复 textarea 旧值，强制清除
+window.addEventListener('pageshow',function(e){if(e.persisted)S('cidrs').value='';});
 
 // Nav large title collapse on scroll
 let navTicking=false;
