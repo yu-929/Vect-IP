@@ -71,12 +71,6 @@ func (e *Engine) Run(ctx context.Context, req Request) (Response, error) {
 		return Response{}, errors.New("no CIDR provided (use --cidr or --cidr-file)")
 	}
 
-	// Initialize seed
-	seed := e.cfg.Seed
-	if seed == 0 {
-		seed = time.Now().UnixNano()
-	}
-
 	// Initialize components
 	timeoutMS := req.TimeoutMS()
 	e.tree = bandit.NewArmTree(prefixes, e.cfg.ToTreeConfig())

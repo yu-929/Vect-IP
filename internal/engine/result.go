@@ -139,10 +139,6 @@ func (c *TopNCollector) Consider(r TopResult) {
 	}
 }
 
-// rebuildIPMap is kept for compatibility but no longer needed
-// since we now update ipSeen incrementally.
-func (c *TopNCollector) rebuildIPMap() {}
-
 // Best returns the best result so far.
 func (c *TopNCollector) Best() TopResult {
 	c.mu.Lock()
