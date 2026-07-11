@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths: ['ios/**', 'internal/**', 'cmd/**', 'cmd/vect-web/web/**', '.github/workflows/**', 'go.mod', 'go.sum']
+  release:
+    types: [created]
   workflow_dispatch:
 
 jobs:
@@ -43,6 +45,13 @@ jobs:
         with:
           name: VectApp
           path: build/VectApp.ipa
+
+      - name: Upload IPA to Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} build/VectApp.ipa --clobber
 
       - name: Verify IPA
         run: |
