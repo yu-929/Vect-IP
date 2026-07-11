@@ -132,17 +132,19 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 /* ===== Local Network ===== */
 .local-grid{display:flex;flex-direction:column}
-.local-row{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 0;border-bottom:0.5px solid var(--glass-border);gap:8px}
+.local-row{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 0;border-bottom:0.5px solid rgba(60,60,60,0.08);gap:8px}
 .local-row:last-child{border-bottom:none}
-.local-row .local-label{font-size:13px;color:var(--secondary);letter-spacing:-0.1px;flex-shrink:0;min-width:56px}
-.local-row .local-val{font-size:15px;font-weight:500;color:var(--text);letter-spacing:-0.2px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local-row .local-label{font-size:13px;color:var(--secondary);letter-spacing:-0.1px;flex-shrink:0;min-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local-row .local-val{font-size:15px;font-weight:500;color:var(--text);letter-spacing:-0.2px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .local-row .local-val.public{color:var(--primary);font-weight:600}
-.local-row .local-copy{width:28px;height:28px;border-radius:14px;border:none;background:var(--input-bg);color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.local-row .local-copy{width:28px;height:28px;border-radius:14px;border:none;background:var(--input-bg);color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .local-row .local-copy:active{background:rgba(0,119,237,0.18);transform:scale(0.9)}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;min-height:24px}
 .card-header .card-title{margin-bottom:0}
 .card-header .refresh-btn{width:32px;height:32px;border-radius:16px;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .card-header .refresh-btn:active{color:var(--primary);background:rgba(0,119,237,0.10);transform:scale(0.9)}
+.card-header .refresh-btn.spinning svg{animation:refreshSpin .6s linear infinite}
+@keyframes refreshSpin{to{transform:rotate(360deg)}}
 #localIPCard{padding:24px 20px;border-radius:20px}
 
 /* ===== History ===== */
@@ -649,6 +651,8 @@ if(document.querySelector('.seg-btn'))document.querySelector('.seg-btn').classLi
 
 // Local IP
 async function fetchLocalIP(){
+const btn=document.querySelector('.refresh-btn');
+btn.classList.add('spinning');
 try{
 S('liPublic').textContent='加载中...';
 const r=await fetch('/api/local-ip');
@@ -658,6 +662,7 @@ S('liLocal').textContent=d.localIPs&&d.localIPs.length?d.localIPs[0]:'--';
 S('liISP').textContent=d.isp||'--';
 S('liLocation').textContent=d.location||'--';
 }catch(e){S('liPublic').textContent='获取失败'}
+btn.classList.remove('spinning');
 }
 fetchLocalIP();
 
