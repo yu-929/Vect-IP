@@ -270,9 +270,27 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 /* ===== Discover button ===== */
 .discover-chip{padding:6px 10px;border-radius:8px;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
 .discover-chip:active{background:rgba(0,119,237,0.10)}
+
+/* ===== Password Lock ===== */
+.lock-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px;transition:opacity .3s}
+.lock-overlay.hidden{opacity:0;pointer-events:none}
+.lock-title{font-size:22px;font-weight:700;color:var(--text)}
+.lock-input{width:200px;padding:12px 16px;border:0.5px solid var(--glass-border);border-radius:var(--radius-input);background:var(--input-bg);color:var(--text);font-size:16px;text-align:center;font-family:inherit;outline:none}
+.lock-input:focus{border-color:var(--primary)}
+.lock-btn{width:200px;padding:12px;border:none;border-radius:var(--radius-btn);background:var(--primary);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.lock-btn:active{opacity:0.8}
+.lock-error{font-size:13px;color:var(--danger);min-height:18px}
 </style>
 </head>
 <body>
+
+<!-- Password Lock -->
+<div class="lock-overlay" id="lockOverlay">
+<div class="lock-title">请输入密码</div>
+<input class="lock-input" id="lockInput" type="password" placeholder="密码" autocomplete="off" onkeydown="if(event.key==='Enter')checkPassword()">
+<div class="lock-error" id="lockError"></div>
+<button class="lock-btn" onclick="checkPassword()">进入</button>
+</div>
 
 <!-- Top Nav -->
 <div class="top-nav">
@@ -1103,7 +1121,31 @@ longPressTimer=setTimeout(()=>{copyText(ip);longPressTimer=null;haptic();},500);
 }
 function ipTouchEnd(){if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}}
 
+// Password lock
+function checkPassword(){
+const input=S('lockInput');
+const err=S('lockError');
+if(input.value==='qian'){
+sessionStorage.setItem('vect-auth','1');
+S('lockOverlay').classList.add('hidden');
+err.textContent='';
+input.value='';
+}else{
+err.textContent='密码错误';
+input.value='';
+input.focus();
+}
+}
+
 // Init
+if(sessionStorage.getItem('vect-auth')==='1'){
+S('lockOverlay').classList.add('hidden');
+bootApp();
+}else{
+S('lockInput').focus();
+bootApp();
+}
+function bootApp(){
 renderHistory();
 updateTracerouteUI();
 updateCidrCount();
@@ -1118,6 +1160,7 @@ requestAnimationFrame(function(){document.documentElement.classList.add('theme-t
 // Request notification permission
 if('Notification'in window&&Notification.permission==='default'&&!localStorage.getItem('vect-notif-asked')){
 setTimeout(function(){Notification.requestPermission();localStorage.setItem('vect-notif-asked','1');},5000);
+}
 }
 </script>
 </body>
