@@ -13,10 +13,6 @@ android {
         targetSdk = 34
         versionCode = 10300
         versionName = "1.3.0"
-
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
-        }
     }
 
     signingConfigs {
@@ -47,16 +43,9 @@ android {
         jvmTarget = "17"
     }
 
-    externalNativeBuild {
-        cmake {
-            path("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
-
     sourceSets {
         getByName("main") {
-            jniLibs.srcDirs("src/main/jniLibs")
+            assets.srcDirs("src/main/assets")
         }
     }
 }

@@ -16,11 +16,15 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewCompat
-import androidx.webkit.WebViewFeature
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
-    private var serverStarted = false
+    private var serverProcess: Process? = null
+    private val executor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,12 +35,64 @@ class MainActivity : AppCompatActivity() {
 
         TracerouteService.start()
 
-        val ret = VectBridge.startServer(8080)
-        serverStarted = ret >= 0
-        if (!serverStarted) {
-            android.util.Log.e("Vect", "Failed to start server")
-        }
+        startVectServer()
+    }
 
+    private fun startVectServer() {
+        executor.execute {
+            try {
+                val binDir = File(filesDir, "bin")
+                binDir.mkdirs()
+                val binary = File(binDir, "vect_server")
+
+                // Extract binary from assets
+                assets.open("bin/vect_server").use { input ->
+                    FileOutputStream(binary).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                binary.setExecutable(true)
+
+                // Start server as subprocess
+                val pb = ProcessBuilder(binary.absolutePath)
+                    .directory(binDir)
+                    .redirectErrorStream(true)
+                serverProcess = pb.start()
+
+                // Wait for server to be ready
+                val startTime = System.currentTimeMillis()
+                val timeout = 10000L
+                var ready = false
+
+                while (System.currentTimeMillis() - startTime < timeout && !ready) {
+                    try {
+                        val url = java.net.URL("http://127.0.0.1:8080/api/health")
+                        val conn = url.openConnection() as java.net.HttpURLConnection
+                        conn.connectTimeout = 1000
+                        conn.readTimeout = 1000
+                        conn.requestMethod = "GET"
+                        val code = conn.responseCode
+                        conn.disconnect()
+                        if (code == 200) {
+                            ready = true
+                        }
+                    } catch (_: Exception) {
+                        Thread.sleep(200)
+                    }
+                }
+
+                if (ready) {
+                    runOnUiThread { loadWebView() }
+                } else {
+                    android.util.Log.e("Vect", "Server did not start in time")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("Vect", "Failed to start server", e)
+            }
+        }
+    }
+
+    private fun loadWebView() {
         webView = findViewById(R.id.webView)
         setupWebView()
     }
@@ -131,7 +187,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        serverProcess?.destroy()
         TracerouteService.stop()
+        executor.shutdownNow()
         super.onDestroy()
     }
 }
