@@ -64,6 +64,8 @@ type ProgressData struct {
 	ElapsedMS  int64   `json:"elapsedMS"`
 	Nodes      int     `json:"nodes"`
 	Stage      int     `json:"stage"`
+	DownloadIP string  `json:"downloadIp,omitempty"`
+	DownloadMbps float64 `json:"downloadMbps,omitempty"`
 }
 
 type ScanSession struct {
@@ -285,19 +287,15 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			session.status = "completed"
 			session.result = resp.Top
 		}
-		session.progress.Stage = 4
+session.progress.Stage = 4
 		session.progress.Completed = 1
 		subs = make([]chan ProgressData, len(session.subs))
 		copy(subs, session.subs)
-		session.subs = nil
 		session.mu.Unlock()
 		sendProgress(session.progress, subs)
 
-		for _, ch := range subs {
-			close(ch)
-		}
-
-		if req.DownloadTop > 0 && len(session.result) > 0 && session.result[0].ScoreMS < 6000 {
+		// Run download tests if requested (keep SSE open during download)
+		if req.DownloadTop > 0 && len(session.result) > 0 {
 			session.mu.Lock()
 			session.status = "downloading"
 			session.mu.Unlock()
@@ -328,7 +326,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 				r.DownloadBytes = dr.Bytes
 				r.DownloadMS = dr.TotalMS
 				r.DownloadMbps = dr.Mbps
-r.DownloadPeakMbps = dr.PeakMbps
+				r.DownloadPeakMbps = dr.PeakMbps
 				r.DownloadError = dr.Error
 				if dr.OK {
 					successCount++
@@ -336,7 +334,26 @@ r.DownloadPeakMbps = dr.PeakMbps
 				if req.DownloadMode == "sequential" && successCount >= dlTop {
 					break
 				}
+				// Send download progress with per-IP details
+				session.mu.Lock()
+				session.progress.Stage = 5
+				session.progress.Completed = i + 1
+				session.progress.Budget = maxTests
+				session.progress.DownloadIP = r.IP.String()
+				session.progress.DownloadMbps = dr.Mbps
+				dlSubs := make([]chan ProgressData, len(session.subs))
+				copy(dlSubs, session.subs)
+				session.mu.Unlock()
+				sendProgress(session.progress, dlSubs)
 			}
+		}
+
+		// Close SSE channels after all processing is done
+		session.mu.Lock()
+		session.subs = nil
+		session.mu.Unlock()
+		for _, ch := range subs {
+			close(ch)
 		}
 
 		if len(session.result) > 0 {
