@@ -2,7 +2,7 @@
 
 > 高宽之网、低延之址，可遇而不可强求。
 
-Cloudflare IP 优选工具。基于蒙特卡洛搜索算法，用更少探测次数从网段中找出延迟更低、更稳定的 IP。附带 Web 控制台，可从移动端发起扫描。
+Cloudflare IP 优选工具。基于蒙特卡洛搜索算法，用更少探测次数从网段中找出延迟更低、更稳定的 IP。另提供 Web 控制台，支持 iOS/Android 移动端发起扫描。
 
 ## 安装
 
@@ -10,7 +10,7 @@ Cloudflare IP 优选工具。基于蒙特卡洛搜索算法，用更少探测次
 curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash
 ```
 
-也直接从 [Release](https://github.com/yu-929/Vect-IP/releases/latest) 下载二进制。
+或从 [Release](https://github.com/yu-929/Vect-IP/releases/latest) 下载二进制。
 
 更新：`curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s update`
 卸载：`curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s uninstall`
@@ -58,7 +58,7 @@ vect -v --budget 3000 --concurrency 100 --cidr-file ./ipv4cidr.txt --out text
 | `--download-bytes` | 50000000 | 下载字节数 |
 | `--download-timeout` | 45s | 单 IP 超时 |
 | `--download-url` | - | 自定义测速地址 |
-| `--download-mode` | sequential | sequential=顺序测直到达标 / all=固定数量 |
+| `--download-mode` | sequential | 顺序模式=直到达标 / 默认模式=固定数量 |
 
 指定 `--download-url` 时默认下载完整文件算速度，加 `--download-bytes` 可限制读取量。
 
