@@ -44,8 +44,12 @@ jobs:
       - name: Gradle diagnostics
         if: failure()
         run: |
-          echo "=== Build output (last 100 lines) ==="
-          tail -100 /tmp/build.log 2>/dev/null || echo "No log"
+          echo "## Gradle Build Error Log" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -200 /tmp/build.log 2>/dev/null >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "=== Build output (last 200 lines) ==="
+          tail -200 /tmp/build.log 2>/dev/null || echo "No log"
           echo "=== APK search ==="
           find android -name "*.apk" -type f 2>/dev/null || echo "No APK files"
           echo "=== Build reports ==="
