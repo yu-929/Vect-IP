@@ -43,15 +43,30 @@ jobs:
           ls -la android/app/src/main/cpp/libvect.h
 
       - name: Decode keystore
-        if: secrets.KEYSTORE_B64 != ''
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-        run: echo "$KEYSTORE_B64" | base64 -d > /tmp/keystore.jks
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > /tmp/keystore.jks
+          else
+            echo "No keystore configured, building unsigned APK"
+          fi
 
       - name: Setup Gradle wrapper
         run: |
+          which gradle || echo "gradle not found"
+          gradle --version || echo "gradle version check failed"
           cd android
           gradle wrapper --gradle-version=8.6
+
+      - name: Verify NDK and Go libs
+        run: |
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -la android/app/src/main/jniLibs/*/libvect.so 2>&1 || echo "No libvect.so found"
+          ls -la android/app/src/main/cpp/libvect.h 2>&1 || echo "No libvect.h found"
+          ls -la android/app/src/main/cpp/CMakeLists.txt
+          ls -la android/build.gradle.kts
 
       - name: Build APK
         working-directory: android
