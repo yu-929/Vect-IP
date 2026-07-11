@@ -15,7 +15,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.webkit.WebViewCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
@@ -116,7 +115,7 @@ class MainActivity : AppCompatActivity() {
             }
         }, "Android")
 
-        WebViewCompat.setWebViewClient(webView, object : WebViewClient() {
+        webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 return false
             }
@@ -125,7 +124,7 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 injectBridge()
             }
-        })
+        }
 
         webView.loadUrl("http://127.0.0.1:8080")
     }

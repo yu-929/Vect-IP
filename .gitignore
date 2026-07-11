@@ -34,3 +34,4 @@ android/app/src/main/cpp/libvect.h
 android/app/build/
 android/.gradle/
 local.properties
+android/app/src/main/assets/bin/

@@ -9,7 +9,6 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketTimeoutException
-import java.net.StandardSocketOptions
 import kotlin.concurrent.thread
 
 data class TracerouteHop(
@@ -95,10 +94,6 @@ object TracerouteService {
 
             try {
                 val socket = Socket()
-                try {
-                    socket.setOption(StandardSocketOptions.IP_TTL, Integer.valueOf(ttl))
-                } catch (_: IllegalArgumentException) {
-                }
                 socket.connect(InetSocketAddress(destAddr, 443), 3000)
                 val elapsed = (System.nanoTime() - start) / 1_000_000.0
                 ms = String.format("%.2f", elapsed)
