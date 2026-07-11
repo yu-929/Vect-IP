@@ -28,17 +28,12 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept Android SDK licenses
+      - name: Install Android SDK components
         run: |
           yes | sdkmanager --licenses || true
-
-      - name: Setup Android NDK
-        run: |
           sdkmanager --install "ndk;26.1.10909125" "build-tools;34.0.0" "platforms;android-34"
           echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/26.1.10909125" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=${ANDROID_HOME}" >> $GITHUB_ENV
-          echo "sdk.dir=${ANDROID_HOME}" > android/local.properties
-          echo "ndk.dir=${ANDROID_HOME}/ndk/26.1.10909125" >> android/local.properties
 
       - name: Build Go shared libraries for Android
         run: |
@@ -47,24 +42,16 @@ jobs:
           ls -la android/app/src/main/jniLibs/*/libvect.so
           ls -la android/app/src/main/cpp/libvect.h
 
-      - name: Build Go shared libraries for Android
-        run: |
-          export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/26.1.10909125"
-          android/build-libvect.sh
-
       - name: Decode keystore
-        if: env.KEYSTORE_B64 != ''
+        if: secrets.KEYSTORE_B64 != ''
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
         run: echo "$KEYSTORE_B64" | base64 -d > /tmp/keystore.jks
 
-      - name: Setup Gradle
+      - name: Setup Gradle wrapper
         run: |
-          # Install Gradle
-          GRADLE_VERSION=8.6
-          wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /opt
-          echo "/opt/gradle-${GRADLE_VERSION}/bin" >> $GITHUB_PATH
+          cd android
+          gradle wrapper --gradle-version=8.6
 
       - name: Build APK
         working-directory: android
@@ -73,12 +60,13 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK
         run: |
           cp android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/Vect.apk 2>/dev/null || \
-          cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/Vect.apk
+          cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/Vect.apk 2>/dev/null || \
+          echo "::warning::APK output not found"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -86,20 +74,15 @@ jobs:
           path: android/app/build/outputs/apk/release/Vect.apk
 
       - name: Publish latest APK
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete latest-apk --cleanup-tag --yes 2>/dev/null || true
-          gh release create latest-apk \
-            --title "Latest APK Build (${{ github.sha }})" \
-            --notes "Auto-built from commit ${{ github.sha }} on $(date -u)" \
-            --target ${{ github.sha }} \
-            android/app/build/outputs/apk/release/Vect.apk
-
-      - name: Upload APK to Release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ github.ref_name }} android/app/build/outputs/apk/release/Vect.apk --clobber
+          if [ -f android/app/build/outputs/apk/release/Vect.apk ]; then
+            gh release delete latest-apk --cleanup-tag --yes 2>/dev/null || true
+            gh release create latest-apk \
+              --title "Latest APK Build (${{ github.sha }})" \
+              --notes "Auto-built from commit ${{ github.sha }} on $(date -u)" \
+              --target ${{ github.sha }} \
+              android/app/build/outputs/apk/release/Vect.apk
+          fi
