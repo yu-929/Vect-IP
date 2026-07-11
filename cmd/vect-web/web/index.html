@@ -205,6 +205,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .h-detail-colo{color:var(--muted2)}
 .h-detail-dl{color:var(--success);font-variant-numeric:tabular-nums}
 .h-detail-tr{color:var(--primary);cursor:pointer;font-weight:500}
+.h-dns-btn{color:var(--primary);cursor:pointer;font-weight:500;font-size:11px;border:none;background:none;font-family:inherit;padding:4px 6px;border-radius:6px}
+.h-dns-btn:active{background:var(--input-bg)}
 .h-detail-tr:active{opacity:0.6}
 .h-detail-tr-wrap{width:100%}
 
@@ -217,6 +219,10 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .settings-row .sl-desc{font-size:11px;color:var(--muted2);margin-top:1px}
 .settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:11px;margin-top:1px;cursor:pointer}
 .settings-row .repo-link:hover{text-decoration:underline}
+.settings-input{background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none}
+.settings-input:focus{border-color:var(--primary)}
+.settings-select{background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10px;padding:6px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer}
+.settings-select:focus{border-color:var(--primary)}
 .toggle-wrap{position:relative;width:44px;height:28px;flex-shrink:0;margin-left:12px}
 .toggle-track{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:14px;background:var(--muted);cursor:pointer;transition:background .25s}
 .toggle-track.on{background:var(--primary)}
@@ -419,7 +425,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <!-- Action Button -->
 <div class="btn-spacer">
-<button class="btn btn-primary" id="startBtn" onclick="startScan()">开始扫描</button>
+<button class="btn btn-primary" id="startBtn" onclick="startScanWrap()">开始扫描</button>
 <button class="btn btn-danger hidden" id="cancelBtn" onclick="cancelScan()">停止扫描</button>
 </div>
 
@@ -508,8 +514,13 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
       </svg>
       <div class="empty-title">暂无扫描记录</div>
       <div class="empty-desc">完成一次扫描后，结果将出现在这里<br>点击「扫描」Tab 开始</div>
-    </div>
-  </div>
+</div>
+	<div class="stage-item" id="stage5Item" style="display:none">
+	<div class="stage-top"><span class="stage-name">下载测速</span><span class="stage-count" id="s5Count">--</span></div>
+	<div class="stage-bar"><div class="stage-fill" id="s5Fill"></div></div>
+	<div class="stage-footer" id="s5Status"></div>
+	</div>
+	</div>
 </div>
 </div>
 
@@ -564,6 +575,52 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>请求路径</label><input id="path" value="/cdn-cgi/trace"></div>
 </div>
 </div>
+</div>
+</div>
+
+<div class="settings-group">
+<div class="sg-title">下载测速</div>
+<div class="settings-row">
+<div style="flex:1">
+<div class="sl-label">自定义测速地址</div>
+<div class="sl-desc">使用自定义 URL 替代默认测速文件</div>
+</div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="customDlTrack" onclick="toggleCustomDl()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="customDlToggle" aria-label="自定义测速地址">
+</div>
+</div>
+</div>
+<div id="customDlUrlRow" style="display:none;margin-top:6px">
+<input id="customDlUrl" type="text" class="settings-input" placeholder="https://example.com/100mb.bin" style="width:100%">
+</div>
+</div>
+
+<div class="settings-group">
+<div class="sg-title">DNS 上传</div>
+<div class="settings-row">
+<div class="sl-label">服务商</div>
+<select id="dnsProvider" class="settings-select">
+<option value="cloudflare">Cloudflare</option>
+<option value="vercel">Vercel</option>
+</select>
+</div>
+<div class="settings-row">
+<div class="sl-label">API Token</div>
+<input id="dnsToken" type="password" class="settings-input" placeholder="API Token" style="flex:1;max-width:200px;text-align:right">
+</div>
+<div class="settings-row">
+<div class="sl-label">Zone / Domain</div>
+<input id="dnsZone" type="text" class="settings-input" placeholder="Zone ID 或域名" style="flex:1;max-width:200px;text-align:right">
+</div>
+<div class="settings-row">
+<div class="sl-label">子域名前缀</div>
+<input id="dnsSubdomain" type="text" class="settings-input" placeholder="例: cf" style="flex:1;max-width:200px;text-align:right">
+</div>
+<div class="settings-row">
+<div class="sl-label">上传数量</div>
+<input id="dnsCount" type="number" class="settings-input" value="3" style="flex:1;max-width:80px;text-align:right">
 </div>
 </div>
 
@@ -649,6 +706,25 @@ const track=S('tracerouteTrack');
 const toggle=S('tracerouteToggle');
 if(track)track.classList.toggle('on',tracerouteEnabled);
 if(toggle)toggle.checked=tracerouteEnabled;
+}
+
+function toggleCustomDl(){
+const on=S('customDlTrack').classList.toggle('on');
+S('customDlToggle').checked=on;
+S('customDlUrlRow').style.display=on?'':'none';
+}
+
+function validateForm(){
+const cidrs=S('cidrs').value.trim();
+const budget=parseInt(S('budget').value);
+if(!cidrs&&!S('asn').value.trim()&&S('scanMode').value!=='quick'&&S('scanMode').value!=='full'){showToast('请输入 CIDR 或 ASN');return false;}
+if(isNaN(budget)||budget<1){showToast('请输入有效的预算值');return false;}
+return true;
+}
+
+function startScanWrap(){
+if(!validateForm())return;
+startScan();
 }
 
 // SP Preset modal
@@ -799,7 +875,9 @@ downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').v
 topN:parseInt(S('topN').value)||20,
 coloAllow:coloMode==='allow'?coloSelected.join(','):'',
 coloExclude:coloMode==='exclude'?coloSelected.join(','):'',
-ipVersion:parseInt(S('ipVersion').value)||0};
+ipVersion:parseInt(S('ipVersion').value)||0,
+customDownloadUrl:S('customDlUrl').value||'',
+customDownloadEnabled:S('customDlToggle').checked};
 if(!body.cidrs.length&&!body.asn){showError('请输入 CIDR 或 ASN');return;}
 hideError();
 S('startBtn').disabled=true;
@@ -825,7 +903,6 @@ updateProgress(p);
 };
 es.addEventListener('done',()=>{
 es.close();
-S('statusLabel').textContent='下载测速中...';
 pollResult(d.id);
 });
 }catch(e){showError('请求失败');resetButtons();}
@@ -834,12 +911,14 @@ pollResult(d.id);
 function resetStages(){
 S('skeletonPanel').style.display='';
 S('progressContent').style.display='none';
-[1,2,3,4].forEach(i=>{
+[1,2,3,4,5].forEach(i=>{
 S('s'+i+'Fill').style.width='0%';
 S('s'+i+'Count').textContent='--';
 S('s'+i+'Est').textContent='预计 --';
 S('s'+i+'Rem').textContent='--';
 });
+S('stage5Item').style.display='none';
+S('s5Status').textContent='';
 S('pAvail').textContent='0';
 S('pBestScore').textContent='-';
 setBestIP('-');
@@ -873,6 +952,13 @@ S('pElapsed').textContent=fmtDur(elapsed);
 if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='<1s';S('s4Rem').textContent='已完成';
 S('statusLabel').textContent='完成';
+}
+if(stage===5){
+S('stage5Item').style.display='';
+S('s5Fill').style.width='100%';
+S('s5Count').textContent=done+'/'+budget;
+S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
+S('statusLabel').textContent='下载测速中...';
 }
 }
 
@@ -927,9 +1013,17 @@ S('statusLabel').textContent='已取消';
 
 // History
 function loadHistory(){
-try{return JSON.parse(localStorage.getItem('vect-history')||'[]');}catch{return[]}
+try{
+const x=new XMLHttpRequest();x.open('GET','/api/history',false);x.send();
+if(x.status===200)return JSON.parse(x.responseText);
+}catch(e){}
+return[];
 }
-function saveHistory(h){localStorage.setItem('vect-history',JSON.stringify(h))}
+function saveHistory(entry){
+const x=new XMLHttpRequest();x.open('POST','/api/history',false);
+x.setRequestHeader('Content-Type','application/json');
+x.send(JSON.stringify(entry));
+}
 
 function renderResults(r){
 	results=r;
@@ -954,9 +1048,7 @@ function renderResults(r){
 		}))
 	};
 	if(!entry.results.length){showToast('所有结果均超时');return;}
-	history.unshift(entry);
-	if(history.length>50)history.length=50;
-	saveHistory(history);
+	saveHistory(entry);
 	renderHistory();
 }
 
@@ -982,7 +1074,7 @@ if(r0)html+='<span class="hm">数据中心: <strong>'+(r0.colo||'-')+'</strong><
 if(tracerouteEnabled&&r0)html+='<span class="hm hm-full" style="text-align:center"><span style="color:var(--primary);cursor:pointer;font-size:12px" onclick="runTracerouteHist(\''+r0.ip+'\',\''+hi+'\')">路由追踪</span></span>';
 html+='</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
-if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 '+total+' 个结果</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button><button class="h-copy-all-btn" onclick="copyAllResults('+hi+')" title="复制全部">复制全部</button></div>';
+if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 '+total+' 个结果</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button><button class="h-copy-all-btn" onclick="copyAllResults('+hi+')" title="复制全部">复制全部</button><button class="h-dns-btn" onclick="dnsUploadFromHistory('+hi+')" title="DNS上传">DNS上传</button></div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
 if(ri===0)return;
@@ -1015,18 +1107,35 @@ else{const total=btn.querySelector('span').textContent='展开全部 '+(detail.q
 }
 
 function deleteHistory(idx){
-let history=loadHistory();
-history.splice(idx,1);
-saveHistory(history);
+const h=loadHistory();
+if(!h[idx]||!h[idx]._id)return;
+const x=new XMLHttpRequest();x.open('DELETE','/api/history/'+h[idx]._id,false);x.send();
 renderHistory();
 showToast('已删除');
 }
 
 function clearHistory(){
 if(!confirm('确认清空所有扫描记录？'))return;
-saveHistory([]);
+const h=loadHistory();
+h.forEach(function(e){if(e._id){const x=new XMLHttpRequest();x.open('DELETE','/api/history/'+e._id,false);x.send();}});
 renderHistory();
 showToast('已清空');
+}
+
+function dnsUploadFromHistory(idx){
+const h=loadHistory();
+if(!h[idx])return;
+const r0=h[idx].results[0];
+// Collect download-ok IPs from history
+const ips=h[idx].results.filter(function(r){return r.dlOk}).map(function(r){return r.ip});
+if(!ips.length){showToast('该次扫描没有可用的测速结果');return;}
+const cfg={provider:S('dnsProvider').value,token:S('dnsToken').value,zone:S('dnsZone').value,subdomain:S('dnsSubdomain').value,count:parseInt(S('dnsCount').value)||ips.length};
+if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在设置中配置 DNS 参数');switchTab('settings');return;}
+showToast('正在上传 DNS 记录...');
+const x=new XMLHttpRequest();x.open('POST','/api/dns-upload',true);
+x.setRequestHeader('Content-Type','application/json');
+x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败');}};
+x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count}));
 }
 
 // Traceroute

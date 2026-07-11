@@ -14,6 +14,7 @@ import (
 	"net/netip"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/yu-929/Vect-IP/internal/dns"
 	"github.com/yu-929/Vect-IP/internal/engine"
 	"github.com/yu-929/Vect-IP/internal/probe"
 )
@@ -47,8 +49,10 @@ type ScanRequest struct {
 	SplitStepV4     int      `json:"splitStepV4"`
 	SplitStepV6     int      `json:"splitStepV6"`
 	DiversityWeight float64  `json:"diversityWeight"`
-	IPVersion       int      `json:"ipVersion"`
-	TopN            int      `json:"topN"`
+	IPVersion           int      `json:"ipVersion"`
+	TopN                int      `json:"topN"`
+	CustomDownloadUrl   string   `json:"customDownloadUrl"`
+	CustomDownloadEnabled bool   `json:"customDownloadEnabled"`
 }
 
 type ScanStatus struct {
@@ -60,14 +64,16 @@ type ScanStatus struct {
 }
 
 type ProgressData struct {
-	Completed  int     `json:"completed"`
-	Budget     int     `json:"budget"`
-	BestScore  float64 `json:"bestScore"`
-	BestIP     string  `json:"bestIP"`
-	BestPrefix string  `json:"bestPrefix"`
-	ElapsedMS  int64   `json:"elapsedMS"`
-	Nodes      int     `json:"nodes"`
-	Stage      int     `json:"stage"`
+	Completed   int     `json:"completed"`
+	Budget      int     `json:"budget"`
+	BestScore   float64 `json:"bestScore"`
+	BestIP      string  `json:"bestIP"`
+	BestPrefix  string  `json:"bestPrefix"`
+	ElapsedMS   int64   `json:"elapsedMS"`
+	Nodes       int     `json:"nodes"`
+	Stage       int     `json:"stage"`
+	DownloadIP  string  `json:"downloadIp,omitempty"`
+	DownloadMbps float64 `json:"downloadMbps,omitempty"`
 }
 
 type ScanSession struct {
@@ -81,10 +87,169 @@ type ScanSession struct {
 }
 
 var (
-	scans   = make(map[string]*ScanSession)
-	scansMu sync.RWMutex
-	nextID  int64
+	scans     = make(map[string]*ScanSession)
+	scansMu   sync.RWMutex
+	nextID    int64
+	historyMu sync.Mutex
 )
+
+func historyDir() string {
+	dir := filepath.Join(os.TempDir(), "vect-history")
+	os.MkdirAll(dir, 0755)
+	return dir
+}
+
+func loadHistory() []map[string]interface{} {
+	historyMu.Lock()
+	defer historyMu.Unlock()
+	entries, _ := filepath.Glob(filepath.Join(historyDir(), "*.json"))
+	sort.Slice(entries, func(i, j int) bool { return entries[i] > entries[j] })
+	var result []map[string]interface{}
+	for _, e := range entries {
+		b, err := os.ReadFile(e)
+		if err != nil {
+			continue
+		}
+		var entry map[string]interface{}
+		if json.Unmarshal(b, &entry) == nil {
+			result = append(result, entry)
+		}
+		if len(result) >= 50 {
+			break
+		}
+	}
+	return result
+}
+
+func saveHistory(entry map[string]interface{}) string {
+	historyMu.Lock()
+	defer historyMu.Unlock()
+	id := fmt.Sprintf("%x", time.Now().UnixNano())
+	entry["_id"] = id
+	b, _ := json.Marshal(entry)
+	os.WriteFile(filepath.Join(historyDir(), id+".json"), b, 0644)
+	// Keep max 50 files
+	files, _ := filepath.Glob(filepath.Join(historyDir(), "*.json"))
+	sort.Slice(files, func(i, j int) bool { return files[i] > files[j] })
+	for i := 50; i < len(files); i++ {
+		os.Remove(files[i])
+	}
+	return id
+}
+
+func deleteHistory(id string) {
+	historyMu.Lock()
+	defer historyMu.Unlock()
+	os.Remove(filepath.Join(historyDir(), id+".json"))
+}
+
+func handleHistory(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(loadHistory())
+	case "POST":
+		var entry map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
+			http.Error(w, "invalid request", 400)
+			return
+		}
+		id := saveHistory(entry)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"id": id})
+	case "DELETE":
+		id := strings.TrimPrefix(r.URL.Path, "/api/history/")
+		if id == "" {
+			http.Error(w, "missing id", 400)
+			return
+		}
+		deleteHistory(id)
+		w.WriteHeader(204)
+	default:
+		http.Error(w, "method not allowed", 405)
+	}
+}
+
+func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+	var req struct {
+		ScanID    string `json:"scanId"`
+		Provider  string `json:"provider"`
+		Token     string `json:"token"`
+		Zone      string `json:"zone"`
+		Subdomain string `json:"subdomain"`
+		Count     int    `json:"count"`
+		TeamID    string `json:"teamId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	if req.Provider == "" || req.Token == "" || req.Zone == "" || req.Subdomain == "" {
+		http.Error(w, "provider, token, zone, subdomain required", 400)
+		return
+	}
+
+	scansMu.RLock()
+	session, ok := scans[req.ScanID]
+	scansMu.RUnlock()
+	if !ok {
+		http.Error(w, "scan not found", 404)
+		return
+	}
+	session.mu.RLock()
+	results := session.result
+	session.mu.RUnlock()
+
+	dlOK := make([]netip.Addr, 0)
+	for _, r := range results {
+		if r.DownloadOK {
+			dlOK = append(dlOK, r.IP)
+		}
+	}
+	if len(dlOK) == 0 {
+		http.Error(w, "no download results available", 400)
+		return
+	}
+	sort.Slice(dlOK, func(i, j int) bool { return false }) // maintain order
+
+	count := req.Count
+	if count <= 0 || count > len(dlOK) {
+		count = len(dlOK)
+	}
+
+	cfg := dns.Config{
+		Provider:    req.Provider,
+		Token:       req.Token,
+		Zone:        req.Zone,
+		Subdomain:   req.Subdomain,
+		UploadCount: count,
+		TeamID:      req.TeamID,
+	}
+	provider, err := dns.NewProvider(cfg)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+	defer cancel()
+
+	ips := dlOK[:count]
+	if err := dns.Upload(ctx, provider, req.Subdomain, ips, false); err != nil {
+		http.Error(w, "upload failed: "+err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok":    true,
+		"count": len(ips),
+	})
+}
 
 func main() {
 	port := "8080"
@@ -108,6 +273,9 @@ func main() {
 	http.HandleFunc("/api/route-type", handleBatchRouteType)
 	http.HandleFunc("/api/health", handleHealth)
 	http.HandleFunc("/api/colo-discover", handleColoDiscover)
+	http.HandleFunc("/api/history", handleHistory)
+	http.HandleFunc("/api/history/", handleHistory)
+	http.HandleFunc("/api/dns-upload", handleDNSUpload)
 
 	log.Printf("Vect Web UI starting on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
@@ -258,11 +426,12 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 
 go func() {
 		defer cancel()
+		var subs []chan ProgressData
 
 		// Stage 1: CIDR/ASN parsing
 		session.mu.Lock()
 		session.progress = ProgressData{Budget: req.Budget, Stage: 1, Completed: 1}
-		subs := make([]chan ProgressData, len(session.subs))
+		subs = make([]chan ProgressData, len(session.subs))
 		copy(subs, session.subs)
 		session.mu.Unlock()
 		sendProgress(session.progress, subs)
@@ -291,15 +460,10 @@ go func() {
 		session.progress.Completed = 1
 		subs = make([]chan ProgressData, len(session.subs))
 		copy(subs, session.subs)
-		session.subs = nil
 		session.mu.Unlock()
 		sendProgress(session.progress, subs)
 
-		for _, ch := range subs {
-			close(ch)
-		}
-
-		// Run download tests if requested
+		// Run download tests if requested (keep SSE open during download)
 		if req.DownloadTop > 0 && len(session.result) > 0 {
 			session.mu.Lock()
 			session.status = "downloading"
@@ -313,6 +477,11 @@ go func() {
 			dlCfg := probe.DownloadConfig{
 				Timeout: 45 * time.Second,
 				Bytes:   50_000_000,
+			}
+			if req.CustomDownloadEnabled && req.CustomDownloadUrl != "" {
+				dlCfg.Path = req.CustomDownloadUrl
+				dlCfg.CustomURL = true
+				dlCfg.Bytes = 0
 			}
 
 			dlp := probe.NewDownloadProber(dlCfg)
@@ -331,7 +500,7 @@ go func() {
 				r.DownloadBytes = dr.Bytes
 				r.DownloadMS = dr.TotalMS
 				r.DownloadMbps = dr.Mbps
-r.DownloadPeakMbps = dr.PeakMbps
+				r.DownloadPeakMbps = dr.PeakMbps
 				r.DownloadError = dr.Error
 				if dr.OK {
 					successCount++
@@ -339,16 +508,26 @@ r.DownloadPeakMbps = dr.PeakMbps
 				if req.DownloadMode == "sequential" && successCount >= dlTop {
 					break
 				}
-				// Send download progress
+				// Send download progress with per-IP details
 				session.mu.Lock()
 				session.progress.Stage = 5
 				session.progress.Completed = i + 1
 				session.progress.Budget = maxTests
-				subs := make([]chan ProgressData, len(session.subs))
-				copy(subs, session.subs)
+				session.progress.DownloadIP = r.IP.String()
+				session.progress.DownloadMbps = dr.Mbps
+				dlSubs := make([]chan ProgressData, len(session.subs))
+				copy(dlSubs, session.subs)
 				session.mu.Unlock()
-				sendProgress(session.progress, subs)
+				sendProgress(session.progress, dlSubs)
 			}
+		}
+
+		// Close SSE channels after all processing is done
+		session.mu.Lock()
+		session.subs = nil
+		session.mu.Unlock()
+		for _, ch := range subs {
+			close(ch)
 		}
 
 		// Fill route types for all results
