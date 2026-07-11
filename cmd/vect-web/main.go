@@ -486,8 +486,8 @@ go func() {
 			}
 
 			dlCfg := probe.DownloadConfig{
-				Timeout: 45 * time.Second,
-				Bytes:   50_000_000,
+				Timeout: 3 * time.Second,
+				Bytes:   1_000_000,
 			}
 			if req.CustomDownloadEnabled && req.CustomDownloadUrl != "" {
 				dlCfg.Path = req.CustomDownloadUrl
@@ -501,9 +501,15 @@ go func() {
 			successCount := 0
 			for i := 0; i < maxTests && successCount < dlTop; i++ {
 				r := &session.result[i]
-				dctx, dcancel := context.WithTimeout(ctx, 45*time.Second)
-				dr := dlp.Download(dctx, r.IP)
-				dcancel()
+				var dr probe.DownloadResult
+				for attempt := 0; attempt < 3; attempt++ {
+					dctx, dcancel := context.WithTimeout(ctx, 3*time.Second)
+					dr = dlp.Download(dctx, r.IP)
+					dcancel()
+					if dr.OK {
+						break
+					}
+				}
 				r.DownloadOK = dr.OK
 				r.DownloadBytes = dr.Bytes
 				r.DownloadMS = dr.TotalMS
