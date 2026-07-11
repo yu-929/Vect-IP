@@ -251,6 +251,15 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func noCache(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	port := "8080"
 	if p := os.Getenv("PORT"); p != "" {
@@ -261,7 +270,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	http.Handle("/", http.FileServer(http.FS(subFS)))
+	http.Handle("/", noCache(http.FileServer(http.FS(subFS))))
 
 	http.HandleFunc("/api/scan", handleScan)
 	http.HandleFunc("/api/scan/", handleScanByID)
