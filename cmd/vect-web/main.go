@@ -166,13 +166,13 @@ func handleHistory(w http.ResponseWriter, r *http.Request) {
 		deleteHistory(id)
 		w.WriteHeader(204)
 	default:
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	var req struct {
