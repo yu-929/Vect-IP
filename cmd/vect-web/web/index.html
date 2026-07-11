@@ -900,11 +900,10 @@ updateProgress(p);
 }catch(e){console.error('SSE parse error',e);}
 };
 es.onerror=function(){console.error('EventSource error',this.readyState);
-if(this.readyState===2&&curId){S('progressContent').style.display='none';pollResult(curId);}};
+if(this.readyState===2&&curId)pollResult(curId);};
 es.addEventListener('done',()=>{
 es.close();
 if(polling)return;
-S('progressContent').style.display='none';
 pollResult(d.id);
 });
 }catch(e){showError('请求失败');resetButtons();}
