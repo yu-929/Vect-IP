@@ -19,21 +19,41 @@ jobs:
         with: { go-version: '1.22' }
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK components
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager --install "build-tools;34.0.0" "platforms;android-34"
+          # Download command line tools
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/* cmdline-tools/latest/ 2>/dev/null || true
+          rm -rf cmdline-tools.zip
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: Install SDK components
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-34" "build-tools;34.0.0" 2>&1
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "SDK installed successfully"
 
       - name: Build Go executable for Android
         run: |
           android/build-libvect.sh
-          echo "=== Verify outputs ==="
           ls -la android/app/src/main/assets/bin/vect_server
 
       - name: Setup Gradle wrapper
-        run: cd android && gradle wrapper --gradle-version=8.6
+        run: |
+          if ! command -v gradle &>/dev/null; then
+            echo "Gradle not found, installing..."
+            wget -q https://services.gradle.org/distributions/gradle-8.6-bin.zip -O /tmp/gradle.zip
+            unzip -q /tmp/gradle.zip -d /opt
+            export PATH="/opt/gradle-8.6/bin:$PATH"
+            echo "/opt/gradle-8.6/bin" >> $GITHUB_PATH
+          fi
+          cd android && gradle wrapper --gradle-version=8.6 2>&1
 
       - name: Build APK
         working-directory: android
@@ -41,19 +61,11 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace --info 2>&1 | tee /tmp/build.log
           exit ${PIPESTATUS[0]}
 
-      - name: Gradle diagnostics
+      - name: Diagnostics
         if: failure()
         run: |
-          echo "## Gradle Build Error Log" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -200 /tmp/build.log 2>/dev/null >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "=== Build output (last 200 lines) ==="
-          tail -200 /tmp/build.log 2>/dev/null || echo "No log"
-          echo "=== APK search ==="
-          find android -name "*.apk" -type f 2>/dev/null || echo "No APK files"
-          echo "=== Build reports ==="
-          find android/app/build/reports -type f 2>/dev/null | head -20 || echo "No reports"
+          tail -200 /tmp/build.log 2>/dev/null
+          find android -name "*.apk" -type f 2>/dev/null || echo "No APK"
 
       - name: Upload build log
         if: failure()
@@ -64,7 +76,7 @@ jobs:
 
       - name: Rename APK
         run: |
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/Vect.apk
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/Vect.apk && echo "APK ready"
 
       - uses: actions/upload-artifact@v4
         with:
