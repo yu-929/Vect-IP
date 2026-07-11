@@ -647,7 +647,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <script>
-let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], coloData=[];
+let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], coloData=[], polling=false;
 let tracerouteEnabled=localStorage.getItem('vect-traceroute')==='1';
 const S=document.getElementById.bind(document);
 const stageConfig=[
@@ -881,6 +881,7 @@ S('cancelBtn').classList.remove('hidden');
 S('statusPanel').style.display='';
 resetStages();
 estStart=Date.now();
+polling=false;
 
 try{
 const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -898,9 +899,11 @@ const p=JSON.parse(e.data);
 updateProgress(p);
 }catch(e){console.error('SSE parse error',e);}
 };
-es.onerror=function(){console.error('EventSource error',this.readyState);};
+es.onerror=function(){console.error('EventSource error',this.readyState);
+if(this.readyState===2&&curId){S('progressContent').style.display='none';pollResult(curId);}};
 es.addEventListener('done',()=>{
 es.close();
+if(polling)return;
 S('progressContent').style.display='none';
 pollResult(d.id);
 });
@@ -963,6 +966,7 @@ S('statusLabel').textContent='下载测速中...';
 function fmtDur(s){if(s<60)return Math.round(s)+'s';const m=Math.floor(s/60);const sec=Math.round(s%60);return m+':'+(sec<10?'0':'')+sec;}
 
 async function pollResult(id,attempt){
+if(polling)return;polling=true;
 if(!attempt)attempt=1;
 try{
 const r=await fetch('/api/scan/'+id);
@@ -980,10 +984,10 @@ showError(d.error||'扫描失败');
 resetButtons();
 S('statusLabel').textContent='失败';
 showToast('扫描失败');
-}else{setTimeout(()=>pollResult(id),1000);}
+}else{polling=false;setTimeout(()=>pollResult(id),1000);}
 }catch(e){
-if(attempt<5){setTimeout(()=>pollResult(id,attempt+1),1000*attempt);return;}
-showError('获取结果失败');resetButtons();
+if(attempt<5){polling=false;setTimeout(()=>pollResult(id,attempt+1),1000*attempt);return;}
+showError('获取结果失败');resetButtons();polling=false;
 }}
 
 function notifyComplete(results){

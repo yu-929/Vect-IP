@@ -653,6 +653,7 @@ func handleProgressSSE(w http.ResponseWriter, r *http.Request, id string) {
 		case data, ok := <-ch:
 			if !ok {
 				fmt.Fprintf(w, "event: done\ndata: \n\n")
+				flusher.Flush()
 				return
 			}
 			b, _ := json.Marshal(data)
