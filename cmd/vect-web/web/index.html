@@ -1023,7 +1023,7 @@ x.send(JSON.stringify(entry));
 function renderResults(r){
 	results=r;
 	if(!r||!r.length)return;
-	const valid=r.filter(x=>x.score_ms<6000);
+	const valid=r.filter(x=>x.score_ms<6000||x.download_ok);
 	const history=loadHistory();
 	const entry={
 		time:new Date().toLocaleString(),
