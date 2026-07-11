@@ -104,7 +104,7 @@ func loadHistory() []map[string]interface{} {
 	defer historyMu.Unlock()
 	entries, _ := filepath.Glob(filepath.Join(historyDir(), "*.json"))
 	sort.Slice(entries, func(i, j int) bool { return entries[i] > entries[j] })
-	var result []map[string]interface{}
+	var result []map[string]interface{} = []map[string]interface{}{}
 	for _, e := range entries {
 		b, err := os.ReadFile(e)
 		if err != nil {

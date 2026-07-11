@@ -1006,7 +1006,11 @@ S('statusLabel').textContent='已取消';
 
 // History
 function loadHistory(){
-try{return JSON.parse(localStorage.getItem('vect-history')||'[]');}catch{return[]}
+try{
+const x=new XMLHttpRequest();x.open('GET','/api/history',false);x.send();
+if(x.status===200)return JSON.parse(x.responseText)||[];
+}catch(e){}
+return[];
 }
 function saveHistory(h){localStorage.setItem('vect-history',JSON.stringify(h))}
 

@@ -1008,7 +1008,7 @@ S('statusLabel').textContent='已取消';
 function loadHistory(){
 try{
 const x=new XMLHttpRequest();x.open('GET','/api/history',false);x.send();
-if(x.status===200)return JSON.parse(x.responseText);
+if(x.status===200)return JSON.parse(x.responseText)||[];
 }catch(e){}
 return[];
 }
