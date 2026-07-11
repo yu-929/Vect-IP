@@ -860,8 +860,8 @@ const bestLabel=best?best.ip+' ('+best.score_ms.toFixed(1)+'ms)':'';
 try{
 if(document.hidden&&'Notification'in window&&Notification.permission==='granted'){
 new Notification('Vect 扫描完成',{body:'发现 '+count+' 个可用 IP\n最优: '+bestLabel,icon:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%230077ED"%3E%3Ccircle cx="12" cy="12" r="9"/%3E%3C/svg%3E'});
-}else if(document.hidden&&window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.vectNotify){
-window.webkit.messageHandlers.vectNotify.postMessage({title:'Vect 扫描完成',body:'发现 '+count+' 个可用 IP\n最优: '+bestLabel});
+}else if(document.hidden&&window.vectNotify){
+window.vectNotify({title:'Vect 扫描完成',body:'发现 '+count+' 个可用 IP\n最优: '+bestLabel});
 }
 }catch(e){}
 }

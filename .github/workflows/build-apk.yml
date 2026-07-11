@@ -1,0 +1,86 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+    paths: ['ios/**', 'internal/**', 'cmd/**', 'cmd/vect-web/web/**', 'android/**', '.github/workflows/**', 'go.mod', 'go.sum']
+  release:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Android NDK
+        run: |
+          sdkmanager --install "ndk;26.1.10909125" "build-tools;34.0.0"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Build Go shared libraries for Android
+        run: |
+          export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/26.1.10909125"
+          android/build-libvect.sh
+
+      - name: Decode keystore
+        if: env.KEYSTORE_B64 != ''
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > /tmp/keystore.jks
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build APK
+        working-directory: android
+        env:
+          KEYSTORE_PATH: /tmp/keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: |
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/Vect.apk 2>/dev/null || \
+          cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/Vect.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vect-APK
+          path: android/app/build/outputs/apk/release/Vect.apk
+
+      - name: Publish latest APK
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest-apk --cleanup-tag --yes 2>/dev/null || true
+          gh release create latest-apk \
+            --title "Latest APK Build (${{ github.sha }})" \
+            --notes "Auto-built from commit ${{ github.sha }} on $(date -u)" \
+            --target ${{ github.sha }} \
+            android/app/build/outputs/apk/release/Vect.apk
+
+      - name: Upload APK to Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} android/app/build/outputs/apk/release/Vect.apk --clobber

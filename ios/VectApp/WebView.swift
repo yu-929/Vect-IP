@@ -14,6 +14,13 @@ struct WebView: UIViewRepresentable {
         config.websiteDataStore = .nonPersistent()
         let userContent = WKUserContentController()
         userContent.add(context.coordinator, name: "vectNotify")
+        let bridgeJS = """
+        window.vectNotify = function(data) {
+            window.webkit.messageHandlers.vectNotify.postMessage(data);
+        };
+        """
+        let script = WKUserScript(source: bridgeJS, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        userContent.addUserScript(script)
         config.userContentController = userContent
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator

@@ -799,7 +799,7 @@ func handleTraceroute(w http.ResponseWriter, r *http.Request) {
 }
 
 func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
-	if runtime.GOOS == "ios" {
+	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
 		client := &http.Client{Timeout: 30 * time.Second}
 		url := fmt.Sprintf("http://127.0.0.1:8091/traceroute/%s", ip)
 		resp, err := client.Get(url)
@@ -970,7 +970,7 @@ type nextTraceResult struct {
 }
 
 func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
-	if runtime.GOOS == "ios" {
+	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
 		return nil
 	}
 	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "3", ip)
@@ -1027,7 +1027,7 @@ func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
 }
 
 func classifyRouteByTrace(ctx context.Context, ip string) *RouteInfo {
-	if runtime.GOOS == "ios" {
+	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
 		return lookupRoute(ctx, ip)
 	}
 	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "5", ip)

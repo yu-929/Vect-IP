@@ -27,3 +27,10 @@ ios/VectApp/libvect.a
 ios/VectApp/libvect.h
 ios/VectApp/Assets.xcassets/AppIcon.appiconset/icon-*.png
 /libvect
+
+# Android generated files
+android/app/src/main/jniLibs/*/libvect.so
+android/app/src/main/cpp/libvect.h
+android/app/build/
+android/.gradle/
+local.properties
