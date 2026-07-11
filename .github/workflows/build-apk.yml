@@ -31,13 +31,35 @@ jobs:
         run: |
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/26.1.10909125"
           android/build-libvect.sh
+          echo "=== Verify outputs ==="
+          ls -la android/app/src/main/jniLibs/arm64-v8a/libvect.so
+          ls -la android/app/src/main/cpp/libvect.h
 
       - name: Setup Gradle wrapper
         run: cd android && gradle wrapper --gradle-version=8.6
 
       - name: Build APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          ./gradlew assembleRelease --no-daemon --stacktrace --info 2>&1 | tee /tmp/build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Gradle diagnostics
+        if: failure()
+        run: |
+          echo "=== Build output (last 100 lines) ==="
+          tail -100 /tmp/build.log 2>/dev/null || echo "No log"
+          echo "=== APK search ==="
+          find android -name "*.apk" -type f 2>/dev/null || echo "No APK files"
+          echo "=== Build reports ==="
+          find android/app/build/reports -type f 2>/dev/null | head -20 || echo "No reports"
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: /tmp/build.log
 
       - name: Rename APK
         run: |
