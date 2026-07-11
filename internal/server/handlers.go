@@ -295,7 +295,7 @@ session.progress.Stage = 4
 		sendProgress(session.progress, subs)
 
 		// Run download tests if requested (keep SSE open during download)
-		if req.DownloadTop > 0 && len(session.result) > 0 {
+		if req.DownloadTop > 0 && len(session.result) > 0 && session.result[0].ScoreMS < 6000 {
 			session.mu.Lock()
 			session.status = "downloading"
 			session.mu.Unlock()
