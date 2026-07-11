@@ -4,13 +4,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOGO_SRC="$SCRIPT_DIR/logo/Vect图标.JPG"
-OUT_DIR="/tmp/vect-icons"
-mkdir -p "$OUT_DIR"
+
+if ! command -v convert &>/dev/null; then
+    echo "ImageMagick not found, using pre-committed icons"
+    exit 0
+fi
 
 if [ ! -f "$LOGO_SRC" ]; then
-    echo "ERROR: Logo not found at $LOGO_SRC"
-    exit 1
+    echo "Logo not found at $LOGO_SRC, using pre-committed icons"
+    exit 0
 fi
+
+OUT_DIR="/tmp/vect-icons"
+mkdir -p "$OUT_DIR"
 
 echo "==> Generating icons from $LOGO_SRC"
 
