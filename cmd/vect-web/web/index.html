@@ -1042,13 +1042,15 @@ function renderResults(r){
 	if(!r||!r.length)return;
 	const valid=r.filter(x=>x.score_ms<6000);
 	if(!valid.length)return;
+	const seen=new Set();
+	const deduped=valid.filter(x=>{if(seen.has(x.ip))return false;seen.add(x.ip);return true;});
 	const history=loadHistory();
 	const entry={
 		time:new Date().toLocaleString(),
 		cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean).join(', '),
 		asn:S('asn').value.trim(),
 		budget:S('budget').value,
-		results:valid.map(x=>({
+		results:deduped.map(x=>({
 			ip:x.ip,
 			score:x.score_ms,
 			colo:x.trace&&x.trace.colo?x.trace.colo:'',
