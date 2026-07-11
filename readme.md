@@ -1,288 +1,141 @@
-# Monte Carlo IP Selector
+# Vect
 
-一个 **Cloudflare IP 优选**工具：用蒙特卡洛搜索算法，在更少探测次数下，从 IPv4/IPv6 网段里找到更快、更稳定的 IP。
+> 高宽之网、低延之址，可遇而不可强求。
 
-## 为什么选择 Vect？
+Cloudflare IP 优选工具。基于蒙特卡洛搜索算法，用更少探测次数从网段中找出延迟更低、更稳定的 IP。附带 Web 控制台，可从移动端发起扫描。
 
-**传统 IP 优选工具的两难困境：**
-- **扫描少了** → 随机打靶，可能错过真正的好 IP
-- **扫描多了** → 耗时太长，还容易触发运营商风控
-
-**Vect 的核心价值：用 1/600 的探测次数，找到接近全段扫描的最优 IP。**
-
-传统工具是"广撒网"，而 Vect 是"精准制导"——通过智能搜索把有限的探测预算集中到真正有潜力的 IP 段，好钢用在刀刃上。
-
-**效率对比（以 Cloudflare IPv4 为例）：**
-
-| 工具/模式 | 探测次数 | 说明 |
-|-----------|----------|------|
-| 全段暴力扫描 | ~180 万 | Cloudflare IPv4 约 180 万个 IP |
-| CloudflareSpeedTest 默认 | ~1 万 | 每个 /24 段随机测 1 个 |
-| **Vect 推荐配置** | **3000** | 智能搜索，聚焦有潜力区域 |
-
-**Vect 如何做到的？**
-
-| 特性 | 说明 |
-|------|------|
-| **递进式下钻** | 发现某个子网表现好，就继续细分探索这个区域，而不是把时间浪费在差的区域 |
-| **多头分散探索** | 多个搜索头并行探索不同区域，通过"排斥力"机制避免都陷入同一个局部最优 |
-| **贝叶斯优化** | 使用 Thompson Sampling 算法，自动平衡"探索新区域"和"利用已知好区域"，无需手动调参 |
-| **多次测试取平均** | 每个 IP 默认测试 6 次，跳过首次握手开销，取平均值，结果更稳定准确 |
-
-## 下载安装
-
-### 一键安装（推荐）
+## 安装
 
 ```bash
-# 安装
 curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash
-
-# 更新到最新版
-curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s update
-
-# 卸载
-curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s uninstall
 ```
 
-### GitHub Release
+也直接从 [Release](https://github.com/yu-929/Vect-IP/releases/latest) 下载二进制。
 
-[Release](https://github.com/yu-929/Vect-IP/releases/latest) 下载解压后即可运行。
+更新：`curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s update`
+卸载：`curl -sL https://raw.githubusercontent.com/yu-929/Vect-IP/main/install.sh | bash -s uninstall`
 
-## 推荐配置
-
-**直接复制使用，无需调参：**
+## 快速开始
 
 ```bash
-# IPv4 推荐配置
-vect -v --out text --cidr-file ./ipv4cidr.txt --budget 3000 --concurrency 100
-
-# IPv6 推荐配置
-vect -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads 16 --concurrency 100
+vect -v --budget 3000 --concurrency 100 --cidr-file ./ipv4cidr.txt --out text
 ```
 
-从源码运行：
-
-```bash
-# IPv4
-go run ./cmd/mcis -v --out text --cidr-file ./ipv4cidr.txt --budget 3000 --concurrency 100
-
-# IPv6
-go run ./cmd/mcis -v --out text --cidr-file ./ipv6cidr.txt --budget 4000 --heads 16 --concurrency 100
-```
-
-**为什么 IPv6 配置不同？**
-- IPv6 地址空间远大于 IPv4，需要更多探测次数（budget）才能收敛
-- 更多搜索头（heads）可以并行探索更广的区域，避免陷入局部最优
-
-**提示：** 推荐在晚高峰时段运行测试，因为此时不同 IP 之间的延迟差异更明显，算法更容易找到最优解。
-
-## 参数速查表
-
-### 常用参数
-
-| 参数 | 默认值 | 推荐值 | 说明 |
-|------|--------|--------|------|
-| `--budget` | 2000 | IPv4: 3000, IPv6: 4000 | 总探测次数，越大结果越稳定 |
-| `--concurrency` | 200 | 100 | 并发探测数 |
-| `--heads` | 4 | IPv4: 4, IPv6: 16 | 搜索头数量，越多探索越广 |
-| `--top` | 20 | 20 | 输出 Top N 个最优 IP |
-| `--timeout` | 3s | 3s | 单次探测超时 |
-| `-v` | 关闭 | 开启 | 显示搜索进度 |
-| `--out` | jsonl | text | 输出格式：text/jsonl/csv |
-
-### 高级参数（一般无需修改）
-
-| 参数 | 默认值 | 取值范围 | 说明 |
-|------|--------|----------|------|
-| `--beam` | 32 | 16-64 | 每个搜索头保留的候选数 |
-| `--diversity-weight` | 0.3 | 0-1 | 多样性权重，越高越分散探索 |
-| `--split-interval` | 20 | 10-30 | 每 N 个样本检查一次拆分 |
-| `--min-samples-split` | 5 | 3-10 | 前缀至少采样 N 次才允许拆分 |
-| `--split-step-v4` | 2 | 1-8 | IPv4 下钻步长（如 /16→/18） |
-| `--split-step-v6` | 4 | 1-16 | IPv6 下钻步长（如 /32→/36） |
-| `--max-bits-v4` | 24 | 1-32 | IPv4 最大前缀长度 |
-| `--max-bits-v6` | 56 | 1-128 | IPv6 最大前缀长度 |
-| `--rounds` | 6 | 3-10 | 每个 IP 测试次数 |
-| `--skip-first` | 1 | 0-3 | 跳过前 N 次测试（去除握手开销） |
-| `--seed` | 0 | ≥0 | 随机种子（0=时间种子） |
-
-## 参数详解
-
-### 基础参数
-
-**输入网段：**
-- `--cidr`：直接指定 CIDR，可重复使用。例：`--cidr 1.1.1.0/24 --cidr 1.0.0.0/24`
-- `--cidr-file`：从文件读取 CIDR，每行一个，支持 `#` 注释
-
-**搜索控制：**
-- `--budget`：总探测次数。**越大越稳定，但耗时越长**。IPv6 空间大，建议 4000+
-- `--concurrency`：并发数。建议 50-200，过高可能导致网络拥塞
-- `--top`：输出前 N 个最优 IP
-
-**输出控制：**
-- `--out`：输出格式
-  - `text`：人类可读格式（推荐日常使用）
-  - `jsonl`：JSON Lines 格式（适合程序解析）
-  - `csv`：CSV 格式（适合导入表格）
-- `--out-file`：输出到文件（默认输出到终端）
-- `-v`：显示搜索进度（强烈推荐开启）
-
-### 搜索算法参数
-
-- `--heads`：搜索头数量。多个搜索头并行探索不同区域，通过"排斥力"机制避免都跑到同一个局部最优。IPv6 建议 8-16
-- `--beam`：每个搜索头保留的候选前缀数。越大探索越发散
-- `--diversity-weight`：多样性权重（0-1）。越高，搜索头之间越分散
-
-### 探测配置
-
-- `--host`：目标域名，同时设置 TLS SNI 和 HTTP Host header。默认 `example.com`
-- `--path`：请求路径。默认 `/cdn-cgi/trace`（Cloudflare 标准端点）
-- `--timeout`：单次探测超时。注意：实际超时 = timeout × rounds
-- `--rounds`：每个 IP 测试次数。默认 6 次，取平均值减少波动
-- `--skip-first`：跳过前 N 次测试。默认 1（跳过首次握手开销）
-
-**提示：** 使用你自己的网站作为 `--host`，可以确保优选出的 IP 对你的网站生效：
-
-```bash
-vect -v --out text --cidr-file ./ipv4cidr.txt --host your-domain.com --budget 3000 --concurrency 100
-```
-
-## 可选功能
-
-### CDN 节点过滤
-
-根据 CDN 机房代码（colo）过滤结果：
-
-- `--colo`：白名单，只保留指定机房。例：`--colo HKG,SJC`
-- `--colo-exclude`：黑名单，排除指定机房。例：`--colo-exclude LAX,DFW`
-
-两者只能二选一。
-
-### 下载测速
-
-对排名靠前的 IP 进行下载速度测试：
+## 核心参数
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--download-top` | 5 | 对 Top N IP 测速（0=关闭） |
-| `--download-bytes` | 50000000 | 下载大小（字节）；使用 `--download-url` 时不传则默认不限制 |
-| `--download-timeout` | 45s | 单 IP 测速超时 |
-| `--download-url` | （空） | 自定义测速文件地址（见下方说明） |
-| `--download-mode` | `all` | 测速模式：`all`（测速前 N 个）或 `sequential`（顺序测速直到成功 N 个） |
+| `--budget` | 2000 | 总探测次数 |
+| `--concurrency` | 200 | 并发数 |
+| `--heads` | 4 | 搜索头数量（IPv6 建议 16） |
+| `--top` | 20 | 输出 Top N |
+| `--timeout` | 3s | 单次超时 |
+| `--cidr` | - | 直接指定网段，可重复 |
+| `--cidr-file` | - | 从文件读取网段 |
+| `--out` | jsonl | 输出格式：text/jsonl/csv |
+| `--out-file` | - | 输出到文件 |
+| `-v` | 关闭 | 显示进度 |
 
-**自定义测速地址：** 由于 Cloudflare 默认测速端点 `speed.cloudflare.com/__down` 对生成的下载文件大小可能存在限制，可通过 `--download-url` 指定自定义的测速文件地址。
+## 算法简介
 
-**指定 `--download-url` 时，默认不限制下载大小**：会下载完整文件直至 EOF，再按实际字节数与耗时计算速度。若需限制流量或时间，可加 `--download-bytes N`（最多读取 N 字节后停止）。未指定自定义 URL 时，仍使用默认 50MB 测速。
+核心思路是**递进式下钻**：发现某段表现好就继续细分探索，差的区域不再浪费探测次数。
+
+| 机制 | 作用 |
+|------|------|
+| 多头分散探索 | 并行探索不同区域，排斥力防止陷入同一局部最优 |
+| Thompson Sampling | 自动平衡探索 vs 利用，无需手动调参 |
+| 多轮取平均 | 每 IP 默认测 6 次，跳过首次握手，结果更稳定 |
+
+## 可选功能
+
+### 下载测速
+
+按延迟排序后对头部 IP 进行带宽测试：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--download-top` | 5 | 测速数量（0=关闭） |
+| `--download-bytes` | 50000000 | 下载字节数 |
+| `--download-timeout` | 45s | 单 IP 超时 |
+| `--download-url` | - | 自定义测速地址 |
+| `--download-mode` | sequential | sequential=顺序测直到达标 / all=固定数量 |
+
+指定 `--download-url` 时默认下载完整文件算速度，加 `--download-bytes` 可限制读取量。
 
 ```bash
-# 自定义地址：默认下载完整文件再算速度
-vect -v --out text --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/path/to/largefile
-
-# 自定义地址且限制只下载前 50MB
-vect -v --out text --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/path/to/largefile --download-bytes 50000000
-```
-
-**注意：** 不限制大小时单次下载可能很大，请视情况调大 `--download-timeout`；流量约等于「文件大小 × 参与测速的 IP 数」。
-
-**可用的测速大文件地址：** 可使用自己部署在 Cloudflare 后的静态大文件；或使用走 Cloudflare CDN 的公开下载链接（如厂商官网的安装包、镜像等）。社区整理的可选地址可参考 [CloudflareSpeedTest 讨论区](https://github.com/XIU2/CloudflareSpeedTest/discussions/490)。
-
-**测速模式说明：**
-
-- `all`（默认）：测速前 `--download-top` 个 IP，不管是否成功
-- `sequential`：按排名顺序逐个测速，**直到成功数达到 `--download-top` 时立即停止**，可节省时间
-
-```bash
-# 默认模式：测速前 5 个 IP（可能有些会失败）
-vect -v --out text --cidr-file ./ipv4cidr.txt --download-top 5 --download-mode all
-
-# 顺序模式：按顺序测速，直到 5 个成功就停（如果前 5 个都成功，就只测 5 个）
-vect -v --out text --cidr-file ./ipv4cidr.txt --download-top 5 --download-mode sequential
+vect -v --cidr-file ./ipv4cidr.txt --download-url https://your-domain.com/largefile --out text
 ```
 
 ### DNS 自动上传
 
-搜索完成后，自动将优选 IP 上传到 DNS 服务商。支持 **Cloudflare** 和 **Vercel**。
+搜索完成后将结果推送到 DNS：
 
 | 参数 | 说明 |
 |------|------|
-| `--dns-provider` | DNS 服务商：`cloudflare` 或 `vercel` |
-| `--dns-token` | API Token（或用环境变量 `CF_API_TOKEN` / `VERCEL_TOKEN`） |
-| `--dns-zone` | Zone ID（Cloudflare）或域名（Vercel），或用环境变量 `CF_ZONE_ID` |
-| `--dns-subdomain` | 子域名前缀（如 `cf` 会创建 `cf.example.com`） |
-| `--dns-upload-count` | 上传 IP 数量（默认与 `--download-top` 相同） |
-
-示例：
+| `--dns-provider` | cloudflare 或 vercel |
+| `--dns-token` | API Token（或环境变量 `CF_API_TOKEN` / `VERCEL_TOKEN`） |
+| `--dns-zone` | Zone ID 或域名 |
+| `--dns-subdomain` | 子域名前缀 |
+| `--dns-upload-count` | 上传数量 |
 
 ```bash
-# Cloudflare（使用环境变量）
-export CF_API_TOKEN="your_token"
-export CF_ZONE_ID="your_zone_id"
+export CF_API_TOKEN="xxx" CF_ZONE_ID="xxx"
 vect --cidr-file ./ipv4cidr.txt --dns-provider cloudflare --dns-subdomain cf -v
-
-# Vercel
-vect --cidr-file ./ipv4cidr.txt --dns-provider vercel --dns-zone example.com --dns-subdomain cf --dns-token YOUR_TOKEN -v
 ```
 
-## 自带网段文件
+### CDN 节点过滤
 
-仓库自带 Cloudflare 高可见度网段（从 `bgp.he.net/AS13335` 抓取，visibility > 90%）：
+`--colo HKG,SJC` 白名单，`--colo-exclude LAX,DFW` 黑名单，两者互斥。
 
-- `ipv4cidr.txt`：IPv4 网段
-- `ipv6cidr.txt`：IPv6 网段
+## 高级参数
 
-更新日期：2026-05-16。
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--beam` | 32 | 每搜索头候选数 |
+| `--diversity-weight` | 0.3 | 多样性权重 |
+| `--split-interval` | 20 | 拆分检查间隔 |
+| `--min-samples-split` | 5 | 最小采样数 |
+| `--split-step-v4` | 2 | IPv4 下钻步长 |
+| `--split-step-v6` | 4 | IPv6 下钻步长 |
+| `--max-bits-v4` | 24 | IPv4 最大前缀 |
+| `--max-bits-v6` | 56 | IPv6 最大前缀 |
+| `--rounds` | 6 | 每 IP 测试轮次 |
+| `--skip-first` | 1 | 跳过前 N 次 |
+| `--seed` | 0 | 随机种子（0=时间） |
+| `--host` | example.com | 目标域名 |
+| `--path` | /cdn-cgi/trace | 请求路径 |
 
-## CIDR 文件格式
+## Web 控制台
 
-- 每行一个 CIDR
-- 支持空行和 `#` 注释
+`vect-web` 提供 Web 界面，通过 iOS/Android App 或浏览器访问：
 
-```text
-# IPv4
-1.1.0.0/16
-1.0.0.0/16
-
-# IPv6
-2606:4700::/32
+```bash
+go run ./cmd/vect-web
 ```
 
-## 输出格式说明
+Web 包含三个页面：扫描（执行搜索）、历史（查看记录）、设置（路由追踪开关及高级参数）。
 
-### text 格式
+## 网段文件
 
-每行包含：rank、ip、score_ms、ok/status、prefix、colo
+仓库自带 Cloudflare 高可见度网段（来源 bgp.he.net/AS13335）：
 
-### jsonl 格式
+- `ipv4cidr.txt` — 约 180 万 IP
+- `ipv6cidr.txt` — 约 2^56 个 IP
 
-一行一个 JSON，包含完整字段：ip、prefix、ok、status、connect_ms、tls_ms、ttfb_ms、total_ms、score_ms、trace 等
-
-### csv 格式
-
-常用字段列，适合导入表格分析。
-
-## 常见问题
-
-**Q: 为什么全部 `ok=false`？**
-
-常见原因：
-- 网络无法直连到目标 IP 的 443 端口
-- 本地防火墙拦截
-- 目标不支持当前 host/path 组合
-
-建议：调大 `--timeout`，先用默认的 `example.com` + `/cdn-cgi/trace` 测试。
-
-**Q: 代理环境下能用吗？**
-
-本工具**强制直连**，忽略 `HTTP_PROXY/HTTPS_PROXY/NO_PROXY` 环境变量，确保测速结果不被代理影响。
+格式：每行一个 CIDR，支持空行和 `#` 注释。
 
 ## 构建
 
 需要 Go 1.22+：
 
 ```bash
+# 命令行工具
 go build -o vect ./cmd/mcis
+
+# Web 控制台
+go build -o vect-web ./cmd/vect-web
 ```
 
 ## License
 
-GNU General Public License v3.0（GPL-3.0）
+GNU General Public License v3.0
