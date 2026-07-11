@@ -152,7 +152,7 @@ func (e *Engine) schedule(ctx context.Context, timeoutMS float64) error {
 			if submitted < int64(e.cfg.Budget) {
 				headID := int(submitted) % e.cfg.Heads
 				if err := e.submitOneTask(ctx, headID); err != nil {
-					// Non-fatal, continue
+					_ = err // Non-fatal, continue
 				}
 			}
 

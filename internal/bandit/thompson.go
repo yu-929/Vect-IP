@@ -109,29 +109,29 @@ func (s *ThompsonSampler) SelectBestN(candidates []*ArmNode, n int) []*ArmNode {
 		score float64
 	}
 
-	scored_nodes := make([]scored, len(candidates))
+	scoredNodes := make([]scored, len(candidates))
 	for i, node := range candidates {
-		scored_nodes[i] = scored{node: node, score: s.SampleScore(node)}
+		scoredNodes[i] = scored{node: node, score: s.SampleScore(node)}
 	}
 
 	// Partial sort to get top N
-	for i := 0; i < n && i < len(scored_nodes); i++ {
+	for i := 0; i < n && i < len(scoredNodes); i++ {
 		minIdx := i
-		for j := i + 1; j < len(scored_nodes); j++ {
-			if scored_nodes[j].score < scored_nodes[minIdx].score {
+		for j := i + 1; j < len(scoredNodes); j++ {
+			if scoredNodes[j].score < scoredNodes[minIdx].score {
 				minIdx = j
 			}
 		}
-		scored_nodes[i], scored_nodes[minIdx] = scored_nodes[minIdx], scored_nodes[i]
+		scoredNodes[i], scoredNodes[minIdx] = scoredNodes[minIdx], scoredNodes[i]
 	}
 
-	if n > len(scored_nodes) {
-		n = len(scored_nodes)
+	if n > len(scoredNodes) {
+		n = len(scoredNodes)
 	}
 
 	result := make([]*ArmNode, n)
 	for i := 0; i < n; i++ {
-		result[i] = scored_nodes[i].node
+		result[i] = scoredNodes[i].node
 	}
 	return result
 }

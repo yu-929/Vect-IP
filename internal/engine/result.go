@@ -187,7 +187,7 @@ func (c *TopNCollector) Len() int {
 	return c.heap.Len()
 }
 
-// ConvertToSearchTopResult converts engine.TopResult to search.TopResult format
+// ConvertToSearchTopResults converts engine.TopResult to search.TopResult format
 // for backward compatibility with existing output module.
 func ConvertToSearchTopResults(results []TopResult) []TopResult {
 	return results

@@ -1,3 +1,4 @@
+// Package cidr provides CIDR prefix parsing, splitting and bit manipulation.
 package cidr
 
 import (

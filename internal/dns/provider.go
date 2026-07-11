@@ -1,3 +1,4 @@
+// Package dns provides DNS resolution via Cloudflare, Vercel and custom providers.
 package dns
 
 import (

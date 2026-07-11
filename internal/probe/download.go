@@ -1,3 +1,4 @@
+// Package probe implements TCP/ICMP probe, bandwidth download and traceroute.
 package probe
 
 import (

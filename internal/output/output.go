@@ -1,3 +1,4 @@
+// Package output formats and writes scan results to stdout or file.
 package output
 
 import (
