@@ -2,7 +2,7 @@ name: Build APK
 on:
   push:
     branches: [main]
-    paths: ['ios/**', 'internal/**', 'cmd/**', 'cmd/vect-web/web/**', 'android/**', '.github/workflows/**', 'go.mod', 'go.sum']
+    paths: ['ios/**', 'internal/**', 'cmd/**', 'cmd/vect-web/web/**', 'logo/**', 'android/**', '.github/workflows/**', 'go.mod', 'go.sum']
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,9 @@ jobs:
         with: { distribution: 'zulu', java-version: '17' }
       - uses: actions/setup-go@v5
         with: { go-version: '1.22' }
+
+      - name: Generate all icons from logo
+        run: ./generate-icons.sh
 
       - name: Setup Android SDK
         run: |

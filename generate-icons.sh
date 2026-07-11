@@ -1,0 +1,45 @@
+#!/bin/bash
+# Generate all app icons from the source logo
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOGO_SRC="$SCRIPT_DIR/logo/Vect图标.JPG"
+OUT_DIR="/tmp/vect-icons"
+mkdir -p "$OUT_DIR"
+
+if [ ! -f "$LOGO_SRC" ]; then
+    echo "ERROR: Logo not found at $LOGO_SRC"
+    exit 1
+fi
+
+echo "==> Generating icons from $LOGO_SRC"
+
+# Web / PWA icons (192, 512, 1024)
+echo "  -> Web icons..."
+convert "$LOGO_SRC" -colorspace sRGB -resize 192x192 -background white -gravity center -extent 192x192 -define png:color-type=6 "$OUT_DIR/icon-192.png"
+convert "$LOGO_SRC" -colorspace sRGB -resize 512x512 -background white -gravity center -extent 512x512 -define png:color-type=6 "$OUT_DIR/icon-512.png"
+convert "$LOGO_SRC" -colorspace sRGB -resize 1024x1024 -background white -gravity center -extent 1024x1024 -define png:color-type=6 "$OUT_DIR/icon-1024.png"
+
+# Copy to web directories
+cp "$OUT_DIR/icon-192.png" "$SCRIPT_DIR/cmd/vect-web/web/icon-192.png"
+cp "$OUT_DIR/icon-512.png" "$SCRIPT_DIR/cmd/vect-web/web/icon-512.png"
+cp "$OUT_DIR/icon-1024.png" "$SCRIPT_DIR/cmd/vect-web/web/icon-1024.png"
+cp "$OUT_DIR/icon-192.png" "$SCRIPT_DIR/ios/libvect/web/icon-192.png"
+cp "$OUT_DIR/icon-512.png" "$SCRIPT_DIR/ios/libvect/web/icon-512.png"
+cp "$OUT_DIR/icon-1024.png" "$SCRIPT_DIR/ios/libvect/web/icon-1024.png"
+
+# Android mipmap icons
+echo "  -> Android icons..."
+ANDROID_RES="$SCRIPT_DIR/android/app/src/main/res"
+mkdir -p "$ANDROID_RES/mipmap-mdpi"
+mkdir -p "$ANDROID_RES/mipmap-hdpi"
+mkdir -p "$ANDROID_RES/mipmap-xhdpi"
+mkdir -p "$ANDROID_RES/mipmap-xxhdpi"
+mkdir -p "$ANDROID_RES/mipmap-xxxhdpi"
+convert "$LOGO_SRC" -colorspace sRGB -resize 48x48 -background white -gravity center -extent 48x48 -define png:color-type=6 "$ANDROID_RES/mipmap-mdpi/ic_launcher.png"
+convert "$LOGO_SRC" -colorspace sRGB -resize 72x72 -background white -gravity center -extent 72x72 -define png:color-type=6 "$ANDROID_RES/mipmap-hdpi/ic_launcher.png"
+convert "$LOGO_SRC" -colorspace sRGB -resize 96x96 -background white -gravity center -extent 96x96 -define png:color-type=6 "$ANDROID_RES/mipmap-xhdpi/ic_launcher.png"
+convert "$LOGO_SRC" -colorspace sRGB -resize 144x144 -background white -gravity center -extent 144x144 -define png:color-type=6 "$ANDROID_RES/mipmap-xxhdpi/ic_launcher.png"
+convert "$LOGO_SRC" -colorspace sRGB -resize 192x192 -background white -gravity center -extent 192x192 -define png:color-type=6 "$ANDROID_RES/mipmap-xxxhdpi/ic_launcher.png"
+
+echo "==> Done."

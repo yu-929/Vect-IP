@@ -1,15 +1,17 @@
 #!/bin/bash
-# Generate iOS app icons from the source 512x512 PNG
+# Generate iOS app icons from the source logo
 # Requires: macOS with sips (built-in)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ASSETS_DIR="$SCRIPT_DIR/VectApp/Assets.xcassets/AppIcon.appiconset"
 SOURCE_ICON="$SCRIPT_DIR/libvect/web/icon-1024.png"
 
 if [ ! -f "$SOURCE_ICON" ]; then
     echo "ERROR: Source icon not found at $SOURCE_ICON"
+    echo "Run ../generate-icons.sh first to generate all icons."
     exit 1
 fi
 
