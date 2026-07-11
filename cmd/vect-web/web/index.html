@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vect">
 <link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
 <title>Vect - Monte Carlo IP Selector</title>
 <style>
 :root{--bg:#F8F8FA;--glass-bg:rgba(255,255,255,0.72);--glass-border:rgba(0,0,0,0.06);--glass-shadow:0 1px 12px rgba(0,0,0,0.03),0 0 0 0.5px rgba(0,0,0,0.02);--primary:#0077ED;--danger:#E63832;--success:#34C759;--text:#1C1C1E;--secondary:#8E8E93;--muted:#C7C7CC;--muted2:#8E8E93;--input-bg:rgba(118,118,128,0.10);--segment-bg:rgba(118,118,128,0.10);--tabbar-bg:rgba(248,248,250,0.82);--tabbar-border:rgba(0,0,0,0.08);--nav-bg:rgba(248,248,250,0.82);--progress-track:rgba(118,118,128,0.12);--progress-fill-start:#0077ED;--progress-fill-end:#00A3FF;--overlay:rgba(0,0,0,0.15);--radius-card:20px;--radius-btn:18px;--radius-input:16px;--radius-seg:14px}
@@ -19,9 +22,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 /* ===== Top Nav (iOS Large Title style) ===== */
 .top-nav{position:sticky;top:0;z-index:50;padding:10px 16px;padding-top:calc(env(safe-area-inset-top) + 26px);padding-bottom:20px;background:var(--nav-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-bottom:0.5px solid var(--glass-border);text-align:center;transition:padding .3s cubic-bezier(0.25,0.1,0.25,1)}
 .top-nav.compact{padding-top:calc(env(safe-area-inset-top) + 10px);padding-bottom:10px}
-.nav-title{font-size:22px;font-weight:700;letter-spacing:-0.3px;color:var(--text);transition:font-size .3s cubic-bezier(0.25,0.1,0.25,1)}
-.top-nav.compact .nav-title{font-size:17px}
-.nav-sub{font-size:13px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px;margin-top:15px;transition:opacity .25s,height .25s,margin .25s;overflow:hidden;max-height:40px}
+.nav-title{font-size:26px;font-weight:700;letter-spacing:1px;color:var(--text);transition:font-size .3s cubic-bezier(0.25,0.1,0.25,1);font-family:'Space Grotesk',sans-serif}
+.top-nav.compact .nav-title{font-size:17px;letter-spacing:0.3px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',sans-serif}
+.nav-sub{font-size:15px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px;margin-top:10px;transition:opacity .25s,height .25s,margin .25s;overflow:hidden;max-height:40px}
 .top-nav.compact .nav-sub{opacity:0;max-height:0;margin-top:0}
 
 /* ===== Glass Card ===== */
