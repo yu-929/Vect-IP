@@ -112,7 +112,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .section:last-child{margin-bottom:0}
 
 /* ===== Status Overview ===== */
-.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8pt;margin-bottom:0}
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8pt;margin-bottom:0}
 .stat-item{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:60pt;padding:0 12pt;background:rgba(118,118,128,0.03);border-radius:12pt;box-sizing:border-box}
 .stat-val{font-size:18pt;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
 .stat-val.brand{color:var(--primary)}
@@ -484,7 +484,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="status-grid">
 <div class="stat-item"><div class="stat-val brand" id="pAvail">0</div><div class="stat-lbl">已完成</div></div>
 <div class="stat-item"><div class="stat-val" id="pBestScore">-</div><div class="stat-lbl">最优延迟</div></div>
-<div class="stat-item"><div class="stat-val ip" id="pBestIP" onclick="copyBestIP()" style="cursor:pointer"><span>--</span></div><div class="stat-lbl">最优 IP</div></div>
 <div class="stat-item"><div class="stat-val" id="pElapsed">0s</div><div class="stat-lbl">总用时</div></div>
 </div>
 
@@ -990,7 +989,6 @@ S('stage5Item').style.display='none';
 S('s5Status').textContent='';
 S('pAvail').textContent='0';
 S('pBestScore').textContent='-';
-setBestIP('-');
 S('pElapsed').textContent='0s';
 // progress shown via skeleton→stages transition
 }
@@ -1015,7 +1013,6 @@ S('s3Est').textContent='预计 '+fmtDur(elapsed+remain);
 S('s3Rem').textContent='剩余 '+fmtDur(Math.max(0,remain));
 S('pAvail').textContent=done;
 S('pBestScore').textContent=p.bestScore>0&&p.bestScore<6000?p.bestScore.toFixed(1)+'ms':'-';
-setBestIP(p.bestIP||'-');
 S('pElapsed').textContent=fmtDur(elapsed);
 }
 if(stage>=4){
@@ -1248,11 +1245,6 @@ html+='</div>';
 trEl.innerHTML=html;
 }
 
-function copyBestIP(){
-const ip=S('pBestIP').querySelector('span').textContent.trim();
-if(!ip||ip==='-')return;
-copyText(ip);
-}
 function copyText(t,silent){
 const msg=silent?'已复制':'已复制: '+t;
 if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast(msg));haptic();}
@@ -1269,11 +1261,6 @@ function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
 function updateCidrCount(){
 const v=S('cidrs').value.split('\n').filter(s=>s.trim()).length;
 S('cidrCount').textContent=v+' 条';
-}
-function setBestIP(ip){
-const el=S('pBestIP');
-el.querySelector('span').textContent=ip||'--';
-el.classList.toggle('v6',ip&&ip.includes(':'));
 }
 function importCidrFile(e){
 const file=e.target.files[0];if(!file)return;
