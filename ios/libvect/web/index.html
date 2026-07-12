@@ -561,7 +561,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 <div class="row" style="margin-top:8pt">
 <div class="field"><label>单次探测超时 (s) <span class="range-hint">0.5-30</span></label><input id="timeout" type="number" value="3" step="0.5" min="0.5" max="30"></div>
-<div class="field"><label>测试轮次 <span class="range-hint">1-20</span></label><input id="rounds" type="number" value="6" min="1" max="20"></div>
+<div class="field"></div>
 </div>
 <div class="row" style="margin-top:8pt">
 <div class="field"><label>多样性权重 <span class="range-hint">0-1</span></label><input id="diversityWeight" type="number" value="0.3" step="0.05" min="0" max="1"></div>
@@ -580,11 +580,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>IPv6 最大前缀 <span class="range-hint">1-128</span></label><input id="maxBitsV6" type="number" value="56" min="1" max="128"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>随机种子 <span class="range-hint">≥0, 0=随机</span></label><input id="seed" type="number" value="0" min="0" max="999999"></div>
 <div class="field"><label>目标域名</label><input id="host" value="example.com"></div>
-</div>
-<div class="row" style="margin-top:8pt">
-<div class="field"><label>请求路径</label><input id="path" value="/cdn-cgi/trace"></div>
 <div class="field"></div>
 </div>
 </div>
@@ -898,7 +894,7 @@ S('coloLabel').textContent=coloMode==='allow'?'允许: '+manual.length+' 个':'�
 async function startScan(){
 const asn=S('asn').value.trim();
 if(asn)await resolveASN();
-const inputs=[['budget',1],['concurrency',1],['heads',1],['beam',1],['rounds',1],['splitStepV4',1],['splitStepV6',1],['splitInterval',5],['minSamplesSplit',1],['maxBitsV4',1],['maxBitsV6',1],['seed',0],['topN',1],['downloadTop',0],['downloadBytes',1],['downloadTimeout',1]];
+const inputs=[['budget',1],['concurrency',1],['heads',1],['beam',1],['splitStepV4',1],['splitStepV6',1],['splitInterval',5],['minSamplesSplit',1],['maxBitsV4',1],['maxBitsV6',1],['topN',1],['downloadTop',0],['downloadBytes',1],['downloadTimeout',1]];
 for(const[id,min]of inputs){
 const el=S(id);
 const v=parseFloat(el.value);
@@ -908,8 +904,7 @@ const body={cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean),
 budget:parseInt(S('budget').value)||2000,concurrency:parseInt(S('concurrency').value)||200,
 heads:parseInt(S('heads').value)||4,beam:parseInt(S('beam').value)||32,
 timeout:(parseFloat(S('timeout').value)||3)+'s',
-host:S('host').value||'example.com',path:S('path').value||'/cdn-cgi/trace',
-rounds:parseInt(S('rounds').value)||6,
+host:S('host').value||'example.com',
 skipFirst:parseInt(S('skipFirst').value)||1,
 diversityWeight:parseFloat(S('diversityWeight').value)||0.3,
 splitStepV4:parseInt(S('splitStepV4').value)||2,
@@ -918,7 +913,6 @@ splitInterval:parseInt(S('splitInterval').value)||20,
 minSamplesSplit:parseInt(S('minSamplesSplit').value)||5,
 maxBitsV4:parseInt(S('maxBitsV4').value)||24,
 maxBitsV6:parseInt(S('maxBitsV6').value)||56,
-seed:parseInt(S('seed').value)||0,
 downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').value,
 topN:parseInt(S('topN').value)||20,
 coloAllow:coloMode==='allow'?coloSelected.join(','):'',
