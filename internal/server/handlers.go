@@ -252,6 +252,9 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	if req.Path == "" {
 		probeCfg.Path = "/cdn-cgi/trace"
 	}
+	if req.SkipFirst <= 0 {
+		probeCfg.SkipFirst = 1
+	}
 
 	engReq := engine.Request{
 		CIDRs: cidrs,
