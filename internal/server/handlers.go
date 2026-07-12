@@ -291,6 +291,14 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			session.status = "completed"
 			session.result = resp.Top
 		}
+		// Filter out results with latency >= 6000ms
+		filtered := make([]engine.TopResult, 0, len(session.result))
+		for _, r := range session.result {
+			if r.ScoreMS < 6000 {
+				filtered = append(filtered, r)
+			}
+		}
+		session.result = filtered
 session.progress.Stage = 4
 		session.progress.Completed = 1
 		subs = make([]chan ProgressData, len(session.subs))
@@ -324,6 +332,9 @@ session.progress.Stage = 4
 
 			dlp := probe.NewDownloadProber(dlCfg)
 			maxTests := dlTop
+			if req.DownloadMode == "sequential" {
+				maxTests = len(session.result)
+			}
 
 			successCount := 0
 			for i := 0; i < maxTests && successCount < dlTop; i++ {

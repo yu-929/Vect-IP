@@ -467,6 +467,14 @@ go func() {
 			session.status = "completed"
 			session.result = resp.Top
 		}
+		// Filter out results with latency >= 6000ms
+		filtered := make([]engine.TopResult, 0, len(session.result))
+		for _, r := range session.result {
+			if r.ScoreMS < 6000 {
+				filtered = append(filtered, r)
+			}
+		}
+		session.result = filtered
 		// Stage 4: filtering/sorting
 		session.progress.Stage = 4
 		session.progress.Completed = 1
@@ -507,6 +515,9 @@ go func() {
 
 			dlp := probe.NewDownloadProber(dlCfg)
 			maxTests := dlTop
+			if req.DownloadMode == "sequential" {
+				maxTests = len(session.result)
+			}
 
 			successCount := 0
 			for i := 0; i < maxTests && successCount < dlTop; i++ {
