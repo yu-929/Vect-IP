@@ -347,9 +347,9 @@ session.progress.Stage = 4
 				r := &session.result[i]
 				var dr probe.DownloadResult
 				for attempt := 0; attempt < 3; attempt++ {
-					dctx, dcancel := context.WithTimeout(ctx, 3*time.Second)
-					dr = dlp.Download(dctx, r.IP)
-					dcancel()
+					dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
+					dr = dlp.Download(dlCtx, r.IP)
+					dlCancel()
 					if dr.OK {
 						break
 					}

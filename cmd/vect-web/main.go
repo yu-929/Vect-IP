@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -508,9 +509,16 @@ go func() {
 				Bytes:   dlBytes,
 			}
 			if req.CustomDownloadEnabled && req.CustomDownloadUrl != "" {
-				dlCfg.Path = req.CustomDownloadUrl
-				dlCfg.CustomURL = true
-				dlCfg.Bytes = 0
+				if u, err := url.Parse(req.CustomDownloadUrl); err == nil && u.Host != "" {
+					dlCfg.SNI = u.Host
+					dlCfg.HostName = u.Host
+					path := u.Path
+					if u.RawQuery != "" {
+						path += "?" + u.RawQuery
+					}
+					dlCfg.Path = path
+					dlCfg.CustomURL = true
+				}
 			}
 
 			dlp := probe.NewDownloadProber(dlCfg)
@@ -524,9 +532,9 @@ go func() {
 				r := &session.result[i]
 				var dr probe.DownloadResult
 				for attempt := 0; attempt < 3; attempt++ {
-					dctx, dcancel := context.WithTimeout(ctx, 3*time.Second)
-					dr = dlp.Download(dctx, r.IP)
-					dcancel()
+					dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
+					dr = dlp.Download(dlCtx, r.IP)
+					dlCancel()
 					if dr.OK {
 						break
 					}
