@@ -1292,7 +1292,6 @@ updateCidrCount();
 }else{document.execCommand('paste');}
 setTimeout(updateCidrCount,200);
 }
-}
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.remove('hidden');t.classList.add('show');
 clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2500);
