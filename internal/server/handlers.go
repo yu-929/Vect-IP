@@ -46,6 +46,7 @@ type ScanRequest struct {
 	SplitStepV6     int      `json:"splitStepV6"`
 	DiversityWeight float64  `json:"diversityWeight"`
 	IPVersion       int      `json:"ipVersion"`
+	TopN                int      `json:"topN"`
 	DownloadBytes   int64    `json:"downloadBytes"`
 	DownloadTimeout int      `json:"downloadTimeout"`
 }
@@ -193,9 +194,14 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		timeout = 3 * time.Second
 	}
 
+	topN := 20
+	if req.TopN > 0 {
+		topN = req.TopN
+	}
+
 	cfg := engine.Config{
 		Budget:          req.Budget,
-		TopN:            20,
+		TopN:            topN,
 		Concurrency:     req.Concurrency,
 		Heads:           req.Heads,
 		Beam:            req.Beam,
