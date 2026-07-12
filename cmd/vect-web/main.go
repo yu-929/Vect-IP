@@ -50,6 +50,11 @@ type ScanRequest struct {
 	SplitStepV4     int      `json:"splitStepV4"`
 	SplitStepV6     int      `json:"splitStepV6"`
 	DiversityWeight float64  `json:"diversityWeight"`
+	SplitInterval       int      `json:"splitInterval"`
+	MinSamplesSplit     int      `json:"minSamplesSplit"`
+	MaxBitsV4           int      `json:"maxBitsV4"`
+	MaxBitsV6           int      `json:"maxBitsV6"`
+	Seed                int64    `json:"seed"`
 	IPVersion           int      `json:"ipVersion"`
 	TopN                int      `json:"topN"`
 	CustomDownloadUrl   string   `json:"customDownloadUrl"`
@@ -373,6 +378,11 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		Beam:            req.Beam,
 		SplitStepV4:     req.SplitStepV4,
 		SplitStepV6:     req.SplitStepV6,
+		SplitInterval:   req.SplitInterval,
+		MinSamplesSplit: req.MinSamplesSplit,
+		MaxBitsV4:       req.MaxBitsV4,
+		MaxBitsV6:       req.MaxBitsV6,
+		Seed:            req.Seed,
 		DiversityWeight: req.DiversityWeight,
 		OnProgress: func(info engine.ProgressInfo) {
 			session.mu.Lock()
@@ -423,13 +433,6 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	if req.Budget <= 0 {
 		cfg.Budget = 2000
 	}
-	if req.SplitStepV4 <= 0 {
-		cfg.SplitStepV4 = 2
-	}
-	if req.SplitStepV6 <= 0 {
-		cfg.SplitStepV6 = 4
-	}
-
 	if req.ColoAllow != "" {
 		cfg.ColoAllow = strings.Split(req.ColoAllow, ",")
 	}
