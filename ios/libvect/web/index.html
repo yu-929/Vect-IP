@@ -75,7 +75,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8pt 10pt}
 .row .field{margin-bottom:0}
 .row .field label{white-space:nowrap}
-.range-hint{display:block;font-size:11px;color:var(--muted2);margin-top:3pt;font-weight:400;letter-spacing:-0.2px}
+.range-hint{font-size:11px;color:var(--muted2);margin-left:6px;font-weight:400;letter-spacing:-0.2px}
 
 /* ===== Colo Filter ===== */
 .colo-filter{display:grid;grid-template-columns:1fr 1fr;gap:8pt}
@@ -363,14 +363,14 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>IP 版本</label>
 <select id="ipVersion"><option value="4">IPv4</option><option value="6">IPv6</option></select>
 </div>
-<div class="field"><label>探测预算</label><input id="budget" type="number" value="2000" min="1"><span class="range-hint">≥1</span></div>
+<div class="field"><label>探测预算 <span class="range-hint">≥1</span></label><input id="budget" type="number" value="2000" min="1"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>并发数</label><input id="concurrency" type="number" value="200" min="1" max="500"><span class="range-hint">1-500</span></div>
-<div class="field"><label>保留 TOP</label><input id="topN" type="number" value="20" min="1" max="100"><span class="range-hint">1-100</span></div>
+<div class="field"><label>并发数 <span class="range-hint">1-500</span></label><input id="concurrency" type="number" value="200" min="1" max="500"></div>
+<div class="field"><label>保留 TOP <span class="range-hint">1-100</span></label><input id="topN" type="number" value="20" min="1" max="100"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>带宽测速 TOP</label><input id="downloadTop" type="number" value="5" min="0" max="50"><span class="range-hint">0-50, 0=不测速</span></div>
+<div class="field"><label>带宽测速 TOP <span class="range-hint">0-50, 0=不测速</span></label><input id="downloadTop" type="number" value="5" min="0" max="50"></div>
 <div class="field"><label>测速模式</label>
 <select id="downloadMode"><option value="all">默认模式</option><option value="sequential" selected>顺序模式</option></select>
 </div>
@@ -556,31 +556,31 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="settings-group">
 <div class="sg-title">高级参数</div>
 <div class="row">
-<div class="field"><label>搜索头 (Heads)</label><input id="heads" type="number" value="4" min="1" max="64"><span class="range-hint">1-64</span></div>
-<div class="field"><label>波束宽度 (Beam)</label><input id="beam" type="number" value="32" min="1" max="128"><span class="range-hint">1-128</span></div>
+<div class="field"><label>搜索头 (Heads) <span class="range-hint">1-64</span></label><input id="heads" type="number" value="4" min="1" max="64"></div>
+<div class="field"><label>波束宽度 (Beam) <span class="range-hint">1-128</span></label><input id="beam" type="number" value="32" min="1" max="128"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>超时 (s)</label><input id="timeout" type="number" value="3" step="0.5" min="0.5" max="30"><span class="range-hint">0.5-30</span></div>
-<div class="field"><label>测试轮次</label><input id="rounds" type="number" value="6" min="1" max="20"><span class="range-hint">1-20</span></div>
+<div class="field"><label>超时 (s) <span class="range-hint">0.5-30</span></label><input id="timeout" type="number" value="3" step="0.5" min="0.5" max="30"></div>
+<div class="field"><label>测试轮次 <span class="range-hint">1-20</span></label><input id="rounds" type="number" value="6" min="1" max="20"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>多样性权重</label><input id="diversityWeight" type="number" value="0.3" step="0.05" min="0" max="1"><span class="range-hint">0-1</span></div>
-<div class="field"><label>跳过首次</label><input id="skipFirst" type="number" value="1" min="0" max="5"><span class="range-hint">0-5</span></div>
+<div class="field"><label>多样性权重 <span class="range-hint">0-1</span></label><input id="diversityWeight" type="number" value="0.3" step="0.05" min="0" max="1"></div>
+<div class="field"><label>跳过首次 <span class="range-hint">0-5</span></label><input id="skipFirst" type="number" value="1" min="0" max="5"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>IPv4 下钻步长</label><input id="splitStepV4" type="number" value="2" min="1" max="8"><span class="range-hint">1-8</span></div>
-<div class="field"><label>IPv6 下钻步长</label><input id="splitStepV6" type="number" value="4" min="1" max="16"><span class="range-hint">1-16</span></div>
+<div class="field"><label>IPv4 下钻步长 <span class="range-hint">1-8</span></label><input id="splitStepV4" type="number" value="2" min="1" max="8"></div>
+<div class="field"><label>IPv6 下钻步长 <span class="range-hint">1-16</span></label><input id="splitStepV6" type="number" value="4" min="1" max="16"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>拆分间隔</label><input id="splitInterval" type="number" value="20" min="5" max="50"><span class="range-hint">5-50</span></div>
-<div class="field"><label>最小采样拆分</label><input id="minSamplesSplit" type="number" value="5" min="1" max="20"><span class="range-hint">1-20</span></div>
+<div class="field"><label>拆分间隔 <span class="range-hint">5-50</span></label><input id="splitInterval" type="number" value="20" min="5" max="50"></div>
+<div class="field"><label>最小采样拆分 <span class="range-hint">1-20</span></label><input id="minSamplesSplit" type="number" value="5" min="1" max="20"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>IPv4 最大前缀</label><input id="maxBitsV4" type="number" value="24" min="1" max="32"><span class="range-hint">1-32</span></div>
-<div class="field"><label>IPv6 最大前缀</label><input id="maxBitsV6" type="number" value="56" min="1" max="128"><span class="range-hint">1-128</span></div>
+<div class="field"><label>IPv4 最大前缀 <span class="range-hint">1-32</span></label><input id="maxBitsV4" type="number" value="24" min="1" max="32"></div>
+<div class="field"><label>IPv6 最大前缀 <span class="range-hint">1-128</span></label><input id="maxBitsV6" type="number" value="56" min="1" max="128"></div>
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>随机种子</label><input id="seed" type="number" value="0" min="0" max="999999"><span class="range-hint">≥0, 0=随机</span></div>
+<div class="field"><label>随机种子 <span class="range-hint">≥0, 0=随机</span></label><input id="seed" type="number" value="0" min="0" max="999999"></div>
 <div class="field"><label>目标域名</label><input id="host" value="example.com"></div>
 </div>
 <div class="row" style="margin-top:8pt">
@@ -607,8 +607,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <input id="customDlUrl" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 10pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:40pt;box-sizing:border-box" placeholder="https://example.com/100mb.bin">
 </div>
 <div class="row" style="margin-top:8pt">
-<div class="field"><label>测速文件大小 (MB)</label><input id="downloadBytes" type="number" value="1" min="1" max="1000"><span class="range-hint">1-1000</span></div>
-<div class="field"><label>单次超时 (s)</label><input id="downloadTimeout" type="number" value="3" min="1" max="120"><span class="range-hint">1-120</span></div>
+<div class="field"><label>测速文件大小 (MB) <span class="range-hint">1-1000</span></label><input id="downloadBytes" type="number" value="1" min="1" max="1000"></div>
+<div class="field"><label>单次超时 (s) <span class="range-hint">1-120</span></label><input id="downloadTimeout" type="number" value="3" min="1" max="120"></div>
 </div>
 </div>
 
