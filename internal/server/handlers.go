@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/yu-929/Vect-IP/internal/dns"
 	"github.com/yu-929/Vect-IP/internal/engine"
 	"github.com/yu-929/Vect-IP/internal/probe"
 )
@@ -121,6 +122,7 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	mux.HandleFunc("/api/traceroute/", handleTraceroute)
 	mux.HandleFunc("/api/route-type/", handleRouteType)
 	mux.HandleFunc("/api/route-type", handleBatchRouteType)
+	mux.HandleFunc("/api/dns-upload", handleDNSUpload)
 	mux.HandleFunc("/api/health", handleHealth)
 	mux.HandleFunc("/api/colo-discover", handleColoDiscover)
 
@@ -1276,4 +1278,76 @@ func handleColoDiscover(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(entries)
+}
+
+func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Provider  string   `json:"provider"`
+		Token     string   `json:"token"`
+		Zone      string   `json:"zone"`
+		Subdomain string   `json:"subdomain"`
+		Count     int      `json:"count"`
+		IPs       []string `json:"ips"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	if req.Provider == "" || req.Token == "" || req.Zone == "" || req.Subdomain == "" {
+		http.Error(w, "provider, token, zone, subdomain required", 400)
+		return
+	}
+	if len(req.IPs) == 0 {
+		http.Error(w, "no IPs provided", 400)
+		return
+	}
+
+	ips := make([]netip.Addr, 0, len(req.IPs))
+	for _, s := range req.IPs {
+		ip, err := netip.ParseAddr(s)
+		if err != nil {
+			continue
+		}
+		ips = append(ips, ip)
+	}
+	if len(ips) == 0 {
+		http.Error(w, "no valid IPs parsed", 400)
+		return
+	}
+
+	count := req.Count
+	if count <= 0 || count > len(ips) {
+		count = len(ips)
+	}
+
+	cfg := dns.Config{
+		Provider:    req.Provider,
+		Token:       req.Token,
+		Zone:        req.Zone,
+		Subdomain:   req.Subdomain,
+		UploadCount: count,
+	}
+	provider, err := dns.NewProvider(cfg)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+	defer cancel()
+
+	if err := dns.Upload(ctx, provider, req.Subdomain, ips[:count], false); err != nil {
+		http.Error(w, "upload failed: "+err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok":    true,
+		"count": count,
+	})
 }
