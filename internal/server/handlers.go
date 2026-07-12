@@ -360,8 +360,8 @@ session.progress.Stage = 4
 				// Send download progress with per-IP details
 				session.mu.Lock()
 				session.progress.Stage = 5
-				session.progress.Completed = i + 1
-				session.progress.Budget = maxTests
+				session.progress.Completed = successCount
+				session.progress.Budget = dlTop
 				session.progress.DownloadIP = r.IP.String()
 				session.progress.DownloadMbps = dr.Mbps
 				dlSubs := make([]chan ProgressData, len(session.subs))
