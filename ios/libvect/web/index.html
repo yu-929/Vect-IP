@@ -332,6 +332,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
 </button>
+<button type="button" class="btn-icon-sm" onclick="pasteCidr()" title="粘贴">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="2" width="12" height="16" rx="2"/><path d="M7 2V1h6v1"/></svg>
+</button>
 <button type="button" class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();" title="清空">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
 </button>
@@ -1274,6 +1277,17 @@ showToast('已导入 '+lines.length+' 条');
 };
 reader.readAsText(file);
 e.target.value='';
+}
+async function pasteCidr(){
+try{
+const text=await navigator.clipboard.readText();
+const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
+if(!lines.length){showToast('剪贴板为空');return;}
+const existing=S('cidrs').value;
+S('cidrs').value=existing+(existing?'\n':'')+lines.join('\n');
+updateCidrCount();
+showToast('已粘贴 '+lines.length+' 条');
+}catch(e){showToast('粘贴失败，请检查剪贴板权限');}
 }
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.remove('hidden');t.classList.add('show');
