@@ -1278,16 +1278,20 @@ showToast('已导入 '+lines.length+' 条');
 reader.readAsText(file);
 e.target.value='';
 }
-async function pasteCidr(){
-try{
-const text=await navigator.clipboard.readText();
+function pasteCidr(){
+const ta=S('cidrs');
+ta.focus();
+if(navigator.clipboard&&navigator.clipboard.readText){
+navigator.clipboard.readText().then(text=>{
 const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
-if(!lines.length){showToast('剪贴板为空');return;}
-const existing=S('cidrs').value;
-S('cidrs').value=existing+(existing?'\n':'')+lines.join('\n');
+if(!lines.length)return;
+const existing=ta.value;
+ta.value=existing+(existing?'\n':'')+lines.join('\n');
 updateCidrCount();
-showToast('已粘贴 '+lines.length+' 条');
-}catch(e){showToast('粘贴失败，请检查剪贴板权限');}
+}).catch(()=>document.execCommand('paste'));
+}else{document.execCommand('paste');}
+setTimeout(updateCidrCount,200);
+}
 }
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.remove('hidden');t.classList.add('show');
