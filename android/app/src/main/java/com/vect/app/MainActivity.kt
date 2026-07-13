@@ -54,22 +54,35 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 binary.setExecutable(true)
+                android.util.Log.i("Vect", "binary size: ${binary.length()}, executable: ${binary.canExecute()}")
 
                 // Start server as subprocess
                 val pb = ProcessBuilder(binary.absolutePath)
                     .directory(binDir)
                     .redirectErrorStream(true)
                 serverProcess = pb.start()
+                android.util.Log.i("Vect", "server process started")
 
                 // Read startup output in background
                 val reader = BufferedReader(InputStreamReader(serverProcess!!.inputStream))
+                val output = StringBuffer()
                 thread(isDaemon = true) {
                     try {
                         while (true) {
                             val line = reader.readLine() ?: break
+                            output.append(line).append('\n')
                             android.util.Log.i("Vect", "server: $line")
                         }
                     } catch (_: Exception) {}
+                }
+
+                // Wait briefly, then check if process is still alive
+                Thread.sleep(500)
+                if (!serverProcess!!.isAlive) {
+                    val exitCode = serverProcess!!.exitValue()
+                    android.util.Log.e("Vect", "server exited immediately with code: $exitCode, output: ${output}")
+                    runOnUiThread { showError("Server crashed on startup (exit code: $exitCode)\n\nOutput:\n$output") }
+                    return@execute
                 }
 
                 // Wait for server to be ready
