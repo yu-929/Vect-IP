@@ -305,7 +305,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="tab-content active" id="tab-scan">
 
 <!-- Status Overview -->
-<div class="glass-card" id="localIPCard" style="display:flex;flex-direction:column">
+<div class="glass-card" id="localIPCard" style="display:flex;flex-direction:column;min-height:180pt">
 <div class="card-header">
 <div class="card-title">本地网络</div>
 <button class="refresh-btn" onclick="fetchLocalIP()" title="刷新">
@@ -313,7 +313,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </button>
 </div>
 <div class="local-grid" id="localInfo">
-<div class="local-row"><span class="local-label">公网IP</span><span class="local-val public" id="liPublic">--</span><button class="local-copy" onclick="copyText(document.getElementById('liPublic').textContent)" title="复制公网IP"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 3V2a1 1 0 011-1h4a1 1 0 011 1v1"/></svg></button></div>
+<div class="local-row" onclick="copyText(document.getElementById('liPublic').textContent)" style="cursor:pointer;-webkit-tap-highlight-color:transparent"><span class="local-label">公网IP</span><span class="local-val public" id="liPublic">--</span></div>
 <div class="local-row"><span class="local-label">本地IP</span><span class="local-val" id="liLocal">--</span></div>
 <div class="local-row"><span class="local-label">运营商</span><span class="local-val" id="liISP">--</span></div>
 <div class="local-row"><span class="local-label">位置</span><span class="local-val" id="liLocation">--</span></div>
