@@ -276,6 +276,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .section:first-child{border-top:none;padding-top:0}
 .section:last-child{margin-bottom:0}
 
+.pm-opt:hover{background:rgba(0,119,237,0.08)}
+.pm-opt:active{background:rgba(0,119,237,0.15)}
+
 /* ===== Loading Ring ===== */
 .loading-ring{display:inline-block;width:16pt;height:16pt;border:2px solid var(--glass-border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -324,13 +327,13 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button class="seg-btn" data-budget="2000" data-concurrency="200" data-topn="20" data-download-top="5">反代模式</button>
 <button class="seg-btn" data-budget="3000" data-concurrency="200" data-topn="20" data-download-top="5">官方模式</button>
 </div>
-<div id="presetRow" style="display:none;margin-top:8pt">
-<select id="cidrPreset" onchange="applyCidrPreset()" style="width:100%;padding:8pt 12pt;line-height:1.35;background:transparent;border:0.5px solid var(--glass-border);border-radius:12pt;color:var(--secondary);font-size:13px;font-weight:500;outline:none;font-family:inherit;text-align:center;text-align-last:center;box-sizing:border-box;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg width='10' height='6' fill='%238E8E93' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12pt center;padding-right:32pt;transition:all .3s">
-<option value="" disabled selected>预设网段</option>
-<option value="official-v4">官方列表 IPv4</option>
-<option value="official-v6">官方列表 IPv6</option>
-<option value="xiaoqian-v4">小钱优选列表 V4</option>
-</select>
+<div id="presetRow" style="display:none;margin-top:8pt;position:relative">
+<div id="presetTrigger" onclick="toggleCidrMenu()" style="width:100%;padding:8pt 36pt 8pt 8pt;border:0.5px solid var(--glass-border);border-radius:11pt;color:var(--secondary);font-size:13px;font-weight:500;font-family:inherit;text-align:center;background:transparent;cursor:pointer;box-sizing:border-box;letter-spacing:-0.1px;transition:all .3s cubic-bezier(0.25,0.1,0.25,1);position:relative"><span id="presetLabel">预设网段</span><span style="position:absolute;right:12pt;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:10px">▼</span></div>
+<div id="presetMenu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--card-bg);border:0.5px solid var(--glass-border);border-radius:12pt;margin-top:4pt;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12)">
+<div class="pm-opt" onclick="selectCidrPreset('official-v4','官方列表 IPv4')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv4</div>
+<div class="pm-opt" onclick="selectCidrPreset('official-v6','官方列表 IPv6')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv6</div>
+<div class="pm-opt" onclick="selectCidrPreset('xiaoqian-v4','小钱优选列表 V4')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center">小钱优选列表 V4</div>
+</div>
 </div>
 
 <div class="section">
@@ -813,14 +816,20 @@ const cidrPresets={
 'official-v6':['2400:cb00::/32','2606:4700::/32','2803:f800::/32','2405:b500::/32','2405:8100::/32','2a06:98c0::/29','2c0f:f248::/32'],
 'xiaoqian-v4':['162.159.32.0/20','198.41.223.0/24','173.245.58.0/23','8.35.211.0/24','8.39.125.0/24','188.164.248.0/24','108.162.198.0/24','162.159.38.0/23','91.193.58.0/23','172.66.0.0/22','104.16.144.0/20','104.16.240.0/20','104.17.16.0/20','104.17.48.0/20','104.17.96.0/20','104.17.112.0/20','104.17.144.0/20','104.17.160.0/20','104.17.176.0/20','104.17.208.0/20','104.18.33.0/24','104.19.32.0/22','104.19.48.0/21','104.19.144.0/21','198.41.208.0/23','104.26.0.0/20','172.67.64.0/20']
 };
-function applyCidrPreset(){
-const v=S('cidrPreset').value;
-if(!v)return;
-S('cidrs').value=cidrPresets[v].join('\n');
-updateCidrCount();
-showToast('已加载 '+cidrPresets[v].length+' 条前缀');
-S('cidrPreset').selectedIndex=0;
+function toggleCidrMenu(){
+const m=S('presetMenu');
+m.style.display=m.style.display==='none'?'':'none';
 }
+function selectCidrPreset(key,label){
+S('cidrs').value=cidrPresets[key].join('\n');
+updateCidrCount();
+showToast('已加载 '+cidrPresets[key].length+' 条前缀');
+S('presetLabel').textContent=label;
+S('presetMenu').style.display='none';
+}
+document.addEventListener('click',e=>{
+if(!e.target.closest('#presetRow'))S('presetMenu').style.display='none';
+});
 if(document.querySelector('.seg-btn'))document.querySelector('.seg-btn').classList.add('active');
 
 // Local IP
