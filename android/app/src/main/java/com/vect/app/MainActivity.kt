@@ -15,10 +15,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStreamReader
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -58,10 +61,22 @@ class MainActivity : AppCompatActivity() {
                     .redirectErrorStream(true)
                 serverProcess = pb.start()
 
+                // Read startup output in background
+                val reader = BufferedReader(InputStreamReader(serverProcess!!.inputStream))
+                thread(isDaemon = true) {
+                    try {
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            android.util.Log.i("Vect", "server: $line")
+                        }
+                    } catch (_: Exception) {}
+                }
+
                 // Wait for server to be ready
                 val startTime = System.currentTimeMillis()
                 val timeout = 10000L
                 var ready = false
+                var lastError = ""
 
                 while (System.currentTimeMillis() - startTime < timeout && !ready) {
                     try {
@@ -75,7 +90,8 @@ class MainActivity : AppCompatActivity() {
                         if (code == 200) {
                             ready = true
                         }
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        lastError = e.message ?: "unknown error"
                         Thread.sleep(200)
                     }
                 }
@@ -83,10 +99,14 @@ class MainActivity : AppCompatActivity() {
                 if (ready) {
                     runOnUiThread { loadWebView() }
                 } else {
-                    android.util.Log.e("Vect", "Server did not start in time")
+                    val log = try { reader.readLine() ?: "" } catch (_: Exception) { "" }
+                    val msg = "Server did not start in 10s\n\nLast error: $lastError\n\nServer output: $log"
+                    android.util.Log.e("Vect", msg)
+                    runOnUiThread { showError(msg) }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("Vect", "Failed to start server", e)
+                runOnUiThread { showError("Failed: ${e.message}") }
             }
         }
     }
@@ -183,6 +203,14 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         NotificationManagerCompat.from(this).notify(1001, notification)
+    }
+
+    private fun showError(msg: String) {
+        findViewById<android.widget.TextView>(R.id.errorText).apply {
+            text = msg
+            visibility = android.view.View.VISIBLE
+        }
+        findViewById<android.webkit.WebView>(R.id.webView).visibility = android.view.View.GONE
     }
 
     override fun onDestroy() {
