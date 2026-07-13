@@ -55,28 +55,23 @@ class MainActivity : AppCompatActivity() {
                 }
                 binary.setExecutable(true)
 
-                // On Android 10+, app data dir is noexec. Copy to native lib dir instead.
-                val nativeLibDir = File(applicationInfo.nativeLibraryDir ?: "")
-                val execBinary = if (nativeLibDir.exists() && nativeLibDir.canWrite()) {
-                    val execFile = File(nativeLibDir, "libvect_server.so")
-                    binary.inputStream().use { src ->
-                        FileOutputStream(execFile).use { dst ->
-                            src.copyTo(dst)
-                        }
-                    }
-                    execFile.setExecutable(true)
-                    android.util.Log.i("Vect", "copied to native lib dir: ${execFile.absolutePath}")
-                    execFile
+                // Android 10+ 的 app data 目录挂载为 noexec，无法直接执行二进制
+                // 使用 /system/bin/linker64 加载 ELF，绕过 noexec 限制
+                // linker 将 ELF 段 mmap 到匿名可执行内存，无需文件可执行权限
+                val linker = File("/system/bin/linker64")
+                val execArgs = if (linker.exists()) {
+                    android.util.Log.i("Vect", "using linker64 to bypass noexec")
+                    arrayOf(linker.absolutePath, binary.absolutePath)
                 } else {
-                    android.util.Log.w("Vect", "native lib dir not writable, using original: ${binary.absolutePath}")
-                    binary
+                    android.util.Log.w("Vect", "linker64 not found, trying direct execution: ${binary.absolutePath}")
+                    arrayOf(binary.absolutePath)
                 }
 
-                android.util.Log.i("Vect", "binary size: ${execBinary.length()}, executable: ${execBinary.canExecute()}")
+                android.util.Log.i("Vect", "binary size: ${binary.length()}")
 
 // Start server as subprocess
-val pb = ProcessBuilder(execBinary.absolutePath)
-    .directory(execBinary.parentFile)
+val pb = ProcessBuilder(*execArgs)
+    .directory(binDir)
     .redirectErrorStream(true)
 serverProcess = pb.start()
                 android.util.Log.i("Vect", "server process started")
