@@ -794,11 +794,11 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 		}
 		if json.NewDecoder(resp.Body).Decode(&ipData) == nil {
 			info.PublicIP = ipData.Query
-			info.ISP = ipData.ISP
+			info.ISP = translateISP(ipData.ISP)
 			if ipData.Org != "" && ipData.Org != ipData.ISP {
-				info.ISP = ipData.Org
+				info.ISP = translateISP(ipData.Org)
 			}
-			info.Location = ipData.City + ", " + ipData.Region + ", " + ipData.Country
+			info.Location = translateLocation(ipData.City + ", " + ipData.Region + ", " + ipData.Country)
 		}
 	}
 	if info.PublicIP == "" {
@@ -819,6 +819,78 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
+}
+
+func translateISP(isp string) string {
+	m := map[string]string{
+		"Alibaba.com Singapore E-Commerce Private Limited": "阿里云新加坡",
+		"Alibaba Cloud":                     "阿里云",
+		"Alibaba":                            "阿里巴巴",
+		"Cloudflare Inc":                     "Cloudflare",
+		"Cloudflare, Inc.":                   "Cloudflare",
+		"Amazon.com, Inc.":                   "亚马逊云(AWS)",
+		"Amazon Data Services":               "亚马逊云(AWS)",
+		"Amazon":                             "亚马逊云(AWS)",
+		"Google LLC":                         "谷歌云(GCP)",
+		"Google Cloud":                       "谷歌云(GCP)",
+		"Microsoft Corporation":              "微软云(Azure)",
+		"Microsoft Azure":                    "微软云(Azure)",
+		"DigitalOcean, LLC":                  "DigitalOcean",
+		"Linode, LLC":                        "Linode",
+		"Vultr Holdings LLC":                 "Vultr",
+		"Tencent Cloud Computing":            "腾讯云",
+		"Huawei Cloud":                       "华为云",
+		"China Telecom":                      "中国电信",
+		"China Unicom":                       "中国联通",
+		"China Mobile":                       "中国移动",
+		"Hong Kong Broadband Network":        "香港宽频",
+		"HKT Limited":                        "香港电讯",
+		"PCCW":                               "电讯盈科",
+		"Netvigator":                         "网上行",
+	}
+	if v, ok := m[isp]; ok {
+		return v
+	}
+	return isp
+}
+
+func translateLocation(loc string) string {
+	m := map[string]string{
+		"Kowloon":     "九龙",
+		"Hong Kong":   "香港",
+		"Macau":       "澳门",
+		"Taipei":      "台北",
+		"Tokyo":       "东京",
+		"Seoul":       "首尔",
+		"Singapore":   "新加坡",
+		"Bangkok":     "曼谷",
+		"London":      "伦敦",
+		"Frankfurt":   "法兰克福",
+		"Amsterdam":   "阿姆斯特丹",
+		"Paris":       "巴黎",
+		"Dublin":      "都柏林",
+		"Milan":       "米兰",
+		"Zurich":      "苏黎世",
+		"Stockholm":   "斯德哥尔摩",
+		"Moscow":      "莫斯科",
+		"Sydney":      "悉尼",
+		"Melbourne":   "墨尔本",
+		"Silicon Valley": "硅谷",
+		"San Jose":    "圣何塞",
+		"Los Angeles": "洛杉矶",
+		"Dallas":      "达拉斯",
+		"Chicago":     "芝加哥",
+		"New York":    "纽约",
+		"Ashburn":     "阿什本",
+		"Miami":       "迈阿密",
+		"Toronto":     "多伦多",
+		"Vancouver":   "温哥华",
+		"Montreal":    "蒙特利尔",
+	}
+	for en, zh := range m {
+		loc = strings.ReplaceAll(loc, en, zh)
+	}
+	return loc
 }
 
 type TracerouteHop struct {
