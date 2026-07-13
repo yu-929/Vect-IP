@@ -331,7 +331,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <span style="font-size:13px;color:var(--secondary);font-weight:500;flex-shrink:0">预设网段</span>
 <div style="position:relative;flex:1;margin-left:10pt;max-width:60%">
 <div id="presetTrigger" onclick="toggleCidrMenu()" style="width:100%;padding:8pt 30pt 8pt 10pt;border:0.5px solid var(--glass-border);border-radius:11pt;color:var(--text);font-size:13px;font-weight:500;font-family:inherit;text-align:left;background:transparent;cursor:pointer;box-sizing:border-box;letter-spacing:-0.1px;transition:all .3s cubic-bezier(0.25,0.1,0.25,1);position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span id="presetLabel">请选择</span><span style="position:absolute;right:10pt;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:10px">▼</span></div>
-<div id="presetMenu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--card-bg);border:0.5px solid var(--glass-border);border-radius:12pt;margin-top:4pt;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12)">
+<div id="presetMenu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--glass-bg);border:0.5px solid var(--glass-border);border-radius:12pt;margin-top:4pt;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12)">
 <div class="pm-opt" onclick="selectCidrPreset('official-v4','官方列表 IPv4')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:left;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv4</div>
 <div class="pm-opt" onclick="selectCidrPreset('official-v6','官方列表 IPv6')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:left;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv6</div>
 <div class="pm-opt" onclick="selectCidrPreset('xiaoqian-v4','小钱优选列表 V4')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:left">小钱优选列表 V4</div>
@@ -811,6 +811,7 @@ document.querySelectorAll('.seg-btn').forEach(b=>{
 		if(b.dataset.topn) S('topN').value=b.dataset.topn;
 		if(b.dataset.downloadTop) S('downloadTop').value=b.dataset.downloadTop;
 		S('presetRow').style.display=b.textContent==='官方模式'?'flex':'none';
+S('presetRow').style.marginBottom=b.textContent==='官方模式'?'10pt':'0';
 		progressLocked=false;S('statusPanel').style.display='none';
 	});
 });
