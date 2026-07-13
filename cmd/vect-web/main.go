@@ -968,7 +968,7 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 			if ipData.Org != "" && ipData.Org != ipData.ISP {
 				info.ISP = translateISP(ipData.Org)
 			}
-			info.Location = translateLocation(ipData.City + ", " + ipData.Region + ", " + ipData.Country)
+			info.Location = translateLocation(ipData.City + " | " + ipData.Region + " | " + ipData.Country)
 		}
 	}
 	// Fallback to ipify if ip-api.com failed
