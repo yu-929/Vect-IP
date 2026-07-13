@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Wait briefly, then check if process is still alive
-                Thread.sleep(500)
+                Thread.sleep(2000)
                 if (!serverProcess!!.isAlive) {
                     val exitCode = serverProcess!!.exitValue()
                     android.util.Log.e("Vect", "server exited immediately with code: $exitCode, output: ${output}")
@@ -85,9 +85,13 @@ class MainActivity : AppCompatActivity() {
                     return@execute
                 }
 
+                // Read whatever output we have so far
+                val initialOutput = output.toString()
+                android.util.Log.i("Vect", "server initial output: $initialOutput")
+
                 // Wait for server to be ready
                 val startTime = System.currentTimeMillis()
-                val timeout = 10000L
+                val timeout = 20000L
                 var ready = false
                 var lastError = ""
 
@@ -113,7 +117,7 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread { loadWebView() }
                 } else {
                     val log = try { reader.readLine() ?: "" } catch (_: Exception) { "" }
-                    val msg = "Server did not start in 10s\n\nLast error: $lastError\n\nServer output: $log"
+                    val msg = "Server did not start in 20s\n\nLast error: $lastError\n\nInitial output: $initialOutput\n\nLatest: $log"
                     android.util.Log.e("Vect", msg)
                     runOnUiThread { showError(msg) }
                 }

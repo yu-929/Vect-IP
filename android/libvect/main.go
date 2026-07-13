@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/yu-929/Vect-IP/internal/server"
 )
@@ -12,9 +13,22 @@ import (
 var webFS embed.FS
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetOutput(os.Stdout)
+
+	log.Println("=== VECT SERVER STARTING ===")
+	log.Println("GOOS=android GOARCH=arm64")
+	log.Println("Creating server...")
+
 	srv := server.SetupServer(8080, webFS, "http://127.0.0.1:8091")
-	log.Printf("starting vect server on 127.0.0.1:8080")
+
+	log.Printf("Server configured, listening on %s", srv.Addr)
+	log.Println("Calling ListenAndServe...")
+	os.Stdout.Sync()
+
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("server error: %v", err)
+		log.Printf("server error: %v", err)
+		os.Stdout.Sync()
+		os.Exit(1)
 	}
 }
