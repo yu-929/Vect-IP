@@ -54,13 +54,31 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 binary.setExecutable(true)
-                android.util.Log.i("Vect", "binary size: ${binary.length()}, executable: ${binary.canExecute()}")
+
+                // On Android 10+, app data dir is noexec. Copy to native lib dir instead.
+                val nativeLibDir = File(applicationInfo.nativeLibraryDir ?: "")
+                val execBinary = if (nativeLibDir.exists() && nativeLibDir.canWrite()) {
+                    val execFile = File(nativeLibDir, "libvect_server.so")
+                    binary.inputStream().use { src ->
+                        FileOutputStream(execFile).use { dst ->
+                            src.copyTo(dst)
+                        }
+                    }
+                    execFile.setExecutable(true)
+                    android.util.Log.i("Vect", "copied to native lib dir: ${execFile.absolutePath}")
+                    execFile
+                } else {
+                    android.util.Log.w("Vect", "native lib dir not writable, using original: ${binary.absolutePath}")
+                    binary
+                }
+
+                android.util.Log.i("Vect", "binary size: ${execBinary.length()}, executable: ${execBinary.canExecute()}")
 
 // Start server as subprocess
-val pb = ProcessBuilder(binary.absolutePath)
-    .directory(binDir)
+val pb = ProcessBuilder(execBinary.absolutePath)
+    .directory(execBinary.parentFile)
     .redirectErrorStream(true)
-                serverProcess = pb.start()
+serverProcess = pb.start()
                 android.util.Log.i("Vect", "server process started")
 
                 // Read startup output in background
