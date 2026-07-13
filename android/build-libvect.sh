@@ -22,6 +22,7 @@ cd "$PROJECT_DIR"
 export CGO_ENABLED=0
 export GOOS=android
 export GOARCH=arm64
+export GOARM64=v8.0
 
 go build \
     -ldflags="-s -w" \
