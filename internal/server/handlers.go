@@ -781,7 +781,7 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("http://ip-api.com/json/")
+	resp, err := client.Get("http://ip-api.com/json/?lang=zh-CN")
 	if err == nil {
 		defer resp.Body.Close()
 		var ipData struct {
