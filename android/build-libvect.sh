@@ -21,15 +21,16 @@ cd "$PROJECT_DIR"
 
 export CGO_ENABLED=0
 export GOOS=android
-export GOARCH=arm64
-export GOARM64=v8.0
 
-go build \
+echo "  -> Building arm64..."
+GOARCH=arm64 GOOS=linux go build \
     -ldflags="-s -w" \
-    -o "$BIN_DIR/vect_server" \
+    -o "$BIN_DIR/vect_server_arm64" \
     ./android/libvect/
+echo "    -> $BIN_DIR/vect_server_arm64 ($(ls -lh "$BIN_DIR/vect_server_arm64" | awk '{print $5}'))"
 
-echo "    -> $BIN_DIR/vect_server ($(ls -lh "$BIN_DIR/vect_server" | awk '{print $5}'))"
+# Copy as main binary
+cp "$BIN_DIR/vect_server_arm64" "$BIN_DIR/vect_server"
 
 # Clean up copied web assets
 rm -rf "$SCRIPT_DIR/libvect/web"

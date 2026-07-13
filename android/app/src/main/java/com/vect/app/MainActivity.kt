@@ -56,10 +56,10 @@ class MainActivity : AppCompatActivity() {
                 binary.setExecutable(true)
                 android.util.Log.i("Vect", "binary size: ${binary.length()}, executable: ${binary.canExecute()}")
 
-                // Start server as subprocess
-                val pb = ProcessBuilder(binary.absolutePath)
-                    .directory(binDir)
-                    .redirectErrorStream(true)
+// Start server as subprocess
+val pb = ProcessBuilder("/system/bin/sh", "-c", binary.absolutePath)
+    .directory(binDir)
+    .redirectErrorStream(true)
                 serverProcess = pb.start()
                 android.util.Log.i("Vect", "server process started")
 
