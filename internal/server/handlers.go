@@ -119,7 +119,7 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(subFS)))
+	mux.Handle("/", noCache(http.FileServer(http.FS(subFS))))
 	mux.HandleFunc("/api/scan", handleScan)
 	mux.HandleFunc("/api/scan/", handleScanByID)
 	mux.HandleFunc("/api/resolve-asn/", handleResolveASN)
@@ -137,6 +137,15 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 		Handler: mux,
 	}
 	return server
+}
+
+func noCache(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func handleScan(w http.ResponseWriter, r *http.Request) {
