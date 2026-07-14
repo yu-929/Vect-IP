@@ -45,4 +45,8 @@ convert "$LOGO_SRC" -colorspace sRGB -resize 96x96 -background white -gravity ce
 convert "$LOGO_SRC" -colorspace sRGB -resize 144x144 -background white -gravity center -extent 144x144 -define png:color-type=6 "$ANDROID_RES/mipmap-xxhdpi/ic_launcher.png"
 convert "$LOGO_SRC" -colorspace sRGB -resize 192x192 -background white -gravity center -extent 192x192 -define png:color-type=6 "$ANDROID_RES/mipmap-xxxhdpi/ic_launcher.png"
 
+# Windows .ico (multi-size: 16,32,48,256)
+echo "  -> Windows icon..."
+convert "$LOGO_SRC" -resize 256x256 -define icon:auto-resize=256,48,32,16 "$SCRIPT_DIR/windows/app.ico"
+
 echo "==> Done."

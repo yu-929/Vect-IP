@@ -34,6 +34,9 @@ jobs:
       - name: Build CLI - macOS arm64
         run: GOOS=darwin GOARCH=arm64 go build -o build/vect-darwin-arm64 -ldflags="-s -w" ./cmd/vect/
 
+      - name: Generate icons (for Windows desktop)
+        run: ./generate-icons.sh
+
       - name: Build Windows Desktop (含图标)
         run: |
           go install github.com/akavel/rsrc@latest

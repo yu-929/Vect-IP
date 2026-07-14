@@ -39,4 +39,6 @@ android/app/src/main/assets/bin/
 # Windows desktop build artifacts
 windows/Vect.exe
 windows/rsrc.syso
+windows/app.ico
 
+new-icon.*
