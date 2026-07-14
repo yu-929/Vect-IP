@@ -24,6 +24,7 @@ export GOOS=android
 
 echo "  -> Building arm64..."
 GOARCH=arm64 GOOS=linux go build \
+    -buildmode=pie \
     -ldflags="-s -w" \
     -o "$BIN_DIR/vect_server_arm64" \
     ./android/libvect/
