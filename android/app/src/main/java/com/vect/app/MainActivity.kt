@@ -45,22 +45,31 @@ class MainActivity : AppCompatActivity() {
             try {
                 val binDir = File(cacheDir, "bin")
                 binDir.mkdirs()
-                val binary = File(binDir, "vect_server")
+
+                // Detect CPU architecture and select correct binary
+                val arch = android.os.Build.SUPPORTED_64_BIT_ABIS.firstOrNull() ?: "arm64-v8a"
+                val binaryName = when {
+                    arch.contains("x86_64") || arch.contains("x64") -> "vect_server_amd64"
+                    else -> "vect_server_arm64"
+                }
+                val binary = File(binDir, binaryName)
 
                 // Extract binary from assets
-                assets.open("bin/vect_server").use { input ->
+                assets.open("bin/$binaryName").use { input ->
                     FileOutputStream(binary).use { output ->
                         input.copyTo(output)
                     }
                 }
                 binary.setExecutable(true)
 
-                android.util.Log.i("Vect", "binary size: ${binary.length()}, executable: ${binary.canExecute()}, path: ${binary.absolutePath}")
+                android.util.Log.i("Vect", "arch=$arch binary=$binaryName size=${binary.length()} executable=${binary.canExecute()} path=${binary.absolutePath}")
 
 // Start server as subprocess
 val pb = ProcessBuilder(binary.absolutePath)
     .directory(binDir)
     .redirectErrorStream(true)
+pb.environment()["GOTRACEBACK"] = "crash"
+pb.environment()["GODEBUG"] = "cpu.arm64.lse=0"
 serverProcess = pb.start()
                 android.util.Log.i("Vect", "server process started")
 
