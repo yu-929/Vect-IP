@@ -45,7 +45,7 @@ jobs:
       - name: Build Go executable for Android
         run: |
           android/build-libvect.sh
-          ls -la android/app/src/main/assets/bin/vect_server
+          ls -la android/app/src/main/assets/bin/vect_server_*
 
       - name: Setup Gradle wrapper
         run: |
