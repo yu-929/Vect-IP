@@ -147,31 +147,10 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Ensure Assets.car
-        run: |
-          APP="build/derived/Build/Products/Release-iphoneos/VectApp.app"
-          echo "==> .app contents before:"
-          ls -la "$APP/"
-          if [ ! -f "$APP/Assets.car" ]; then
-            echo "==> Assets.car missing, compiling with actool..."
-            xcrun actool ios/VectApp/Assets.xcassets \
-              --compile "$APP" \
-              --platform iphoneos \
-              --minimum-deployment-target 16.0 \
-              --target-device iphone \
-              --target-device ipad \
-              --compress-pngs
-          fi
-          echo "==> .app contents after:"
-          ls -la "$APP/"
-
       - name: Package IPA
         run: |
           mkdir -p build/Payload
-          APP="build/derived/Build/Products/Release-iphoneos/VectApp.app"
-          echo "==> Copying .app from: $APP"
-          ls -la "$APP/"
-          cp -r "$APP" build/Payload/
+          cp -r build/derived/Build/Products/Release-iphoneos/VectApp.app build/Payload/
           cd build && zip -r VectApp.ipa Payload/
 
       - uses: actions/upload-artifact@v4

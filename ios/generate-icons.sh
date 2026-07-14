@@ -22,10 +22,7 @@ generate_icon() {
     local scale=$2
     local filename=$3
     local pixel_size=$(echo "$size * $scale" | bc | cut -d. -f1)
-    TMP=$(mktemp)
-    sips -z "$pixel_size" "$pixel_size" "$SOURCE_ICON" --out "$TMP" &>/dev/null
-    cp "$TMP" "$ASSETS_DIR/$filename"
-    rm -f "$TMP"
+    convert "$SOURCE_ICON" -resize "${pixel_size}x${pixel_size}" -define png:color-type=6 "$ASSETS_DIR/$filename"
     echo "  Generated $filename (${pixel_size}x${pixel_size})"
 }
 
