@@ -29,12 +29,11 @@ ios/VectApp/libvect.h
 /libvect
 
 # Android generated files
-android/app/src/main/jniLibs/*/libvect.so
+android/app/src/main/jniLibs/*/libvect_server.so
 android/app/src/main/cpp/libvect.h
 android/app/build/
 android/.gradle/
 local.properties
-android/app/src/main/assets/bin/
 
 # Windows desktop build artifacts
 windows/Vect.exe
