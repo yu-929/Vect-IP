@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate iOS app icons from the source logo
-# Requires: macOS with sips (built-in)
+# Requires: ImageMagick (convert)
 
 set -euo pipefail
 
@@ -8,6 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ASSETS_DIR="$SCRIPT_DIR/VectApp/Assets.xcassets/AppIcon.appiconset"
 SOURCE_ICON="$PROJECT_DIR/web/icon-1024.png"
+
+if ! command -v convert &>/dev/null; then
+    echo "ERROR: ImageMagick (convert) not found. Install with: brew install imagemagick"
+    exit 1
+fi
 
 if [ ! -f "$SOURCE_ICON" ]; then
     echo "ERROR: Source icon not found at $SOURCE_ICON"
@@ -22,7 +27,7 @@ generate_icon() {
     local scale=$2
     local filename=$3
     local pixel_size=$(echo "$size * $scale" | bc | cut -d. -f1)
-    sips -z "$pixel_size" "$pixel_size" "$SOURCE_ICON" --out "$ASSETS_DIR/$filename" > /dev/null 2>&1
+    convert "$SOURCE_ICON" -resize "${pixel_size}x${pixel_size}" "$ASSETS_DIR/$filename" 2>&1
     echo "  Generated $filename (${pixel_size}x${pixel_size})"
 }
 

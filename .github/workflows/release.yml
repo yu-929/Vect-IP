@@ -17,49 +17,8 @@ jobs:
       - uses: actions/setup-go@v5
         with: { go-version: '1.20' }
 
-      - run: mkdir -p build
-
-      - name: Build CLI - Linux amd64
-        run: GOOS=linux GOARCH=amd64 go build -o build/vect-linux-amd64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: Build CLI - Linux arm64
-        run: GOOS=linux GOARCH=arm64 go build -o build/vect-linux-arm64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: Build CLI - Windows amd64
-        run: GOOS=windows GOARCH=amd64 go build -o build/vect-windows-amd64.exe -ldflags="-s -w" ./cmd/vect/
-
-      - name: Build CLI - macOS amd64
-        run: GOOS=darwin GOARCH=amd64 go build -o build/vect-darwin-amd64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: Build CLI - macOS arm64
-        run: GOOS=darwin GOARCH=arm64 go build -o build/vect-darwin-arm64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: Generate icons (for Windows desktop)
-        run: ./generate-icons.sh
-
-      - name: Build Windows Desktop (含图标)
-        run: |
-          go install github.com/akavel/rsrc@latest
-          cd windows && rsrc -ico app.ico -o rsrc.syso && cd ..
-          GOOS=windows GOARCH=amd64 go build -o build/Vect.exe -ldflags="-s -w" ./windows/
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cli-desktop
-          path: build/
-          retention-days: 1
-
-  # ======== Android APK ========
-  build-apk:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with: { distribution: 'zulu', java-version: '17' }
-
-      - uses: actions/setup-go@v5
-        with: { go-version: '1.20' }
+      - name: Install ImageMagick
+        run: brew install imagemagick
 
       - name: Generate icons
         run: ./generate-icons.sh
