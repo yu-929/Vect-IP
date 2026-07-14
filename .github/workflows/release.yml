@@ -34,6 +34,11 @@ jobs:
       - name: Build CLI - macOS arm64
         run: GOOS=darwin GOARCH=arm64 go build -o build/vect-darwin-arm64 -ldflags="-s -w" ./cmd/vect/
 
+      - name: Install ImageMagick
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y && apt-get install -y imagemagick
+
       - name: Generate icons
         run: ./generate-icons.sh
 
