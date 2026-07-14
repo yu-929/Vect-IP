@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private fun startVectServer() {
         executor.execute {
             try {
-                val binDir = File(filesDir, "bin")
+                val binDir = File(cacheDir, "bin")
                 binDir.mkdirs()
                 val binary = File(binDir, "vect_server")
 
@@ -55,22 +55,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 binary.setExecutable(true)
 
-                // Android 10+ 的 app data 目录挂载为 noexec，无法直接执行二进制
-                // 使用 /system/bin/linker64 加载 ELF，绕过 noexec 限制
-                // linker 将 ELF 段 mmap 到匿名可执行内存，无需文件可执行权限
-                val linker = File("/system/bin/linker64")
-                val execArgs = if (linker.exists()) {
-                    android.util.Log.i("Vect", "using linker64 to bypass noexec")
-                    arrayOf(linker.absolutePath, binary.absolutePath)
-                } else {
-                    android.util.Log.w("Vect", "linker64 not found, trying direct execution: ${binary.absolutePath}")
-                    arrayOf(binary.absolutePath)
-                }
-
-                android.util.Log.i("Vect", "binary size: ${binary.length()}")
+                android.util.Log.i("Vect", "binary size: ${binary.length()}, executable: ${binary.canExecute()}, path: ${binary.absolutePath}")
 
 // Start server as subprocess
-val pb = ProcessBuilder(*execArgs)
+val pb = ProcessBuilder(binary.absolutePath)
     .directory(binDir)
     .redirectErrorStream(true)
 serverProcess = pb.start()
