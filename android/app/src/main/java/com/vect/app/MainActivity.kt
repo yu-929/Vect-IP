@@ -43,7 +43,8 @@ class MainActivity : AppCompatActivity() {
     private fun startVectServer() {
         executor.execute {
             try {
-                val binDir = File(cacheDir, "bin")
+                // Use filesDir instead of cacheDir: cache might be mounted noexec on MIUI/HyperOS
+                val binDir = File(filesDir, "bin")
                 binDir.mkdirs()
 
                 // Detect CPU architecture and select correct binary
@@ -61,6 +62,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 binary.setExecutable(true)
+
+                // Fallback: use Runtime.exec(chmod) if Java API didn't work
+                if (!binary.canExecute()) {
+                    try {
+                        Runtime.getRuntime().exec("chmod 755 ${binary.absolutePath}").waitFor()
+                    } catch (_: Exception) {}
+                }
 
                 android.util.Log.i("Vect", "arch=$arch binary=$binaryName size=${binary.length()} executable=${binary.canExecute()} path=${binary.absolutePath}")
 
