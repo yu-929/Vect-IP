@@ -1,16 +1,13 @@
 package main
 
 import (
-	"embed"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/yu-929/Vect-IP/internal/server"
+	"github.com/yu-929/Vect-IP/web"
 )
-
-//go:embed web
-var webFS embed.FS
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -20,7 +17,7 @@ func main() {
 	log.Println("GOOS=android GOARCH=arm64")
 	log.Println("Creating server...")
 
-	srv := server.SetupServer(8080, webFS, "http://127.0.0.1:8091")
+	srv := server.SetupServer(8080, web.FS, "http://127.0.0.1:8091")
 
 	log.Printf("Server configured, listening on %s", srv.Addr)
 	log.Println("Calling ListenAndServe...")

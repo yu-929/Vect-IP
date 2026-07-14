@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -113,13 +112,8 @@ var globalTracerouteBaseURL string
 func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	globalTracerouteBaseURL = tracerouteBaseURL
 
-	subFS, err := fs.Sub(webFS, "web")
-	if err != nil {
-		log.Fatalf("embedded web fs: %v", err)
-	}
-
 	mux := http.NewServeMux()
-	mux.Handle("/", noCache(http.FileServer(http.FS(subFS))))
+	mux.Handle("/", noCache(http.FileServer(http.FS(webFS))))
 	mux.HandleFunc("/api/scan", handleScan)
 	mux.HandleFunc("/api/scan/", handleScanByID)
 	mux.HandleFunc("/api/resolve-asn/", handleResolveASN)

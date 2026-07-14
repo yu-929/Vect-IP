@@ -35,3 +35,8 @@ android/app/build/
 android/.gradle/
 local.properties
 android/app/src/main/assets/bin/
+
+# Windows desktop build artifacts
+windows/Vect.exe
+windows/rsrc.syso
+

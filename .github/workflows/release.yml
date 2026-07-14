@@ -1,26 +1,106 @@
+name: Release All Platforms
+
 on:
-  release:
-    types: [created]
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: '发版说明（留空则自动从 git log 生成）'
+        required: false
+        default: ''
 
 permissions:
-    contents: write
-    packages: write
+  contents: write
 
 jobs:
-  releases-matrix:
-    name: release
+  release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, arm64]
     steps:
-    - uses: actions/checkout@v4
-    - uses: wangyoucao577/go-release-action@v1
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        project_path: "./cmd/mcis"
-        binary_name: "vect"
-        extra_files: LICENSE readme.md ipv4cidr.txt ipv6cidr.txt
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+
+      - name: 读取版本号
+        id: ver
+        run: echo "tag=v$(cat VERSION)" >> $GITHUB_OUTPUT
+
+      - name: 生成发版标题 (北京时间)
+        id: title
+        run: |
+          ts=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
+          echo "title=Vect ${{ steps.ver.outputs.tag }} - $ts" >> $GITHUB_OUTPUT
+
+      - name: 生成变更日志
+        id: log
+        run: |
+          last=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$last" ]; then
+            git log ${last}..HEAD --oneline --no-merges > /tmp/changelog
+          else
+            git log --oneline --no-merges -20 > /tmp/changelog
+          fi
+          {
+            echo "body<<CHANGELOG"
+            echo "## 变更"
+            [ -s /tmp/changelog ] && cat /tmp/changelog || echo "首次发版"
+            echo "CHANGELOG"
+          } >> $GITHUB_OUTPUT
+
+      - run: mkdir -p build
+
+      - name: 构建 CLI - Linux amd64
+        run: GOOS=linux GOARCH=amd64 go build -o build/vect-linux-amd64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: 构建 CLI - Linux arm64
+        run: GOOS=linux GOARCH=arm64 go build -o build/vect-linux-arm64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: 构建 CLI - Windows amd64
+        run: GOOS=windows GOARCH=amd64 go build -o build/vect-windows-amd64.exe -ldflags="-s -w" ./cmd/vect/
+
+      - name: 构建 CLI - macOS amd64
+        run: GOOS=darwin GOARCH=amd64 go build -o build/vect-darwin-amd64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: 构建 CLI - macOS arm64
+        run: GOOS=darwin GOARCH=arm64 go build -o build/vect-darwin-arm64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: 构建 Windows 桌面版 (生成图标资源)
+        run: |
+          go install github.com/akavel/rsrc@latest
+          cd windows && rsrc -ico app.ico -o rsrc.syso && cd ..
+          GOOS=windows GOARCH=amd64 go build -o build/Vect.exe -ldflags="-s -w" ./windows/
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.title.outputs.title }}
+          body: ${{ steps.log.outputs.body }}
+          files: |
+            build/vect-linux-amd64
+            build/vect-linux-arm64
+            build/vect-windows-amd64.exe
+            build/vect-darwin-amd64
+            build/vect-darwin-arm64
+            build/Vect.exe
+            LICENSE
+            readme.md
+            ipv4cidr.txt
+            ipv6cidr.txt
+          draft: false
+          prerelease: false
+
+      - name: 自动递增版本号
+        run: |
+          cur=$(cat VERSION)
+          maj=$(echo "$cur" | cut -d. -f1)
+          min=$(echo "$cur" | cut -d. -f2)
+          next="${maj}.$((min + 1))"
+          echo "$next" > VERSION
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: bump version to v$next"
+          git push

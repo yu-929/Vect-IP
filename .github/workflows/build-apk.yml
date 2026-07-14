@@ -2,7 +2,7 @@ name: Build APK
 on:
   push:
     branches: [main]
-    paths: ['ios/**', 'internal/**', 'cmd/**', 'cmd/vect-web/web/**', 'logo/**', 'android/**', '.github/workflows/**', 'go.mod', 'go.sum']
+    paths: ['ios/**', 'internal/**', 'cmd/**', 'web/**', 'logo/**', 'android/**', '.github/workflows/**', 'go.mod', 'go.sum']
   workflow_dispatch:
 
 permissions:

@@ -3,19 +3,17 @@ package main
 import (
 	"bufio"
 	"context"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,10 +24,8 @@ import (
 	"github.com/yu-929/Vect-IP/internal/dns"
 	"github.com/yu-929/Vect-IP/internal/engine"
 	"github.com/yu-929/Vect-IP/internal/probe"
+	"github.com/yu-929/Vect-IP/web"
 )
-
-//go:embed web
-var webFS embed.FS
 
 type ScanRequest struct {
 	CIDRs           []string `json:"cidrs"`
@@ -274,11 +270,7 @@ func main() {
 		port = p
 	}
 
-	subFS, err := fs.Sub(webFS, "web")
-	if err != nil {
-		log.Fatal(err)
-	}
-	http.Handle("/", noCache(http.FileServer(http.FS(subFS))))
+	http.Handle("/", noCache(http.FileServer(http.FS(web.FS))))
 
 	http.HandleFunc("/api/scan", handleScan)
 	http.HandleFunc("/api/scan/", handleScanByID)
@@ -1169,7 +1161,7 @@ func enrichHops(ctx context.Context, hops []TracerouteHop) []TracerouteHop {
 		}
 		ip := hops[i].IP
 		wg.Add(1)
-		go func() {
+		go func(i int) {
 			defer wg.Done()
 			mu.Lock()
 			if cached, ok := cache[ip]; ok {
@@ -1236,7 +1228,7 @@ func enrichHops(ctx context.Context, hops []TracerouteHop) []TracerouteHop {
 			hops[i].RouteType = info.RouteType
 			hops[i].RouteLine = info.RouteLine
 			mu.Unlock()
-		}()
+		}(i)
 	}
 	wg.Wait()
 	return hops
