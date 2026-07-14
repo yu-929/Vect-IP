@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ASSETS_DIR="$SCRIPT_DIR/VectApp/Assets.xcassets/AppIcon.appiconset"
-SOURCE_ICON="$SCRIPT_DIR/libvect/web/icon-1024.png"
+SOURCE_ICON="$PROJECT_DIR/web/icon-1024.png"
 
 if [ ! -f "$SOURCE_ICON" ]; then
     echo "ERROR: Source icon not found at $SOURCE_ICON"

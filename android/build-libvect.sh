@@ -25,11 +25,6 @@ echo "Using Go: $($GO version)"
 rm -rf "$BIN_DIR"
 mkdir -p "$BIN_DIR"
 
-# Copy web assets for embedding
-echo "==> Copying web assets..."
-rm -rf "$SCRIPT_DIR/libvect/web"
-cp -r "$PROJECT_DIR/ios/libvect/web" "$SCRIPT_DIR/libvect/web"
-
 cd "$PROJECT_DIR"
 
 export CGO_ENABLED=0
@@ -50,9 +45,6 @@ if command -v patchelf &>/dev/null; then
 else
   echo "  -> Skipping amd64 build (patchelf not installed)"
 fi
-
-# Clean up copied web assets
-rm -rf "$SCRIPT_DIR/libvect/web"
 
 echo ""
 echo "Done."

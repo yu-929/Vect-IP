@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LOGO_SRC="$SCRIPT_DIR/logo/Vect图标.JPG"
+LOGO_SRC="$SCRIPT_DIR/logo/图标.jpg"
 
 if ! command -v convert &>/dev/null; then
     echo "ImageMagick not found, using pre-committed icons"
@@ -26,13 +26,10 @@ convert "$LOGO_SRC" -colorspace sRGB -resize 192x192 -background white -gravity 
 convert "$LOGO_SRC" -colorspace sRGB -resize 512x512 -background white -gravity center -extent 512x512 -define png:color-type=6 "$OUT_DIR/icon-512.png"
 convert "$LOGO_SRC" -colorspace sRGB -resize 1024x1024 -background white -gravity center -extent 1024x1024 -define png:color-type=6 "$OUT_DIR/icon-1024.png"
 
-# Copy to web directories
-cp "$OUT_DIR/icon-192.png" "$SCRIPT_DIR/cmd/vect-web/web/icon-192.png"
-cp "$OUT_DIR/icon-512.png" "$SCRIPT_DIR/cmd/vect-web/web/icon-512.png"
-cp "$OUT_DIR/icon-1024.png" "$SCRIPT_DIR/cmd/vect-web/web/icon-1024.png"
-cp "$OUT_DIR/icon-192.png" "$SCRIPT_DIR/ios/libvect/web/icon-192.png"
-cp "$OUT_DIR/icon-512.png" "$SCRIPT_DIR/ios/libvect/web/icon-512.png"
-cp "$OUT_DIR/icon-1024.png" "$SCRIPT_DIR/ios/libvect/web/icon-1024.png"
+# Copy to shared web directory
+cp "$OUT_DIR/icon-192.png" "$SCRIPT_DIR/web/icon-192.png"
+cp "$OUT_DIR/icon-512.png" "$SCRIPT_DIR/web/icon-512.png"
+cp "$OUT_DIR/icon-1024.png" "$SCRIPT_DIR/web/icon-1024.png"
 
 # Android mipmap icons
 echo "  -> Android icons..."
