@@ -52,26 +52,6 @@ jobs:
           name: VectApp
           path: build/VectApp.ipa
 
-      - name: Upload IPA to Release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ github.ref_name }} build/VectApp.ipa --clobber
-
-      - name: Publish to Vect-IP release
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="Vect-IP-$(date -u +%Y%m%d)-${GITHUB_SHA:0:7}"
-          gh release upload "$TAG" build/VectApp.ipa --clobber 2>/dev/null || \
-          gh release create "$TAG" \
-            --title "Vect-IP $(date -u +%Y-%m-%d)" \
-            --notes "Auto-built from commit ${GITHUB_SHA} on $(date -u)" \
-            --target "$GITHUB_SHA" \
-            build/VectApp.ipa
-
       - name: Verify IPA
         run: |
           unzip -l build/VectApp.ipa | head -20

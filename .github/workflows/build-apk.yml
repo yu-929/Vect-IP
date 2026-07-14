@@ -85,15 +85,3 @@ jobs:
         with:
           name: Vect-APK
           path: android/app/build/outputs/apk/debug/Vect.apk
-
-      - name: Publish to Vect-IP release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="Vect-IP-$(date -u +%Y%m%d)-${GITHUB_SHA:0:7}"
-          gh release upload "$TAG" android/app/build/outputs/apk/debug/Vect.apk --clobber 2>/dev/null || \
-          gh release create "$TAG" \
-            --title "Vect-IP $(date -u +%Y-%m-%d)" \
-            --notes "Auto-built from commit ${GITHUB_SHA} on $(date -u)" \
-            --target "$GITHUB_SHA" \
-            android/app/build/outputs/apk/debug/Vect.apk

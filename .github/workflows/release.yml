@@ -2,26 +2,168 @@ name: Release All Platforms
 
 on:
   workflow_dispatch:
-    inputs:
-      notes:
-        description: '发版说明（留空则自动从 git log 生成）'
-        required: false
-        default: ''
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  # ======== CLI + Windows 桌面 ========
+  build-cli:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
       - uses: actions/setup-go@v5
+        with: { go-version: '1.20' }
+
+      - run: mkdir -p build
+
+      - name: Build CLI - Linux amd64
+        run: GOOS=linux GOARCH=amd64 go build -o build/vect-linux-amd64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: Build CLI - Linux arm64
+        run: GOOS=linux GOARCH=arm64 go build -o build/vect-linux-arm64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: Build CLI - Windows amd64
+        run: GOOS=windows GOARCH=amd64 go build -o build/vect-windows-amd64.exe -ldflags="-s -w" ./cmd/vect/
+
+      - name: Build CLI - macOS amd64
+        run: GOOS=darwin GOARCH=amd64 go build -o build/vect-darwin-amd64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: Build CLI - macOS arm64
+        run: GOOS=darwin GOARCH=arm64 go build -o build/vect-darwin-arm64 -ldflags="-s -w" ./cmd/vect/
+
+      - name: Build Windows Desktop (含图标)
+        run: |
+          go install github.com/akavel/rsrc@latest
+          cd windows && rsrc -ico app.ico -o rsrc.syso && cd ..
+          GOOS=windows GOARCH=amd64 go build -o build/Vect.exe -ldflags="-s -w" ./windows/
+
+      - uses: actions/upload-artifact@v4
         with:
-          go-version: '1.20'
+          name: cli-desktop
+          path: build/
+          retention-days: 1
+
+  # ======== Android APK ========
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with: { distribution: 'zulu', java-version: '17' }
+
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.20' }
+
+      - name: Generate icons
+        run: ./generate-icons.sh
+
+      - name: Setup Android SDK
+        run: |
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/* cmdline-tools/latest/ 2>/dev/null || true
+          rm -rf cmdline-tools.zip
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: Install SDK components
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Setup Gradle
+        run: |
+          if ! command -v gradle &>/dev/null; then
+            wget -q https://services.gradle.org/distributions/gradle-8.6-bin.zip -O /tmp/gradle.zip
+            unzip -q /tmp/gradle.zip -d /opt
+            echo "/opt/gradle-8.6/bin" >> $GITHUB_PATH
+            export PATH="/opt/gradle-8.6/bin:$PATH"
+          fi
+          cd android && gradle wrapper --gradle-version=8.6
+
+      - name: Build Go binary for Android
+        run: android/build-libvect.sh
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1
+
+      - name: Collect APK
+        run: |
+          mkdir -p build
+          cp android/app/build/outputs/apk/debug/app-debug.apk build/Vect.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: build/Vect.apk
+          retention-days: 1
+
+  # ======== iOS IPA ========
+  build-ipa:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.20' }
+
+      - name: Generate icons
+        run: |
+          ./generate-icons.sh
+          cd ios && ./generate-icons.sh
+
+      - name: Build Go static library for iOS
+        run: cd ios && ./build-libvect.sh
+
+      - name: Build .app (unsigned)
+        run: |
+          xcodebuild build \
+            -project ios/VectApp.xcodeproj \
+            -scheme VectApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/derived \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package IPA
+        run: |
+          mkdir -p build/Payload
+          cp -r build/derived/Build/Products/Release-iphoneos/VectApp.app build/Payload/
+          cd build && zip -r VectApp.ipa Payload/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: build/VectApp.ipa
+          retention-days: 1
+
+  # ======== 创建 Release ========
+  release:
+    needs: [build-cli, build-apk, build-ipa]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/download-artifact@v4
+        with: { name: cli-desktop, path: build/ }
+
+      - uses: actions/download-artifact@v4
+        with: { name: apk, path: build/ }
+
+      - uses: actions/download-artifact@v4
+        with: { name: ipa, path: build/ }
 
       - name: 读取版本号
         id: ver
@@ -29,9 +171,7 @@ jobs:
 
       - name: 生成发版标题 (北京时间)
         id: title
-        run: |
-          ts=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
-          echo "title=Vect ${{ steps.ver.outputs.tag }} - $ts" >> $GITHUB_OUTPUT
+        run: echo "title=Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')" >> $GITHUB_OUTPUT
 
       - name: 生成变更日志
         id: log
@@ -49,28 +189,8 @@ jobs:
             echo "CHANGELOG"
           } >> $GITHUB_OUTPUT
 
-      - run: mkdir -p build
-
-      - name: 构建 CLI - Linux amd64
-        run: GOOS=linux GOARCH=amd64 go build -o build/vect-linux-amd64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: 构建 CLI - Linux arm64
-        run: GOOS=linux GOARCH=arm64 go build -o build/vect-linux-arm64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: 构建 CLI - Windows amd64
-        run: GOOS=windows GOARCH=amd64 go build -o build/vect-windows-amd64.exe -ldflags="-s -w" ./cmd/vect/
-
-      - name: 构建 CLI - macOS amd64
-        run: GOOS=darwin GOARCH=amd64 go build -o build/vect-darwin-amd64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: 构建 CLI - macOS arm64
-        run: GOOS=darwin GOARCH=arm64 go build -o build/vect-darwin-arm64 -ldflags="-s -w" ./cmd/vect/
-
-      - name: 构建 Windows 桌面版 (生成图标资源)
-        run: |
-          go install github.com/akavel/rsrc@latest
-          cd windows && rsrc -ico app.ico -o rsrc.syso && cd ..
-          GOOS=windows GOARCH=amd64 go build -o build/Vect.exe -ldflags="-s -w" ./windows/
+      - name: 列出产物
+        run: ls -lh build/
 
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
@@ -79,12 +199,7 @@ jobs:
           name: ${{ steps.title.outputs.title }}
           body: ${{ steps.log.outputs.body }}
           files: |
-            build/vect-linux-amd64
-            build/vect-linux-arm64
-            build/vect-windows-amd64.exe
-            build/vect-darwin-amd64
-            build/vect-darwin-arm64
-            build/Vect.exe
+            build/*
             LICENSE
             readme.md
             ipv4cidr.txt
@@ -102,5 +217,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add VERSION
-          git commit -m "chore: bump version to v$next"
+          git commit -m "chore: bump version to v$next [skip ci]"
           git push
