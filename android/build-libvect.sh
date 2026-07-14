@@ -33,6 +33,11 @@ echo "    -> $BIN_DIR/vect_server_arm64 ($(ls -lh "$BIN_DIR/vect_server_arm64" |
 # Copy as main binary
 cp "$BIN_DIR/vect_server_arm64" "$BIN_DIR/vect_server"
 
+# Fix PT_INTERP to Android's linker64 (GOOS=linux sets /lib/ld-linux-aarch64.so.1)
+patchelf --set-interpreter /system/bin/linker64 "$BIN_DIR/vect_server_arm64"
+patchelf --set-interpreter /system/bin/linker64 "$BIN_DIR/vect_server"
+echo "  -> PT_INTERP set to /system/bin/linker64"
+
 # Clean up copied web assets
 rm -rf "$SCRIPT_DIR/libvect/web"
 
