@@ -16,9 +16,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import java.io.BufferedReader
-import java.io.File
-import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -43,45 +43,21 @@ class MainActivity : AppCompatActivity() {
     private fun startVectServer() {
         executor.execute {
             try {
-                // Use filesDir instead of cacheDir: cache might be mounted noexec on MIUI/HyperOS
-                val binDir = File(filesDir, "bin")
-                binDir.mkdirs()
-
-                // Detect CPU architecture and select correct binary
-                val arch = android.os.Build.SUPPORTED_64_BIT_ABIS.firstOrNull() ?: "arm64-v8a"
-                val binaryName = when {
-                    arch.contains("x86_64") || arch.contains("x64") -> "vect_server_amd64"
-                    else -> "vect_server_arm64"
-                }
-                val binary = File(binDir, binaryName)
-
-                // Extract binary from assets
-                assets.open("bin/$binaryName").use { input ->
-                    FileOutputStream(binary).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                binary.setExecutable(true)
-
-                // Fallback: use Runtime.exec(chmod) if Java API didn't work
-                if (!binary.canExecute()) {
-                    try {
-                        Runtime.getRuntime().exec("chmod 755 ${binary.absolutePath}").waitFor()
-                    } catch (_: Exception) {}
+                val binary = findServerBinary()
+                if (binary == null) {
+                    runOnUiThread { showError("Server binary not found in native library directory") }
+                    return@execute
                 }
 
-                android.util.Log.i("Vect", "arch=$arch binary=$binaryName size=${binary.length()} executable=${binary.canExecute()} path=${binary.absolutePath}")
+                android.util.Log.i("Vect", "Starting server from: ${binary.absolutePath} executable=${binary.canExecute()}")
 
-// Start server as subprocess
-val pb = ProcessBuilder(binary.absolutePath)
-    .directory(binDir)
-    .redirectErrorStream(true)
-pb.environment()["GOTRACEBACK"] = "crash"
-pb.environment()["GODEBUG"] = "cpu.arm64.lse=0"
-serverProcess = pb.start()
-                android.util.Log.i("Vect", "server process started")
+                val pb = ProcessBuilder(binary.absolutePath)
+                    .directory(binary.parentFile)
+                    .redirectErrorStream(true)
+                pb.environment()["GOTRACEBACK"] = "crash"
+                serverProcess = pb.start()
+                android.util.Log.i("Vect", "server process started, pid=${serverProcess!!.pid()}")
 
-                // Read startup output in background
                 val reader = BufferedReader(InputStreamReader(serverProcess!!.inputStream))
                 val output = StringBuffer()
                 thread(isDaemon = true) {
@@ -94,20 +70,6 @@ serverProcess = pb.start()
                     } catch (_: Exception) {}
                 }
 
-                // Wait briefly, then check if process is still alive
-                Thread.sleep(2000)
-                if (!serverProcess!!.isAlive) {
-                    val exitCode = serverProcess!!.exitValue()
-                    android.util.Log.e("Vect", "server exited immediately with code: $exitCode, output: ${output}")
-                    runOnUiThread { showError("Server crashed on startup (exit code: $exitCode)\n\nOutput:\n$output") }
-                    return@execute
-                }
-
-                // Read whatever output we have so far
-                val initialOutput = output.toString()
-                android.util.Log.i("Vect", "server initial output: $initialOutput")
-
-                // Wait for server to be ready
                 val startTime = System.currentTimeMillis()
                 val timeout = 20000L
                 var ready = false
@@ -115,16 +77,14 @@ serverProcess = pb.start()
 
                 while (System.currentTimeMillis() - startTime < timeout && !ready) {
                     try {
-                        val url = java.net.URL("http://127.0.0.1:8080/api/health")
-                        val conn = url.openConnection() as java.net.HttpURLConnection
+                        val url = URL("http://127.0.0.1:8080/api/health")
+                        val conn = url.openConnection() as HttpURLConnection
                         conn.connectTimeout = 1000
                         conn.readTimeout = 1000
                         conn.requestMethod = "GET"
                         val code = conn.responseCode
                         conn.disconnect()
-                        if (code == 200) {
-                            ready = true
-                        }
+                        if (code == 200) ready = true
                     } catch (e: Exception) {
                         lastError = e.message ?: "unknown error"
                         Thread.sleep(200)
@@ -132,10 +92,14 @@ serverProcess = pb.start()
                 }
 
                 if (ready) {
+                    android.util.Log.i("Vect", "Server ready after ${System.currentTimeMillis() - startTime}ms")
                     runOnUiThread { loadWebView() }
                 } else {
-                    val log = try { reader.readLine() ?: "" } catch (_: Exception) { "" }
-                    val msg = "Server did not start in 20s\n\nLast error: $lastError\n\nInitial output: $initialOutput\n\nLatest: $log"
+                    if (!serverProcess!!.isAlive) {
+                        val exitCode = serverProcess!!.exitValue()
+                        android.util.Log.e("Vect", "server exited with code: $exitCode, output: ${output}")
+                    }
+                    val msg = "Server did not start in 20s\n\nLast error: $lastError"
                     android.util.Log.e("Vect", msg)
                     runOnUiThread { showError(msg) }
                 }
@@ -144,6 +108,19 @@ serverProcess = pb.start()
                 runOnUiThread { showError("Failed: ${e.message}") }
             }
         }
+    }
+
+    private fun findServerBinary(): java.io.File? {
+        val libDir = applicationInfo.nativeLibraryDir
+        val libFile = java.io.File(libDir, "libvect_server.so")
+        if (libFile.exists() && libFile.canExecute()) return libFile
+
+        val altName = if (Build.SUPPORTED_64_BIT_ABIS.any { it.contains("x86_64") || it.contains("x64") })
+            "libvect_server.so" else "libvect_server.so"
+        val altFile = java.io.File(libDir, altName)
+        if (altFile.exists()) return altFile
+
+        return null
     }
 
     private fun loadWebView() {
