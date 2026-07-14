@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
                     .redirectErrorStream(true)
                 pb.environment()["GOTRACEBACK"] = "crash"
                 serverProcess = pb.start()
-                android.util.Log.i("Vect", "server process started, pid=${serverProcess!!.pid()}")
+                android.util.Log.i("Vect", "server process started")
 
                 val reader = BufferedReader(InputStreamReader(serverProcess!!.inputStream))
                 val output = StringBuffer()
