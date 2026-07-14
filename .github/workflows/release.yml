@@ -37,7 +37,7 @@ jobs:
       - name: Install ImageMagick
         run: |
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y && apt-get install -y imagemagick
+          sudo apt-get update -y && sudo apt-get install -y imagemagick
 
       - name: Generate icons
         run: ./generate-icons.sh
