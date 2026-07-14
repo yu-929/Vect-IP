@@ -198,12 +198,7 @@ jobs:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: ${{ steps.title.outputs.title }}
           body: ${{ steps.log.outputs.body }}
-          files: |
-            build/*
-            LICENSE
-            readme.md
-            ipv4cidr.txt
-            ipv6cidr.txt
+          files: build/*
           draft: false
           prerelease: false
 
