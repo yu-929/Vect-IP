@@ -40,6 +40,9 @@ type TopResult struct {
 	TLSMS     int64             `json:"tls_ms"`
 	TTFBMS    int64             `json:"ttfb_ms"`
 	TotalMS   int64             `json:"total_ms"`
+	JitterMS  float64           `json:"jitter_ms"`
+	MinMS     int64             `json:"min_ms"`
+	MaxMS     int64             `json:"max_ms"`
 	ScoreMS   float64           `json:"score_ms"`
 	Trace     map[string]string `json:"trace,omitempty"`
 

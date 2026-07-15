@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -53,6 +54,8 @@ type ScanRequest struct {
 	TopN                int      `json:"topN"`
 	DownloadBytes   int64    `json:"downloadBytes"`
 	DownloadTimeout int      `json:"downloadTimeout"`
+	CustomDownloadURL   string `json:"customDownloadUrl"`
+	CustomDownloadEnabled bool `json:"customDownloadEnabled"`
 }
 
 type ScanStatus struct {
@@ -332,7 +335,7 @@ session.progress.Stage = 4
 				dlTop = len(session.result)
 			}
 
-			dlBytes := req.DownloadBytes
+dlBytes := req.DownloadBytes
 			if dlBytes <= 0 {
 				dlBytes = 1_000_000
 			}
@@ -343,6 +346,17 @@ session.progress.Stage = 4
 			dlCfg := probe.DownloadConfig{
 				Timeout: time.Duration(dlTimeout) * time.Second,
 				Bytes:   dlBytes,
+			}
+			if req.CustomDownloadEnabled && req.CustomDownloadURL != "" {
+				if u, err := url.Parse(req.CustomDownloadURL); err == nil && u.Host != "" {
+					dlCfg.CustomURL = true
+					dlCfg.Path = u.Path
+					if u.RawQuery != "" {
+						dlCfg.Path += "?" + u.RawQuery
+					}
+					dlCfg.SNI = u.Hostname()
+					dlCfg.HostName = u.Host
+				}
 			}
 
 			dlp := probe.NewDownloadProber(dlCfg)
@@ -660,7 +674,7 @@ func classifyRoute(asn int) (routeType, routeLine string) {
 }
 
 // compositeScore computes a comprehensive score for ranking results.
-// Lower is better. Considers latency, download speed, and route type.
+// Lower is better. Considers latency, download speed, jitter, and route type.
 func compositeScore(r *engine.TopResult) float64 {
 	score := r.ScoreMS
 
@@ -671,6 +685,11 @@ func compositeScore(r *engine.TopResult) float64 {
 			dlBonus = 100
 		}
 		score -= dlBonus
+	}
+
+	// Jitter penalty: absolute penalty for unstable connections
+	if r.JitterMS > 0 {
+		score += r.JitterMS * 0.5
 	}
 
 	// Route type bonus

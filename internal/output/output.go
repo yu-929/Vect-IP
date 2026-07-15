@@ -31,7 +31,7 @@ func WriteCSV(w io.Writer, rows []engine.TopResult) error {
 	header := []string{
 		"rank", "ip", "prefix",
 		"ok", "status",
-		"connect_ms", "tls_ms", "ttfb_ms", "total_ms",
+		"connect_ms", "tls_ms", "ttfb_ms", "total_ms", "jitter_ms",
 		"score_ms", "samples_prefix", "ok_prefix", "fail_prefix",
 		"download_ok", "download_mbps", "download_peak_mbps", "download_ms", "download_bytes", "download_error",
 		"colo",
@@ -55,6 +55,7 @@ func WriteCSV(w io.Writer, rows []engine.TopResult) error {
 			strconv.FormatInt(r.TLSMS, 10),
 			strconv.FormatInt(r.TTFBMS, 10),
 			strconv.FormatInt(r.TotalMS, 10),
+			fmt.Sprintf("%.2f", r.JitterMS),
 			fmt.Sprintf("%.2f", r.ScoreMS),
 			strconv.Itoa(r.PrefixSamples),
 			strconv.Itoa(r.PrefixOK),
@@ -91,8 +92,12 @@ func WriteText(w io.Writer, rows []engine.TopResult) error {
 				dl += "\tdl_err=" + r.DownloadError
 			}
 		}
-		_, err := fmt.Fprintf(w, "%d\t%s\t%.1fms\tok=%v\tstatus=%d\tprefix=%s\tcolo=%s%s\n",
-			i+1, r.IP.String(), r.ScoreMS, r.OK, r.Status, r.Prefix.String(), colo, dl)
+		jitter := ""
+		if r.JitterMS > 0 {
+			jitter = fmt.Sprintf("\tjitter=%.1fms", r.JitterMS)
+		}
+		_, err := fmt.Fprintf(w, "%d\t%s\t%.1fms\tok=%v\tstatus=%d\tprefix=%s\tcolo=%s%s%s\n",
+			i+1, r.IP.String(), r.ScoreMS, r.OK, r.Status, r.Prefix.String(), colo, jitter, dl)
 		if err != nil {
 			return err
 		}
