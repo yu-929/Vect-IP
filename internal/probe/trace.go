@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/netip"
+	"sort"
 	"strings"
 	"time"
 )
@@ -33,6 +35,9 @@ type Result struct {
 	TLSMS     int64             `json:"tls_ms"`
 	TTFBMS    int64             `json:"ttfb_ms"`
 	TotalMS   int64             `json:"total_ms"`
+	JitterMS  float64           `json:"jitter_ms"`
+	MinMS     int64             `json:"min_ms"`
+	MaxMS     int64             `json:"max_ms"`
 	Trace     map[string]string `json:"trace,omitempty"`
 	When      time.Time         `json:"when"`
 }
@@ -203,7 +208,6 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 	for i := 0; i < rounds; i++ {
 		r := p.probeOnce(ctx, ip)
 		results = append(results, r)
-		// If any round fails, return the failure immediately
 		if !r.OK {
 			return r
 		}
@@ -211,12 +215,26 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 
 	// Skip the first N rounds (which include handshake overhead) and calculate average
 	if len(results) <= skipFirst {
-		// If we skipped all rounds, return the last one
 		return results[len(results)-1]
 	}
 
 	validResults := results[skipFirst:]
-	return calculateAverage(validResults, ip)
+	// Filter out failed rounds
+	var filtered []Result
+	for _, r := range validResults {
+		if r.OK {
+			filtered = append(filtered, r)
+		}
+	}
+	if len(filtered) == 0 {
+		return results[len(results)-1]
+	}
+	avg := calculateAverage(filtered, ip)
+	jitterMS, minMS, maxMS := calculateJitter(filtered)
+	avg.JitterMS = jitterMS
+	avg.MinMS = minMS
+	avg.MaxMS = maxMS
+	return avg
 }
 
 // calculateAverage computes the average of multiple probe results.
@@ -267,6 +285,66 @@ func calculateAverage(results []Result, ip netip.Addr) Result {
 	}
 
 	return avg
+}
+
+// calculateJitter computes the standard deviation, min, and max of TotalMS values.
+// Uses sample standard deviation (N-1) and IQR-based outlier removal for robustness.
+func calculateJitter(results []Result) (jitterMS float64, minMS int64, maxMS int64) {
+	if len(results) == 0 {
+		return 0, 0, 0
+	}
+
+	count := len(results)
+	if count <= 1 {
+		return 0, results[0].TotalMS, results[0].TotalMS
+	}
+
+	values := make([]int64, count)
+	for i, r := range results {
+		values[i] = r.TotalMS
+	}
+	sorted := make([]int64, count)
+	copy(sorted, values)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
+
+	minMS = sorted[0]
+	maxMS = sorted[count-1]
+
+	q1 := sorted[count/4]
+	q3 := sorted[3*count/4]
+	iqr := q3 - q1
+	lower := q1 - int64(float64(iqr)*1.5)
+	upper := q3 + int64(float64(iqr)*1.5)
+
+	var sum int64
+	var validCount int
+	for _, v := range values {
+		if v >= lower && v <= upper {
+			sum += v
+			validCount++
+		}
+	}
+
+	if validCount < 2 {
+		validCount = count
+		sum = 0
+		for _, v := range values {
+			sum += v
+		}
+	}
+
+	mean := float64(sum) / float64(validCount)
+
+	var sqDiff float64
+	for _, v := range values {
+		if v >= lower && v <= upper {
+			d := float64(v) - mean
+			sqDiff += d * d
+		}
+	}
+
+	jitterMS = math.Sqrt(sqDiff / float64(validCount-1))
+	return jitterMS, minMS, maxMS
 }
 
 func parseTrace(s string) map[string]string {
