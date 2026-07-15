@@ -1,6 +1,9 @@
 name: Release All Platforms
 
 on:
+  push:
+    branches: [main]
+    paths: ['internal/**', 'cmd/**', 'web/**', 'logo/**', 'android/**', 'ios/**', '.github/workflows/**', 'go.mod', 'go.sum']
   workflow_dispatch:
 
 permissions:
@@ -212,16 +215,3 @@ jobs:
           files: build/*
           draft: false
           prerelease: false
-
-      - name: 自动递增版本号
-        run: |
-          cur=$(cat VERSION)
-          maj=$(echo "$cur" | cut -d. -f1)
-          min=$(echo "$cur" | cut -d. -f2)
-          next="${maj}.$((min + 1))"
-          echo "$next" > VERSION
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION
-          git commit -m "chore: bump version to v$next"
-          git push
