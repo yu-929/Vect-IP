@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -128,6 +129,7 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	mux.HandleFunc("/api/dns-upload", handleDNSUpload)
 	mux.HandleFunc("/api/health", handleHealth)
 	mux.HandleFunc("/api/colo-discover", handleColoDiscover)
+	mux.HandleFunc("/api/resolve-url", handleResolveURL)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
@@ -1487,5 +1489,74 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"ok":    true,
 		"count": count,
+	})
+}
+
+type resolveURLReq struct {
+	URL string `json:"url"`
+}
+
+func handleResolveURL(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req resolveURLReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request: "+err.Error(), 400)
+		return
+	}
+	if req.URL == "" {
+		http.Error(w, "url is required", 400)
+		return
+	}
+	u, err := url.Parse(req.URL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		http.Error(w, "invalid url", 400)
+		return
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(req.URL)
+	if err != nil {
+		http.Error(w, "fetch failed: "+err.Error(), 502)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "read failed: "+err.Error(), 502)
+		return
+	}
+
+	ipRe := regexp.MustCompile(`^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
+	var cidrs []string
+	seen := map[string]bool{}
+	for _, line := range strings.Split(string(body), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		m := ipRe.FindStringSubmatch(line)
+		if m == nil {
+			continue
+		}
+		ip := m[1]
+		rest := strings.TrimSpace(line[len(m[0]):])
+		cidr := ip + "/24"
+		if strings.HasPrefix(rest, "/") {
+			cidr = line
+		}
+		if !seen[cidr] {
+			cidrs = append(cidrs, cidr)
+			seen[cidr] = true
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"cidrs": cidrs,
+		"count": len(cidrs),
 	})
 }

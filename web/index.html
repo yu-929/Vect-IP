@@ -360,6 +360,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button type="button" class="btn-icon-sm" onclick="pasteCidr()" title="粘贴">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="2" width="12" height="16" rx="2"/><path d="M7 2V1h6v1"/></svg>
 </button>
+<button type="button" class="btn-icon-sm" onclick="importFromUrl()" title="从链接导入">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 5H5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-4"/><path d="M12 3h5v5M10 10l7-7"/></svg>
+</button>
 <button type="button" class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();" title="清空">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
 </button>
@@ -1385,6 +1388,24 @@ updateCidrCount();
 }).catch(()=>document.execCommand('paste'));
 }else{document.execCommand('paste');}
 setTimeout(updateCidrCount,200);
+}
+async function importFromUrl(){
+const ta=S('cidrs');
+let url=ta.value.trim();
+if(!url||!url.startsWith('http')){
+url=prompt('请输入 IP 列表链接（支持 http/https）：');
+if(!url)return;
+}
+showToast('正在解析链接...');
+try{
+const r=await fetch('/api/resolve-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+if(!r.ok){const e=await r.text();showToast('解析失败: '+e);return;}
+const data=await r.json();
+if(!data.cidrs||!data.cidrs.length){showToast('未解析到有效 IP');return;}
+ta.value=data.cidrs.join('\n');
+updateCidrCount();
+showToast('已导入 '+data.count+' 条 CIDR');
+}catch(e){showToast('请求失败: '+e.message);}
 }
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.remove('hidden');t.classList.add('show');
