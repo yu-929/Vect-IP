@@ -663,6 +663,18 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field" style="margin-top:8pt"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 10pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:40pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
 <div class="field" style="margin-top:8pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 10pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:40pt;box-sizing:border-box" placeholder="例: cf"></div>
 <div class="field" style="margin-top:8pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 10pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:40pt;box-sizing:border-box"></div>
+<div class="settings-row" style="margin-top:10pt">
+<div style="flex:1">
+<div class="sl-label">过滤仅IPv6节点</div>
+<div class="sl-desc">通过可用性API过滤仅IPv6的节点，保留IPv4/双栈结果</div>
+</div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="filterIpv6OnlyTrack" onclick="toggleFilterIpv6Only()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="filterIpv6OnlyToggle" aria-label="过滤仅IPv6节点">
+</div>
+</div>
+</div>
 </div>
 </div>
 
@@ -764,6 +776,11 @@ function toggleDnsEnable(){
 const on=S('dnsEnableTrack').classList.toggle('on');
 S('dnsEnableToggle').checked=on;
 S('dnsConfigFields').style.display=on?'':'none';
+}
+
+function toggleFilterIpv6Only(){
+const on=S('filterIpv6OnlyTrack').classList.toggle('on');
+S('filterIpv6OnlyToggle').checked=on;
 }
 
 function toggleAdv(){
@@ -1281,13 +1298,13 @@ const h=loadHistory();
 if(!h[idx])return;
 const ips=h[idx].results.map(function(r){return r.ip});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
-const cfg={provider:S('dnsProvider').value,token:S('dnsToken').value,zone:S('dnsZone').value,subdomain:S('dnsSubdomain').value,count:parseInt(S('dnsCount').value)||ips.length};
+const cfg={provider:S('dnsProvider').value,token:S('dnsToken').value,zone:S('dnsZone').value,subdomain:S('dnsSubdomain').value,count:parseInt(S('dnsCount').value)||ips.length,filter_ipv6_only:S('filterIpv6OnlyToggle').checked};
 if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在设置中配置 DNS 参数');switchTab('settings');return;}
 showToast('正在上传 DNS 记录...');
 const x=new XMLHttpRequest();x.open('POST','/api/dns-upload',true);
 x.setRequestHeader('Content-Type','application/json');
 x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败');}};
-x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:ips}));
+x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:ips,filter_ipv6_only:cfg.filter_ipv6_only}));
 }
 
 // Traceroute

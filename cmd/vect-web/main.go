@@ -180,13 +180,15 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		ScanID    string `json:"scanId"`
-		Provider  string `json:"provider"`
-		Token     string `json:"token"`
-		Zone      string `json:"zone"`
-		Subdomain string `json:"subdomain"`
-		Count     int    `json:"count"`
-		TeamID    string `json:"teamId"`
+		ScanID         string   `json:"scanId"`
+		Provider       string   `json:"provider"`
+		Token          string   `json:"token"`
+		Zone           string   `json:"zone"`
+		Subdomain      string   `json:"subdomain"`
+		Count          int      `json:"count"`
+		TeamID         string   `json:"teamId"`
+		IPs            []string `json:"ips"`
+		FilterIPv6Only bool     `json:"filter_ipv6_only"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", 400)
@@ -197,28 +199,45 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scansMu.RLock()
-	session, ok := scans[req.ScanID]
-	scansMu.RUnlock()
-	if !ok {
-		http.Error(w, "scan not found", 404)
-		return
-	}
-	session.mu.RLock()
-	results := session.result
-	session.mu.RUnlock()
-
-	dlOK := make([]netip.Addr, 0)
-	for _, r := range results {
-		if r.DownloadOK {
-			dlOK = append(dlOK, r.IP)
+	var dlOK []netip.Addr
+	if len(req.IPs) > 0 {
+		for _, s := range req.IPs {
+			ip, err := netip.ParseAddr(s)
+			if err != nil {
+				continue
+			}
+			dlOK = append(dlOK, ip)
+		}
+	} else {
+		scansMu.RLock()
+		session, ok := scans[req.ScanID]
+		scansMu.RUnlock()
+		if !ok {
+			http.Error(w, "scan not found", 404)
+			return
+		}
+		session.mu.RLock()
+		results := session.result
+		session.mu.RUnlock()
+		for _, r := range results {
+			if r.DownloadOK {
+				dlOK = append(dlOK, r.IP)
+			}
 		}
 	}
 	if len(dlOK) == 0 {
-		http.Error(w, "no download results available", 400)
+		http.Error(w, "no IPs available", 400)
 		return
 	}
 	sort.Slice(dlOK, func(i, j int) bool { return false }) // maintain order
+
+	if req.FilterIPv6Only {
+		dlOK = dns.FilterIPv6OnlyByAPI(dlOK)
+		if len(dlOK) == 0 {
+			http.Error(w, "no IPv4/dual-stack IPs after filtering", 400)
+			return
+		}
+	}
 
 	count := req.Count
 	if count <= 0 || count > len(dlOK) {

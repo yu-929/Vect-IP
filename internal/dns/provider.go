@@ -3,9 +3,14 @@ package dns
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/netip"
 	"os"
+	"sync"
+	"time"
 )
 
 // Config holds DNS upload configuration.
@@ -69,6 +74,52 @@ func NewProvider(cfg Config) (Provider, error) {
 	default:
 		return nil, fmt.Errorf("unknown DNS provider: %s (supported: cloudflare, vercel)", cfg.Provider)
 	}
+}
+
+const availabilityCheckURL = "https://api.090227.xyz/check"
+
+// FilterIPv6OnlyByAPI calls the availability check API for each IP and returns
+// only IPs whose inferred_stack is not "ipv6_only". On API errors the IP is kept.
+func FilterIPv6OnlyByAPI(ips []netip.Addr) []netip.Addr {
+	type result struct {
+		ip   netip.Addr
+		keep bool
+	}
+	ch := make(chan result, len(ips))
+	var wg sync.WaitGroup
+	client := &http.Client{Timeout: 5 * time.Second}
+	for _, ip := range ips {
+		wg.Add(1)
+		go func(ip netip.Addr) {
+			defer wg.Done()
+			url := fmt.Sprintf("%s?proxyip=%s:443", availabilityCheckURL, ip.String())
+			resp, err := client.Get(url)
+			if err != nil {
+				ch <- result{ip, true}
+				return
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			var data struct {
+				InferredStack string `json:"inferred_stack"`
+			}
+			if err := json.Unmarshal(body, &data); err != nil {
+				ch <- result{ip, true}
+				return
+			}
+			ch <- result{ip, data.InferredStack != "ipv6_only"}
+		}(ip)
+	}
+	wg.Wait()
+	close(ch)
+
+	var filtered []netip.Addr
+	for r := range ch {
+		if r.keep {
+			filtered = append(filtered, r.ip)
+		}
+	}
+	return filtered
 }
 
 // Upload uploads the given IPs to the DNS provider.

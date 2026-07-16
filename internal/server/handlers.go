@@ -1415,12 +1415,13 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Provider  string   `json:"provider"`
-		Token     string   `json:"token"`
-		Zone      string   `json:"zone"`
-		Subdomain string   `json:"subdomain"`
-		Count     int      `json:"count"`
-		IPs       []string `json:"ips"`
+		Provider       string   `json:"provider"`
+		Token          string   `json:"token"`
+		Zone           string   `json:"zone"`
+		Subdomain      string   `json:"subdomain"`
+		Count          int      `json:"count"`
+		IPs            []string `json:"ips"`
+		FilterIPv6Only bool     `json:"filter_ipv6_only"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", 400)
@@ -1446,6 +1447,14 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 	if len(ips) == 0 {
 		http.Error(w, "no valid IPs parsed", 400)
 		return
+	}
+
+	if req.FilterIPv6Only {
+		ips = dns.FilterIPv6OnlyByAPI(ips)
+		if len(ips) == 0 {
+			http.Error(w, "no IPv4/dual-stack IPs after filtering", 400)
+			return
+		}
 	}
 
 	count := req.Count
