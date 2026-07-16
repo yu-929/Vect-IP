@@ -1393,13 +1393,10 @@ async function importFromUrl(){
 const ta=S('cidrs');
 let url=ta.value.trim();
 if(!url||!url.startsWith('http')){
-url=prompt('请输入 IP 列表链接（支持 http/https）：');
+url=prompt('请输入 IP 列表链接：');
 if(!url)return;
 }
-if(!url.includes('://')){
-showToast('链接格式错误，需要以 http:// 或 https:// 开头');
-return;
-}
+if(!url.startsWith('http'))url='https://'+url;
 showToast('正在解析链接...');
 try{
 const r=await fetch('/api/resolve-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
