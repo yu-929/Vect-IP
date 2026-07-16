@@ -1324,7 +1324,7 @@ if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在设置中配置 DN
 showToast('正在上传 DNS 记录...');
 const x=new XMLHttpRequest();x.open('POST','/api/dns-upload',true);
 x.setRequestHeader('Content-Type','application/json');
-x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败');}};
+x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败: '+x.responseText);}};
 x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:ips,filter_ipv6_only:cfg.filter_ipv6_only,record_type:cfg.record_type}));
 }
 
