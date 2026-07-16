@@ -1584,7 +1584,7 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Get(req.URL)
 	if err != nil {
 		http.Error(w, "fetch failed: "+err.Error(), 502)
