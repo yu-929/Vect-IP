@@ -199,6 +199,97 @@ func (p *CloudflareProvider) CreateRecords(ctx context.Context, subdomain string
 	return nil
 }
 
+// BatchUpdate atomically replaces all records for the subdomain using Cloudflare's
+// DNS Records Batch API (single POST, much faster than delete+create per record).
+func (p *CloudflareProvider) BatchUpdate(ctx context.Context, subdomain string, ips []netip.Addr) error {
+	fqdn, err := p.buildFQDN(ctx, subdomain)
+	if err != nil {
+		return err
+	}
+
+	// Group by record type
+	var v4, v6 []netip.Addr
+	for _, ip := range ips {
+		if ip.Is4() {
+			v4 = append(v4, ip)
+		} else {
+			v6 = append(v6, ip)
+		}
+	}
+
+	for _, group := range []struct {
+		ips  []netip.Addr
+		rtype string
+	}{
+		{v4, "A"},
+		{v6, "AAAA"},
+	} {
+		if len(group.ips) == 0 {
+			continue
+		}
+
+		// List existing records
+		existing, err := p.listRecords(ctx, fqdn, group.rtype)
+		if err != nil {
+			return fmt.Errorf("list %s records: %w", group.rtype, err)
+		}
+
+		deletes := make([]map[string]string, len(existing))
+		for i, rec := range existing {
+			deletes[i] = map[string]string{"id": rec.ID}
+		}
+
+		posts := make([]map[string]interface{}, len(group.ips))
+		for i, ip := range group.ips {
+			posts[i] = map[string]interface{}{
+				"name":    fqdn,
+				"type":    group.rtype,
+				"content": ip.String(),
+				"ttl":     1,
+				"proxied": false,
+			}
+		}
+
+		url := fmt.Sprintf("%s/zones/%s/dns_records/batch", cloudflareAPIBase, p.zoneID)
+		payload := map[string]interface{}{
+			"deletes": deletes,
+			"posts":   posts,
+		}
+		data, _ := json.Marshal(payload)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Authorization", "Bearer "+p.token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := p.client.Do(req)
+		if err != nil {
+			return fmt.Errorf("batch update %s records: %w", group.rtype, err)
+		}
+
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		var result struct {
+			Success bool      `json:"success"`
+			Errors  []cfError `json:"errors"`
+		}
+		if err := json.Unmarshal(body, &result); err != nil {
+			return fmt.Errorf("batch update %s records: parse response: %w", group.rtype, err)
+		}
+		if !result.Success {
+			if len(result.Errors) > 0 {
+				return fmt.Errorf("batch update %s records: %s", group.rtype, result.Errors[0].Message)
+			}
+			return fmt.Errorf("batch update %s records: unknown error", group.rtype)
+		}
+	}
+
+	return nil
+}
+
 func (p *CloudflareProvider) listRecords(ctx context.Context, name, recordType string) ([]cfDNSRecord, error) {
 	url := fmt.Sprintf("%s/zones/%s/dns_records?type=%s&name=%s", cloudflareAPIBase, p.zoneID, recordType, name)
 

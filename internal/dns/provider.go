@@ -129,6 +129,14 @@ func Upload(ctx context.Context, provider Provider, subdomain string, ips []neti
 		return nil
 	}
 
+	// Use batch update if provider supports it (faster: single API call)
+	if bp, ok := provider.(interface {
+		BatchUpdate(ctx context.Context, subdomain string, ips []netip.Addr) error
+	}); ok {
+		return bp.BatchUpdate(ctx, subdomain, ips)
+	}
+
+	// Fall back to delete + create
 	// Separate IPv4 and IPv6 addresses
 	var v4, v6 []netip.Addr
 	for _, ip := range ips {
