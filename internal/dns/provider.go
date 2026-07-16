@@ -87,7 +87,7 @@ func FilterIPv6OnlyByAPI(ips []netip.Addr) []netip.Addr {
 	}
 	ch := make(chan result, len(ips))
 	var wg sync.WaitGroup
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 3 * time.Second}
 	for _, ip := range ips {
 		wg.Add(1)
 		go func(ip netip.Addr) {

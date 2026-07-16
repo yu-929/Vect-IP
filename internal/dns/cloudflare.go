@@ -8,13 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
-	"time"
+	"sync"
 )
 
 const cloudflareAPIBase = "https://api.cloudflare.com/client/v4"
-
-// cfRateLimit enforces Cloudflare API rate limits (1200 req/5min ~ 4 req/s).
-var cfRateLimit = time.NewTicker(300 * time.Millisecond)
 
 // CloudflareProvider implements Provider for Cloudflare DNS.
 type CloudflareProvider struct {
@@ -35,11 +32,6 @@ func NewCloudflareProvider(token, zoneID string) *CloudflareProvider {
 
 func (p *CloudflareProvider) Name() string {
 	return "cloudflare"
-}
-
-// throttle blocks until the rate limiter allows the next request.
-func (p *CloudflareProvider) throttle() {
-	<-cfRateLimit.C
 }
 
 // cfDNSRecord represents a Cloudflare DNS record.
@@ -93,7 +85,6 @@ func (p *CloudflareProvider) getZoneName(ctx context.Context) (string, error) {
 	}
 
 	url := fmt.Sprintf("%s/zones/%s", cloudflareAPIBase, p.zoneID)
-	p.throttle()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -171,27 +162,45 @@ func (p *CloudflareProvider) DeleteRecords(ctx context.Context, subdomain string
 
 // CreateRecords creates A/AAAA records for the given IPs.
 func (p *CloudflareProvider) CreateRecords(ctx context.Context, subdomain string, ips []netip.Addr) error {
-	// Build full domain name
 	fqdn, err := p.buildFQDN(ctx, subdomain)
 	if err != nil {
 		return err
 	}
 
+	sem := make(chan struct{}, 5)
+	errCh := make(chan error, len(ips))
+	var wg sync.WaitGroup
+
 	for _, ip := range ips {
-		recordType := "A"
-		if ip.Is6() {
-			recordType = "AAAA"
-		}
-		if err := p.createRecord(ctx, fqdn, recordType, ip.String()); err != nil {
-			return fmt.Errorf("create record for %s: %w", ip.String(), err)
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(ip netip.Addr) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			recordType := "A"
+			if ip.Is6() {
+				recordType = "AAAA"
+			}
+			if err := p.createRecord(ctx, fqdn, recordType, ip.String()); err != nil {
+				errCh <- fmt.Errorf("create record for %s: %w", ip.String(), err)
+			}
+		}(ip)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		if err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
 func (p *CloudflareProvider) listRecords(ctx context.Context, name, recordType string) ([]cfDNSRecord, error) {
 	url := fmt.Sprintf("%s/zones/%s/dns_records?type=%s&name=%s", cloudflareAPIBase, p.zoneID, recordType, name)
-	p.throttle()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -228,7 +237,6 @@ func (p *CloudflareProvider) listRecords(ctx context.Context, name, recordType s
 
 func (p *CloudflareProvider) deleteRecord(ctx context.Context, recordID string) error {
 	url := fmt.Sprintf("%s/zones/%s/dns_records/%s", cloudflareAPIBase, p.zoneID, recordID)
-	p.throttle()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
@@ -265,7 +273,6 @@ func (p *CloudflareProvider) deleteRecord(ctx context.Context, recordID string) 
 
 func (p *CloudflareProvider) createRecord(ctx context.Context, name, recordType, content string) error {
 	url := fmt.Sprintf("%s/zones/%s/dns_records", cloudflareAPIBase, p.zoneID)
-	p.throttle()
 
 	payload := map[string]interface{}{
 		"type":    recordType,
