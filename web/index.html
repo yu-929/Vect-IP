@@ -958,12 +958,17 @@ S('coloLabel').textContent=coloMode==='allow'?'允许: '+manual.length+' 个':'�
 
 // Start scan
 function normalizeCidrs(lines){
-const ipv4=/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-const ipv4cidr=/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/;
+const ipExtract=/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
 return lines.map(s=>s.trim()).filter(Boolean).map(s=>{
-if(ipv4cidr.test(s)||s.includes('/'))return s;
-if(ipv4.test(s))return s+'/24';
-return '';
+const m=s.match(ipExtract);
+if(!m){
+if(s.includes('/'))return s;
+return'';
+}
+const ip=m[1];
+const rest=s.slice(m[0].length);
+if(rest.startsWith('/'))return s;
+return ip+'/24';
 }).filter(Boolean);
 }
 
