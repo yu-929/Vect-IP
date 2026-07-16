@@ -1517,7 +1517,9 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(req.URL)
+	req2, _ := http.NewRequest("GET", req.URL, nil)
+	req2.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15")
+	resp, err := client.Do(req2)
 	if err != nil {
 		http.Error(w, "fetch failed: "+err.Error(), 502)
 		return
