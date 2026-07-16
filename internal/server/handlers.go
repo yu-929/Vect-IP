@@ -1521,14 +1521,15 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 	req2.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15")
 	resp, err := client.Do(req2)
 	if err != nil {
-		http.Error(w, "fetch failed: "+err.Error(), 502)
+http.Error(w, "fetch failed: "+err.Error(), http.StatusBadGateway)
+
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		http.Error(w, "read failed: "+err.Error(), 502)
+		http.Error(w, "read failed: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 
