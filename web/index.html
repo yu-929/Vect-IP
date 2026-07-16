@@ -862,7 +862,7 @@ const btn=document.querySelector('.refresh-btn');
 btn.classList.add('spinning');
 try{
 S('liPublic').textContent='加载中...';
-const r=await fetch('/api/local-ip');
+const r=await fetch('/api/local-ip?_='+Date.now());
 const d=await r.json();
 S('liPublic').textContent=d.publicIP||'--';
 S('liLocal').textContent=d.localIPs&&d.localIPs.length?d.localIPs[0]:'--';
