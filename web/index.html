@@ -1022,6 +1022,12 @@ S('statusPanel').style.display='';
 
 try{
 const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+if(!r.ok){
+const txt=await r.text();
+let msg='启动失败';
+if(txt&&txt.length<200)msg+=`: ${txt}`;
+showError(msg);resetButtons();return;
+}
 const d=await r.json();
 if(!d.id){showError('启动失败');return;}
 curId=d.id;
