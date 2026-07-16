@@ -235,7 +235,7 @@ func (p *CloudflareProvider) batchUpdateTXT(ctx context.Context, fqdn string, ip
 		posts[i] = map[string]interface{}{
 			"name":    fqdn,
 			"type":    "TXT",
-			"content": ip.String(),
+			"content": ip.String() + ":443",
 			"ttl":     1,
 		}
 	}
