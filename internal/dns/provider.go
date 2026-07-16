@@ -21,6 +21,7 @@ type Config struct {
 	Subdomain   string // Subdomain prefix (e.g., "cf" for cf.example.com)
 	UploadCount int    // Number of IPs to upload
 	TeamID      string // Vercel Team ID (optional)
+	RecordType  string // "A" or "TXT" (Cloudflare only, default "A")
 }
 
 // Provider defines the interface for DNS record management.
@@ -51,7 +52,7 @@ func NewProvider(cfg Config) (Provider, error) {
 		if zone == "" {
 			return nil, fmt.Errorf("cloudflare: zone ID required (--dns-zone or CF_ZONE_ID)")
 		}
-		return NewCloudflareProvider(token, zone), nil
+		return NewCloudflareProvider(token, zone, cfg.RecordType), nil
 
 	case "vercel":
 		token := cfg.Token

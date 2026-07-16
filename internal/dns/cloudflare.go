@@ -15,18 +15,23 @@ const cloudflareAPIBase = "https://api.cloudflare.com/client/v4"
 
 // CloudflareProvider implements Provider for Cloudflare DNS.
 type CloudflareProvider struct {
-	token    string
-	zoneID   string
-	zoneName string // cached zone name (e.g., "example.com")
-	client   *http.Client
+	token      string
+	zoneID     string
+	zoneName   string // cached zone name (e.g., "example.com")
+	recordType string // "A" or "TXT"
+	client     *http.Client
 }
 
 // NewCloudflareProvider creates a new Cloudflare DNS provider.
-func NewCloudflareProvider(token, zoneID string) *CloudflareProvider {
+func NewCloudflareProvider(token, zoneID, recordType string) *CloudflareProvider {
+	if recordType == "" {
+		recordType = "A"
+	}
 	return &CloudflareProvider{
-		token:  token,
-		zoneID: zoneID,
-		client: &http.Client{},
+		token:      token,
+		zoneID:     zoneID,
+		recordType: recordType,
+		client:     &http.Client{},
 	}
 }
 
@@ -207,7 +212,38 @@ func (p *CloudflareProvider) BatchUpdate(ctx context.Context, subdomain string, 
 		return err
 	}
 
-	// Group by record type
+	if p.recordType == "TXT" {
+		return p.batchUpdateTXT(ctx, fqdn, ips)
+	}
+
+	return p.batchUpdateA(ctx, fqdn, ips)
+}
+
+func (p *CloudflareProvider) batchUpdateTXT(ctx context.Context, fqdn string, ips []netip.Addr) error {
+	existing, err := p.listRecords(ctx, fqdn, "TXT")
+	if err != nil {
+		return fmt.Errorf("list TXT records: %w", err)
+	}
+
+	deletes := make([]map[string]string, len(existing))
+	for i, rec := range existing {
+		deletes[i] = map[string]string{"id": rec.ID}
+	}
+
+	posts := make([]map[string]interface{}, len(ips))
+	for i, ip := range ips {
+		posts[i] = map[string]interface{}{
+			"name":    fqdn,
+			"type":    "TXT",
+			"content": ip.String(),
+			"ttl":     1,
+		}
+	}
+
+	return p.doBatch(ctx, deletes, posts)
+}
+
+func (p *CloudflareProvider) batchUpdateA(ctx context.Context, fqdn string, ips []netip.Addr) error {
 	var v4, v6 []netip.Addr
 	for _, ip := range ips {
 		if ip.Is4() {
@@ -218,7 +254,7 @@ func (p *CloudflareProvider) BatchUpdate(ctx context.Context, subdomain string, 
 	}
 
 	for _, group := range []struct {
-		ips  []netip.Addr
+		ips   []netip.Addr
 		rtype string
 	}{
 		{v4, "A"},
@@ -228,7 +264,6 @@ func (p *CloudflareProvider) BatchUpdate(ctx context.Context, subdomain string, 
 			continue
 		}
 
-		// List existing records
 		existing, err := p.listRecords(ctx, fqdn, group.rtype)
 		if err != nil {
 			return fmt.Errorf("list %s records: %w", group.rtype, err)
@@ -250,41 +285,49 @@ func (p *CloudflareProvider) BatchUpdate(ctx context.Context, subdomain string, 
 			}
 		}
 
-		url := fmt.Sprintf("%s/zones/%s/dns_records/batch", cloudflareAPIBase, p.zoneID)
-		payload := map[string]interface{}{
-			"deletes": deletes,
-			"posts":   posts,
-		}
-		data, _ := json.Marshal(payload)
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
-		if err != nil {
+		if err := p.doBatch(ctx, deletes, posts); err != nil {
 			return err
 		}
-		req.Header.Set("Authorization", "Bearer "+p.token)
-		req.Header.Set("Content-Type", "application/json")
+	}
 
-		resp, err := p.client.Do(req)
-		if err != nil {
-			return fmt.Errorf("batch update %s records: %w", group.rtype, err)
-		}
+	return nil
+}
 
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+func (p *CloudflareProvider) doBatch(ctx context.Context, deletes []map[string]string, posts []map[string]interface{}) error {
+	url := fmt.Sprintf("%s/zones/%s/dns_records/batch", cloudflareAPIBase, p.zoneID)
+	payload := map[string]interface{}{
+		"deletes": deletes,
+		"posts":   posts,
+	}
+	data, _ := json.Marshal(payload)
 
-		var result struct {
-			Success bool      `json:"success"`
-			Errors  []cfError `json:"errors"`
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+p.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	var result struct {
+		Success bool      `json:"success"`
+		Errors  []cfError `json:"errors"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return fmt.Errorf("parse batch response: %w", err)
+	}
+	if !result.Success {
+		if len(result.Errors) > 0 {
+			return fmt.Errorf("batch update: %s", result.Errors[0].Message)
 		}
-		if err := json.Unmarshal(body, &result); err != nil {
-			return fmt.Errorf("batch update %s records: parse response: %w", group.rtype, err)
-		}
-		if !result.Success {
-			if len(result.Errors) > 0 {
-				return fmt.Errorf("batch update %s records: %s", group.rtype, result.Errors[0].Message)
-			}
-			return fmt.Errorf("batch update %s records: unknown error", group.rtype)
-		}
+		return fmt.Errorf("batch update: unknown error")
 	}
 
 	return nil

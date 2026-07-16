@@ -190,6 +190,7 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 		TeamID         string   `json:"teamId"`
 		IPs            []string `json:"ips"`
 		FilterIPv6Only bool     `json:"filter_ipv6_only"`
+		RecordType     string   `json:"record_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", 400)
@@ -252,6 +253,7 @@ func handleDNSUpload(w http.ResponseWriter, r *http.Request) {
 		Subdomain:   req.Subdomain,
 		UploadCount: count,
 		TeamID:      req.TeamID,
+		RecordType:  req.RecordType,
 	}
 	provider, err := dns.NewProvider(cfg)
 	if err != nil {
