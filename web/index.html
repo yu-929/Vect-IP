@@ -1392,9 +1392,10 @@ setTimeout(updateCidrCount,200);
 async function importFromUrl(){
 const ta=S('cidrs');
 let url=ta.value.trim();
-if(!url||!url.startsWith('http')){
-url=prompt('请输入 IP 列表链接：');
-if(!url)return;
+if(!url){
+showToast('请先在输入框中粘贴 IP 列表链接');
+ta.focus();
+return;
 }
 if(!url.startsWith('http'))url='https://'+url;
 showToast('正在解析链接...');
