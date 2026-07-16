@@ -512,9 +512,7 @@ func handleProgressSSE(w http.ResponseWriter, r *http.Request, id string) {
 	ch := make(chan ProgressData, 8)
 	session.mu.Lock()
 	session.subs = append(session.subs, ch)
-	if session.status != "running" {
-		ch <- session.progress
-	}
+	ch <- session.progress
 	session.mu.Unlock()
 
 	ctx := r.Context()

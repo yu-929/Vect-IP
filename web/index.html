@@ -737,6 +737,23 @@ const tabs=document.querySelectorAll('.tab-content');
 const items=document.querySelectorAll('.tab-item');
 tabs.forEach(t=>{if(t.id==='tab-'+name){t.classList.add('active');}else{t.classList.remove('active');}});
 items.forEach(t=>{t.classList.toggle('active',t.dataset.tab===name);});
+if(name==='scan'&&curId){
+S('statusPanel').style.display='';
+if(!es||es.readyState===2){
+es=new EventSource('/api/scan/'+curId+'?subscribe');
+es.onmessage=function(e){
+if(!e.data)return;
+try{updateProgress(JSON.parse(e.data));}catch(ex){}
+};
+es.onerror=function(){
+if(this.readyState===2&&curId)pollResult(curId);
+};
+es.addEventListener('done',function(){
+es.close();
+if(!polling)pollResult(curId);
+});
+}
+}
 }
 
 // Theme
