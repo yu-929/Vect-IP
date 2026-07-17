@@ -1301,8 +1301,8 @@ if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部|'+total+'</span></button>'+
-(S('dnsEnableToggle').checked?'<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>':'')+
-(S('gitEnableToggle').checked?'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>':'')+
+'<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>'+
+'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>'+
 '</div></div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
@@ -1335,7 +1335,7 @@ const top=btn.getBoundingClientRect().top;
 detail.style.display=isHidden?'':'none';
 const h=loadHistory();
 const total=h[hi]?h[hi].results.length:0;
-if(isHidden){btn.querySelector('span').textContent='收起';}
+if(isHidden){btn.querySelector('span').textContent='收起全部|'+total;}
 else{btn.querySelector('span').textContent='展开全部|'+total;}
 window.scrollBy(0,btn.getBoundingClientRect().top-top);
 }
@@ -1356,7 +1356,6 @@ showToast('已清空');
 }
 
 function dnsUploadFromHistory(idx){
-if(!S('dnsEnableToggle').checked){showToast('请先在设置中启用 DNS 上传');switchTab('settings');return;}
 const h=loadHistory();
 if(!h[idx])return;
 const ips=h[idx].results.map(function(r){return r.ip});
@@ -1371,7 +1370,6 @@ x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdo
 }
 
 function githubUploadFromHistory(idx){
-if(!S('gitEnableToggle').checked){showToast('请先在设置中启用 GIT 上传');switchTab('settings');return;}
 const h=loadHistory();
 if(!h[idx])return;
 const ips=h[idx].results.map(function(r){return r.ip});
