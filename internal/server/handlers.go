@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
@@ -113,6 +114,52 @@ func sendProgress(progress ProgressData, subs []chan ProgressData) {
 // tracerouteBaseURL is set per-platform (empty on desktop, "http://127.0.0.1:8091" on mobile)
 var globalTracerouteBaseURL string
 
+func historyFilePath() string {
+	dir := filepath.Join(os.TempDir(), "vect-history")
+	os.MkdirAll(dir, 0755)
+	return filepath.Join(dir, "full-history.json")
+}
+
+func loadHistoryFromFile() []interface{} {
+	b, err := os.ReadFile(historyFilePath())
+	if err != nil {
+		return nil
+	}
+	var entries []interface{}
+	if json.Unmarshal(b, &entries) == nil {
+		return entries
+	}
+	return nil
+}
+
+func saveHistoryToFile(entries []interface{}) {
+	b, _ := json.Marshal(entries)
+	os.WriteFile(historyFilePath(), b, 0644)
+}
+
+func handleHistoryList(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		entries := loadHistoryFromFile()
+		if entries == nil {
+			json.NewEncoder(w).Encode([]interface{}{})
+		} else {
+			json.NewEncoder(w).Encode(entries)
+		}
+	case "POST":
+		var entries []interface{}
+		if err := json.NewDecoder(r.Body).Decode(&entries); err != nil {
+			http.Error(w, "invalid request", 400)
+			return
+		}
+		saveHistoryToFile(entries)
+		w.WriteHeader(200)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	globalTracerouteBaseURL = tracerouteBaseURL
 
@@ -130,6 +177,7 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	mux.HandleFunc("/api/health", handleHealth)
 	mux.HandleFunc("/api/colo-discover", handleColoDiscover)
 	mux.HandleFunc("/api/resolve-url", handleResolveURL)
+	mux.HandleFunc("/api/history/list", handleHistoryList)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", port),

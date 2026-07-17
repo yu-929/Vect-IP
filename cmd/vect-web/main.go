@@ -148,6 +148,52 @@ func deleteHistory(id string) {
 	os.Remove(filepath.Join(historyDir(), id+".json"))
 }
 
+func historyFilePath() string {
+	dir := filepath.Join(os.TempDir(), "vect-history")
+	os.MkdirAll(dir, 0755)
+	return filepath.Join(dir, "full-history.json")
+}
+
+func loadHistoryFromFile() []interface{} {
+	b, err := os.ReadFile(historyFilePath())
+	if err != nil {
+		return nil
+	}
+	var entries []interface{}
+	if json.Unmarshal(b, &entries) == nil {
+		return entries
+	}
+	return nil
+}
+
+func saveHistoryToFile(entries []interface{}) {
+	b, _ := json.Marshal(entries)
+	os.WriteFile(historyFilePath(), b, 0644)
+}
+
+func handleHistoryList(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		entries := loadHistoryFromFile()
+		if entries == nil {
+			json.NewEncoder(w).Encode([]interface{}{})
+		} else {
+			json.NewEncoder(w).Encode(entries)
+		}
+	case "POST":
+		var entries []interface{}
+		if err := json.NewDecoder(r.Body).Decode(&entries); err != nil {
+			http.Error(w, "invalid request", 400)
+			return
+		}
+		saveHistoryToFile(entries)
+		w.WriteHeader(200)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func handleHistory(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -306,6 +352,7 @@ func main() {
 	http.HandleFunc("/api/colo-discover", handleColoDiscover)
 	http.HandleFunc("/api/history", handleHistory)
 	http.HandleFunc("/api/history/", handleHistory)
+	http.HandleFunc("/api/history/list", handleHistoryList)
 	http.HandleFunc("/api/dns-upload", handleDNSUpload)
 	http.HandleFunc("/api/resolve-url", handleResolveURL)
 

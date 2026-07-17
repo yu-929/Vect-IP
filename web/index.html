@@ -1210,7 +1210,19 @@ if(stored)return JSON.parse(stored)||[];
 }catch(e){}
 return[];
 }
-function saveHistory(h){localStorage.setItem('vect-history',JSON.stringify(h))}
+function syncHistoryFromServer(){
+var x=new XMLHttpRequest();
+x.open('GET','/api/history/list',true);
+x.onload=function(){if(x.status===200){try{var h=JSON.parse(x.responseText);if(h&&h.length>0)localStorage.setItem('vect-history',JSON.stringify(h));renderHistory();}catch(e){}}};
+x.send();
+}
+function saveHistory(h){
+localStorage.setItem('vect-history',JSON.stringify(h));
+var x=new XMLHttpRequest();
+x.open('POST','/api/history/list',true);
+x.setRequestHeader('Content-Type','application/json');
+x.send(JSON.stringify(h));
+}
 
 function renderResults(r){
 	results=r;
@@ -1448,6 +1460,7 @@ function ipTouchEnd(){if(longPressTimer){clearTimeout(longPressTimer);longPressT
 bootApp();
 function bootApp(){
 renderHistory();
+syncHistoryFromServer();
 updateTracerouteUI();
 updateCidrCount();
 updateThemeOpts();
