@@ -325,202 +325,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="pm-opt" onclick="selectCidrPreset('edt-warp','EDT/WARP通用列表')" style="padding:10pt 14pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center">EDT/WARP通用列表</div>
 </div>
 </div>
-</div>
-
-<div class="section">
-<div class="field">
-<label>CIDR 网段 | 单行单条</label>
-<div class="input-group" style="margin-bottom:5pt">
-<button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
-<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
-</button>
-<button type="button" class="btn-icon-sm" onclick="pasteCidr()" title="粘贴">
-<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="2" width="12" height="16" rx="2"/><path d="M7 2V1h6v1"/></svg>
-</button>
-<button type="button" class="btn-icon-sm" onclick="importFromUrl()" title="从链接导入">
-<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 5H5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-4"/><path d="M12 3h5v5M10 10l7-7"/></svg>
-</button>
-<button type="button" class="btn-icon-sm" onclick="resolveDomains()" title="解析域名转为/24">
-<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 3v14M3 10h14"/><circle cx="10" cy="10" r="3"/></svg>
-</button>
-<button type="button" class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();" title="清空">
-<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
-</button>
-<span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
-</div>
-<input type="file" id="cidrFile" accept=".txt,.csv" style="display:none" onchange="importCidrFile(event)">
-<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" autocomplete="off" oninput="updateCidrCount()"></textarea>
-</div>
-</div>
-
-<div class="section">
-<div class="field">
-<label>ASN 自治系统编号 | 自动解析</label>
-<div class="input-group">
-<input id="asn" type="number" placeholder="例如 13335">
-<button class="btn-icon" onclick="S('asn').value=''" aria-label="清空 ASN">
-<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5l10 10M15 5L5 15"/></svg>
-</button>
-<button class="btn-icon" id="resolveBtn" onclick="resolveASN()" aria-label="解析 ASN">
-<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3l6 6-6 6M4 9h12"/></svg>
-</button>
-</div>
-</div>
-</div>
-
-<div class="section">
-<div class="row">
-<div class="field"><label>IP 版本</label>
-<select id="ipVersion"><option value="4">IPv4</option><option value="6">IPv6</option></select>
-</div>
-<div class="field"><label>探测预算</label><input id="budget" type="number" value="2000" min="1"></div>
-</div>
-<div class="row" style="margin-top:8pt">
-<div class="field"><label>并发数</label><input id="concurrency" type="number" value="200" min="1" max="500"></div>
-<div class="field"><label>保留 TOP</label><input id="topN" type="number" value="20" min="1" max="100"></div>
-</div>
-<div class="row" style="margin-top:8pt">
-<div class="field"><label>带宽测速 TOP</label><input id="downloadTop" type="number" value="5" min="0" max="50"></div>
-<div class="field"><label>测速模式</label>
-<select id="downloadMode"><option value="all">默认模式</option><option value="sequential" selected>顺序模式</option></select>
-</div>
-</div>
-</div>
-
-<div class="section">
-<div class="field">
-<label>机房过滤</label>
-<div class="colo-filter">
-<select id="coloFilterMode" onchange="onColoModeChange()">
-<option value="">关闭</option>
-<option value="allow">白名单</option>
-<option value="exclude">黑名单</option>
-</select>
-<input id="coloInput" placeholder="输入机房代码，逗号分隔" disabled>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Error -->
-<div id="error-msg" class="hidden error-box">
-<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11a1 1 0 110-2 1 1 0 010 2zm-1-7h2v4H9V6z"/></svg>
-<span id="errorText"></span>
-</div>
-
-<!-- Action Button -->
-<div class="btn-spacer">
-<button class="btn btn-primary" id="actionBtn" onclick="toggleScan()">开始扫描</button>
-</div>
-
-<div style="border-top:0.5px solid var(--glass-border);margin:18pt 0"></div>
-
-<!-- Status Panel (inline in scan tab) -->
-<div class="glass-card" id="statusPanel" style="display:none">
-<div style="display:flex;justify-content:space-between;align-items:center">
-<span style="font-size:13px;font-weight:500;color:var(--secondary)">扫描进度</span>
-<div style="display:flex;align-items:center;gap:8pt">
-<span style="font-size:11px;color:var(--muted2);font-family:'SF Mono',ui-monospace,monospace" id="scanId">--</span>
-<button id="collapseBtn" onclick="if(progressLocked)return;var pc=S('progressContent');var h=pc.style.display==='none';pc.style.display=h?'':'none';this.textContent=h?'收起':'展开'" style="font-size:11px;color:var(--secondary);border:none;background:var(--input-bg);border-radius:6pt;padding:3pt 8pt;cursor:pointer;font-family:inherit">收起</button>
-</div>
-</div>
-
-<!-- Skeleton -->
-<div id="skeletonPanel">
-<div class="skeleton-card" style="border:none;backdrop-filter:none;background:transparent;padding:0;margin:0">
-<div class="skeleton-stage">
-<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
-<div class="skeleton-line w80 h10" style="margin-bottom:8pt"></div>
-<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
-<div class="skeleton-line w80 h10" style="margin-bottom:8pt"></div>
-<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
-<div class="skeleton-line w80 h10" style="margin-bottom:8pt"></div>
-<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
-<div class="skeleton-line w80 h10" style="margin-bottom:8pt"></div>
-</div>
-<div class="skeleton-grid">
-<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
-<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
-<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
-<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
-</div>
-</div>
-</div>
-
-<div id="progressContent" style="display:none">
-
-<div class="stage-list" id="stageList">
-<div class="stage-item">
-<div class="stage-top"><span class="stage-name">网段解析</span><span class="stage-count" id="s1Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s1Fill"></div></div>
-<div class="stage-footer"><span id="s1Est">预计 --</span><span id="s1Rem">--</span></div>
-</div>
-<div class="stage-item">
-<div class="stage-top"><span class="stage-name">IP 抽样</span><span class="stage-count" id="s2Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s2Fill"></div></div>
-<div class="stage-footer"><span id="s2Est">预计 --</span><span id="s2Rem">--</span></div>
-</div>
-<div class="stage-item">
-<div class="stage-top"><span class="stage-name">并发探测</span><span class="stage-count" id="s3Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s3Fill"></div></div>
-<div class="stage-footer"><span id="s3Est">预计 --</span><span id="s3Rem">--</span></div>
-</div>
-<div class="stage-item">
-<div class="stage-top"><span class="stage-name">筛选排序</span><span class="stage-count" id="s4Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s4Fill"></div></div>
-<div class="stage-footer"><span id="s4Est">预计 --</span><span id="s4Rem">--</span></div>
-</div>
-<div class="stage-item download-stage" id="stage5Item" style="display:none">
-<div class="stage-top"><span class="stage-name">下载测速</span><span class="stage-count" id="s5Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s5Fill"></div></div>
-<div class="stage-footer" id="s5Status"></div>
-</div>
-<div class="stage-item" id="stage6Item" style="display:none">
-<div class="stage-top"><span class="stage-name">ASN 查询</span><span class="stage-count" id="s6Count">--</span></div>
-<div class="stage-bar"><div class="stage-fill" id="s6Fill"></div></div>
-<div class="stage-footer"><span id="s6Est">预计 --</span><span id="s6Rem">--</span></div>
-</div>
-</div>
-
-<div class="status-grid">
-<div class="stat-item"><div class="stat-val brand" id="pAvail">0</div><div class="stat-lbl">已完成</div></div>
-<div class="stat-item"><div class="stat-val" id="pBestScore">-</div><div class="stat-lbl">最优延迟</div></div>
-<div class="stat-item"><div class="stat-val" id="pElapsed">0s</div><div class="stat-lbl">总用时</div></div>
-</div>
-
-</div><!-- progressContent -->
-</div><!-- statusPanel -->
-</div><!-- tab-scan -->
-
-<!-- ============ HISTORY TAB ============ -->
-<div class="tab-content" id="tab-history">
-<div class="glass-card">
-<div class="card-title">扫描历史</div>
-<div class="history-header">
-<span class="count" id="historyCount">0 条记录</span>
-<button class="clear-btn" onclick="clearHistory()" id="clearHistoryBtn" style="display:none">清空</button>
-</div>
-<div style="border-top:0.5px solid var(--glass-border);margin:12pt 0 16pt 0"></div>
-<div class="history-list" id="historyList">
-    <div class="history-empty">
-      <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="40" cy="40" r="28"/>
-        <path d="M40 28v12l8 8"/>
-        <path d="M28 12l-8 8M52 12l8 8"/>
-        <path d="M12 28l8 8M12 52l8-8M60 36l8 8M60 44l8-8"/>
-        <path d="M28 68l-8-8M52 68l8-8"/>
-      </svg>
-      <div class="empty-title">暂无扫描记录</div>
-      <div class="empty-desc">完成一次扫描后，结果将出现在这里<br>点击「扫描」Tab 开始</div>
-</div>
-	</div>
-</div>
-</div>
-
-<!-- ============ SETTINGS TAB ============ -->
-<div class="tab-content" id="tab-settings">
-<div class="glass-card">
-<div class="card-title">设置</div>
 
 <div class="settings-group">
 <div class="sg-title">外观</div>
@@ -616,7 +420,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="settings-row">
 <div style="flex:1">
 <div class="sl-label">启用 DNS 上传</div>
-<div class="sl-desc">开启后在历史记录显示上传按钮</div>
 </div>
 <div class="toggle-wrap">
 <div class="toggle-track" id="dnsEnableTrack" onclick="toggleDnsEnable()">
@@ -652,7 +455,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="settings-row">
 <div style="flex:1">
 <div class="sl-label">启用 GIT 上传</div>
-<div class="sl-desc">开启后在历史记录显示 GIT 上传按钮</div>
 </div>
 <div class="toggle-wrap">
 <div class="toggle-track" id="gitEnableTrack" onclick="toggleGitEnable()">
@@ -674,12 +476,13 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="settings-row">
 <div style="flex:1">
 <div class="sl-label">启用 ASN 查询</div>
-<div class="sl-desc">开启后复制和 GIT 上传的格式变为 IP:443#colo-asname</div>
 </div>
 <div class="toggle-wrap">
 <div class="toggle-track" id="asnTrack" onclick="toggleASN()">
 <div class="toggle-knob"></div>
 <input type="checkbox" class="toggle-input" id="asnToggle" aria-label="启用 ASN 查询">
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1108,7 +911,11 @@ if(stage===5){
 S('stage5Item').style.display='';
 S('s5Fill').style.width='100%';
 S('s5Count').textContent=done+'/'+budget;
-S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
+if(S('stage6Item').style.display!=='none'){
+	S('stage5Item').style.display='none';
+}else{
+	S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
+}
 // download speed stage label removed
 }
 }
@@ -1125,6 +932,7 @@ const d=await r.json();
 if(d.status==='completed'){
 	progressLocked=false;
 	S('s5Status').textContent='';
+	S('stage5Item').style.display='none';
 	const results=d.result||[];
 	if(localStorage.getItem('vect-asn')==='1'&&results.length){
 		S('stage6Item').style.display='';
@@ -1335,7 +1143,7 @@ html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</div>'
 html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-jitter">'+(r.jitter!==undefined?r.jitter.toFixed(1)+'ms':'--')+'</span>';
-html+='<span class="h-detail-colo">'+(r.colo||'-')+coloFlag(r.colo)+(r.asname?'-'+r.asname:'')+'</span>';
+html+='<span class="h-detail-colo">'+(r.colo||'-')+coloFlag(r.colo)+'</span>';
 html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
 				if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
 html+='</div>';
