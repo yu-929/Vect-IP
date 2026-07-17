@@ -1374,7 +1374,10 @@ const h=loadHistory();
 if(!h[idx])return;
 const ips=h[idx].results.map(function(r){return r.ip});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
-const cfg={token:S('gitToken').value,repo:S('gitRepo').value,path:S('gitPath').value,branch:S('gitBranch').value};
+var repo=S('gitRepo').value.trim();
+repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
+if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('settings');return;}
+const cfg={token:S('gitToken').value,repo:repo,path:S('gitPath').value,branch:S('gitBranch').value};
 if(!cfg.token||!cfg.repo){showToast('请先在设置中配置 GIT 参数');switchTab('settings');return;}
 showToast('正在上传到 GitHub...');
 const x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);

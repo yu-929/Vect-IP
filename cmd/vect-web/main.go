@@ -1740,6 +1740,8 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewDecoder(getResp.Body).Decode(&existing)
 		sha = existing.SHA
+	} else if err != nil && getResp == nil {
+		// GET failed, will try PUT anyway
 	}
 	if getResp != nil {
 		getResp.Body.Close()
