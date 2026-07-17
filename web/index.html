@@ -1570,8 +1570,8 @@ out.push(lines[i]);
 ta.value=out.join('\n');
 S('cidrCount').textContent=out.filter(s=>s.trim()).length+' 条';
 const ok=Object.keys(resolved).length;
-if(errors.length)showToast('完成 '+ok+'/'+domains.length+', 失败: '+errors.join('; '));
-else showToast('已完成域名解析');
+const pct=domains.length?Math.round(ok/domains.length*100):0;
+showToast('域名解析 '+ok+'/'+domains.length+' | 通过率 '+pct+'%');
 }catch(e){showToast('请求失败: '+e.message);}
 }
 function showToast(m){
