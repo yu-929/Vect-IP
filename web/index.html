@@ -618,17 +618,14 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <div class="settings-group">
 <div class="sg-title">下载测速</div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">自定义测速地址</div>
-<div class="sl-desc">使用自定义 URL 替代默认测速文件</div>
-</div>
-<div class="toggle-wrap">
-<div class="toggle-track" id="customDlTrack" onclick="toggleCustomDl()">
-<div class="toggle-knob"></div>
-<input type="checkbox" class="toggle-input" id="customDlToggle" aria-label="自定义测速地址">
-</div>
-</div>
+<div class="field"><label>测速网址</label>
+<select id="dlUrlPreset" onchange="toggleDlUrlInput()">
+<option value="auto">自动选择</option>
+<option value="speed.cloudflare.com/__down?bytes=99999999">Cloudflare</option>
+<option value="cf.090227.xyz/__down?bytes=99999999">CMLiussss</option>
+<option value="speed.okl.abrdns.com">CMCC专属</option>
+<option value="__custom__">自定义测速地址</option>
+</select>
 </div>
 <div id="customDlUrlRow" style="display:none;margin-top:8pt">
 <input id="customDlUrl" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 10pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:40pt;box-sizing:border-box" placeholder="https://example.com/100mb.bin">
@@ -802,10 +799,8 @@ if(track)track.classList.toggle('on',tracerouteEnabled);
 if(toggle)toggle.checked=tracerouteEnabled;
 }
 
-function toggleCustomDl(){
-const on=S('customDlTrack').classList.toggle('on');
-S('customDlToggle').checked=on;
-S('customDlUrlRow').style.display=on?'':'none';
+function toggleDlUrlInput(){
+S('customDlUrlRow').style.display=S('dlUrlPreset').value==='__custom__'?'':'none';
 }
 
 function toggleDnsEnable(){
@@ -1054,8 +1049,8 @@ coloExclude:coloMode==='exclude'?coloSelected.join(','):'',
 ipVersion:parseInt(S('ipVersion').value)||4,
 downloadBytes:parseInt(S('downloadBytes').value)*1000*1000||0,
 downloadTimeout:parseInt(S('downloadTimeout').value)||0,
-customDownloadUrl:S('customDlUrl').value||'',
-customDownloadEnabled:S('customDlToggle').checked};
+customDownloadUrl:S('dlUrlPreset').value==='__custom__'?S('customDlUrl').value:S('dlUrlPreset').value,
+customDownloadEnabled:S('dlUrlPreset').value!=='auto'};
 if(adv){
 body.heads=parseInt(S('heads').value)||4;
 body.beam=parseInt(S('beam').value)||32;
