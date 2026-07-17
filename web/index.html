@@ -816,6 +816,7 @@ function toggleDnsEnable(){
 const on=S('dnsEnableTrack').classList.toggle('on');
 S('dnsEnableToggle').checked=on;
 S('dnsConfigFields').style.display=on?'':'none';
+renderHistory();
 }
 
 function toggleFilterIpv6Only(){
@@ -828,6 +829,7 @@ const on=S('gitEnableTrack').classList.toggle('on');
 S('gitEnableToggle').checked=on;
 S('gitConfigFields').style.display=on?'':'none';
 localStorage.setItem('vect-git-enabled',on?'1':'0');
+renderHistory();
 }
 
 function toggleAdv(){
