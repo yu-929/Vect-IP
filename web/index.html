@@ -1340,7 +1340,7 @@ html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="i
 if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div></div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
-'<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部|'+total+'</span></button>'+
+'<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
 '<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>'+
 '<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>'+
 '</div></div>';
@@ -1375,8 +1375,8 @@ const top=btn.getBoundingClientRect().top;
 detail.style.display=isHidden?'':'none';
 const h=loadHistory();
 const total=h[hi]?h[hi].results.length:0;
-if(isHidden){btn.querySelector('span').textContent='收起全部|'+total;}
-else{btn.querySelector('span').textContent='展开全部|'+total;}
+if(isHidden){btn.querySelector('span').textContent='收起全部 | '+total;}
+else{btn.querySelector('span').textContent='展开全部 | '+total;}
 window.scrollBy(0,btn.getBoundingClientRect().top-top);
 }
 
