@@ -1543,13 +1543,15 @@ idxMap.push(i);
 if(!domains.length){showToast('未检测到需要解析的域名');return;}
 showToast('正在解析 '+domains.length+' 个域名...');
 try{
-const resolved={};
+const resolved={};const errors=[];
 for(const d of domains){
+try{
 const r=await fetch('/api/resolve-domain?domain='+encodeURIComponent(d));
-if(!r.ok){const e=await r.text();showToast(d+' 解析失败: '+e);return;}
+if(!r.ok){errors.push(d+': '+await r.text());continue;}
 const data=await r.json();
-if(!data.cidrs||!data.cidrs.length){showToast(d+' 未解析到 IP');return;}
+if(!data.cidrs||!data.cidrs.length){errors.push(d+': 未解析到 IP');continue;}
 resolved[d]=data.cidrs;
+}catch(e){errors.push(d+': '+e.message);}
 }
 const out=[];
 for(let i=0;i<lines.length;i++){
@@ -1567,7 +1569,9 @@ out.push(lines[i]);
 }
 ta.value=out.join('\n');
 S('cidrCount').textContent=out.filter(s=>s.trim()).length+' 条';
-showToast('已完成域名解析');
+const ok=Object.keys(resolved).length;
+if(errors.length)showToast('完成 '+ok+'/'+domains.length+', 失败: '+errors.join('; '));
+else showToast('已完成域名解析');
 }catch(e){showToast('请求失败: '+e.message);}
 }
 function showToast(m){
