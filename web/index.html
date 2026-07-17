@@ -1284,6 +1284,47 @@ function renderResults(r){
 	renderHistory();
 }
 
+const coloCountry={
+ACK:'NZ',ADL:'AU',AKL:'NZ',ALG:'DZ',AMM:'JO',AMS:'NL',ARN:'SE',ATH:'GR',ATL:'US',AUC:'AU',
+AUH:'AE',AVP:'US',AXA:'US',BAH:'BS',BCN:'ES',BEG:'RS',BEL:'BR',BEY:'LB',BFS:'GB',BGO:'NO',
+BGW:'IQ',BHX:'GB',BIO:'ES',BJL:'GM',BKK:'TH',BLR:'IN',BNE:'AU',BOG:'CO',BOM:'IN',BNK:'AU',
+BRE:'DE',BRI:'IT',BRS:'GB',BRU:'BE',BSL:'CH',BUD:'HU',BWN:'BN',BZE:'BZ',CAI:'EG',CCS:'VE',
+CCU:'IN',CDG:'FR',CEB:'PH',CGB:'BR',CGK:'ID',CGO:'CN',CJU:'KR',CKG:'CN',CLT:'US',CMN:'MA',
+CNX:'TH',CPH:'DK',CPT:'ZA',CRL:'BE',CSX:'CN',CTU:'CN',CUE:'EC',CUR:'CW',CWB:'BR',CWL:'GB',
+DAD:'VN',DAL:'US',DCA:'US',DEL:'IN',DEN:'US',DFW:'US',DLC:'CN',DMM:'SA',DNMM:'NG',DSM:'US',
+DUB:'IE',DUR:'ZA',DUS:'DE',DXB:'AE',EDI:'GB',ELP:'US',EMA:'GB',ESB:'TR',EVE:'NO',EWR:'US',
+EZE:'AR',FAO:'PT',FCO:'IT',FLN:'BR',FOC:'CN',FOR:'BR',FRA:'DE',FSD:'US',FUK:'JP',FUN:'TV',
+GDL:'MX',GIG:'BR',GLA:'GB',GLF:'CR',GOI:'IN',GOT:'SE',GRU:'BR',GUA:'GT',GUM:'US',GVA:'CH',
+HAK:'CN',HAM:'DE',HAV:'CU',HEL:'FI',HFE:'CN',HGH:'CN',HHN:'CN',HKG:'HK',HLN:'US',HNL:'US',
+HOE:'LA',HOU:'US',HRB:'CN',HRE:'ZW',HYD:'IN',IAD:'US',IAH:'US',ICT:'US',IND:'US',IOR:'IE',
+ISB:'PK',IST:'TR',ITM:'JP',JED:'SA',JER:'JE',JFK:'US',JHB:'MY',JIB:'DJ',JIJ:'ET',JKT:'ID',
+JNB:'ZA',KAN:'NG',KEF:'IS',KGL:'RW',KHI:'PK',KHV:'RU',KIX:'JP',KMQ:'CN',KNX:'AU',KRT:'SD',
+KTM:'NP',KTW:'PL',KUL:'MY',KWI:'KW',LAD:'AO',LAX:'US',LBA:'GB',LCA:'LC',LCE:'HN',LCK:'US',
+LDS:'CN',LED:'RU',LEJ:'DE',LEX:'US',LGA:'US',LHE:'PK',LHR:'GB',LIM:'PE',LIN:'IT',LIS:'PT',
+LJU:'SI',LLA:'SE',LLW:'MW',LPB:'BO',LPL:'GB',LTN:'GB',LUN:'ZM',LUX:'LU',LYS:'FR',
+MAD:'ES',MAN:'GB',MBA:'KE',MCI:'US',MCO:'US',MCT:'OM',MDZ:'AR',MEL:'AU',MEM:'US',MEX:'MX',
+MFM:'MO',MGA:'MG',MGM:'US',MIA:'US',MIL:'IT',MLE:'MV',MLH:'FR',MMA:'SE',MNL:'PH',MOW:'RU',
+MRS:'FR',MRU:'MU',MSP:'US',MSQ:'BY',MST:'NL',MSY:'US',MTY:'MX',MUC:'DE',MVD:'UY',MXP:'IT',
+MYJ:'RU',NAG:'IN',NAN:'FJ',NBO:'KE',NCE:'FR',NCL:'GB',NDJ:'TD',NGO:'JP',NIM:'NE',NNG:'CN',
+NRT:'JP',NTE:'FR',NUE:'DE',NVT:'BR',NWI:'GB',OAK:'US',OHD:'MK',OKA:'JP',OKC:'US',OMS:'RU',
+ONT:'US',ORD:'US',ORF:'US',ORK:'IE',ORY:'FR',OSL:'NO',OTP:'RO',OUA:'BF',OUL:'FI',OVB:'RU',
+PAE:'US',PAP:'HT',PBH:'BT',PDX:'US',PEN:'MY',PER:'AU',PEW:'PK',PFO:'CY',PHL:'US',PHX:'US',
+PIA:'US',PIT:'US',PNH:'KH',POM:'PG',POP:'DO',PRG:'CZ',PSA:'IT',PSP:'US',PTY:'PA',PUJ:'DO',
+PVG:'CN',PVR:'MX',RGN:'MM',RIC:'US',RIX:'LV',RMQ:'US',RNO:'US',RUH:'SA',RUM:'NP',RXN:'RU',
+SAN:'US',SAO:'BR',SAV:'US',SBN:'US',SCC:'US',SCL:'CL',SDF:'US',SDQ:'DO',SEA:'US',SEZ:'SC',
+SFO:'US',SGN:'VN',SHA:'CN',SHE:'CN',SIN:'SG',SJC:'US',SJJ:'BA',SJO:'CR',SJP:'BR',SJW:'CN',
+SKG:'GR',SLC:'US',SMF:'US',SNN:'IE',SOF:'BG',SOL:'SB',SOM:'LT',SRO:'US',SSA:'BR',STL:'US',
+STO:'SE',STR:'DE',SUB:'ID',SUN:'US',SUX:'US',SVO:'RU',SWA:'CN',SXB:'FR',SYD:'AU',SYW:'MY',
+SYX:'CN',SZG:'CN',TAS:'UZ',TBS:'GE',TAO:'CN',TGU:'HN',THE:'BR',TIA:'AL',TIV:'ME',TLL:'EE',
+TLS:'FR',TNR:'MG',TPE:'TW',TRD:'NO',TSE:'KZ',TSN:'CN',TUN:'TN',TXL:'DE',TYN:'CN',
+UBN:'MN',UPG:'ID',URC:'CN',USM:'TH',VIE:'AT',VKO:'RU',VLC:'ES',VNO:'LT',VTE:'LA',
+WAW:'PL',WUH:'CN',WUX:'CN',WXN:'CN',
+XIY:'CN',XMN:'CN',
+YEG:'CA',YHZ:'CA',YMQ:'CA',YOW:'CA',YQB:'CA',QRY:'CA',YTZ:'CA',YUL:'CA',YVR:'CA',YWG:'CA',
+YXE:'CA',YYC:'CA',YYZ:'CA',YZH:'CN',ZAG:'HR',ZAM:'PH',ZHA:'CN',ZRH:'CH',
+};
+function coloFlag(c){return coloCountry[c]?'('+coloCountry[c]+')':'';}
+
 function renderHistory(){
 const history=loadHistory();
 const list=S('historyList');
@@ -1297,7 +1338,7 @@ const total=h.results.length;
 html+='<div class="glass-card history-item">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="copy-btn" onclick="copyAllResults('+hi+')" title="复制全部"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="12" height="12" rx="2"/><path d="M3 3h12v2"/></svg></button><button class="del-btn" onclick="deleteHistory('+hi+')" title="删除"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg></button></div></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
-if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div></div>';
+if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+' '+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div></div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部|'+total+'</span></button>'+
@@ -1313,7 +1354,7 @@ html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</div>'
 html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-jitter">'+(r.jitter!==undefined?r.jitter.toFixed(1)+'ms':'--')+'</span>';
-html+='<span class="h-detail-colo">'+(r.colo||'-')+'</span>';
+html+='<span class="h-detail-colo">'+(r.colo||'-')+' '+coloFlag(r.colo)+'</span>';
 html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
 				if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
 html+='</div>';
