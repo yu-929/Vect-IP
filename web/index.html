@@ -345,6 +345,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <div class="section">
 <div class="field">
+<div class="input-group" style="margin-bottom:5pt">
+<input id="domainInput" type="text" placeholder="输入域名解析 IP 并转为 /24" style="flex:1;height:30pt;padding:0 10pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:15pt;color:var(--text);font-size:12px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')resolveDomain()">
+<button class="btn-icon-sm" onclick="resolveDomain()" title="解析域名">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+</button>
+</div>
 <label>CIDR 前缀（每行一个）</label>
 <div class="input-group" style="margin-bottom:5pt">
 <button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
@@ -1481,6 +1487,20 @@ if(!r.ok){const e=await r.text();showToast('解析失败: '+e);return;}
 const data=await r.json();
 if(!data.cidrs||!data.cidrs.length){showToast('未解析到有效 IP');return;}
 ta.value=data.cidrs.join('\n');
+updateCidrCount();
+showToast('已导入 '+data.count+' 条 CIDR');
+}catch(e){showToast('请求失败: '+e.message);}
+}
+async function resolveDomain(){
+const domain=S('domainInput').value.trim();
+if(!domain){showToast('请输入域名');return;}
+showToast('正在解析域名...');
+try{
+const r=await fetch('/api/resolve-domain?domain='+encodeURIComponent(domain));
+if(!r.ok){const e=await r.text();showToast('解析失败: '+e);return;}
+const data=await r.json();
+if(!data.cidrs||!data.cidrs.length){showToast('未解析到有效 IP');return;}
+S('cidrs').value=data.cidrs.join('\n');
 updateCidrCount();
 showToast('已导入 '+data.count+' 条 CIDR');
 }catch(e){showToast('请求失败: '+e.message);}

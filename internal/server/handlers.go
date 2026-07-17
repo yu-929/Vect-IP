@@ -181,6 +181,7 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	mux.HandleFunc("/api/resolve-url", handleResolveURL)
 	mux.HandleFunc("/api/history/list", handleHistoryList)
 	mux.HandleFunc("/api/github-upload", handleGitHubUpload)
+	mux.HandleFunc("/api/resolve-domain", handleResolveDomain)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
@@ -1601,6 +1602,49 @@ http.Error(w, "fetch failed: "+err.Error(), http.StatusBadGateway)
 		cidr := ip + "/24"
 		if strings.HasPrefix(rest, "/") {
 			cidr = line
+		}
+		if !seen[cidr] {
+			cidrs = append(cidrs, cidr)
+			seen[cidr] = true
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"cidrs": cidrs,
+		"count": len(cidrs),
+	})
+}
+
+func handleResolveDomain(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	domain := r.URL.Query().Get("domain")
+	if domain == "" {
+		http.Error(w, "domain required", 400)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	ips, err := net.DefaultResolver.LookupNetIP(ctx, "ip4", domain)
+	if err != nil {
+		http.Error(w, "dns lookup failed: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	seen := map[string]bool{}
+	var cidrs []string
+	for _, ip := range ips {
+		cidr := ip.String()
+		if ip.Is4() {
+			parts := strings.Split(cidr, ".")
+			if len(parts) == 4 {
+				cidr = parts[0] + "." + parts[1] + "." + parts[2] + ".0/24"
+			}
 		}
 		if !seen[cidr] {
 			cidrs = append(cidrs, cidr)
