@@ -356,6 +356,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button type="button" class="btn-icon-sm" onclick="importFromUrl()" title="从链接导入">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 5H5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-4"/><path d="M12 3h5v5M10 10l7-7"/></svg>
 </button>
+<button type="button" class="btn-icon-sm" onclick="resolveDomains()" title="解析域名转为/24">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 3v14M3 10h14"/><circle cx="10" cy="10" r="3"/></svg>
+</button>
 <button type="button" class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();" title="清空">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
 </button>
@@ -1519,6 +1522,48 @@ if(!data.cidrs||!data.cidrs.length){showToast('未解析到有效 IP');return;}
 ta.value=data.cidrs.join('\n');
 updateCidrCount();
 showToast('已导入 '+data.count+' 条 CIDR');
+}catch(e){showToast('请求失败: '+e.message);}
+}
+async function resolveDomains(){
+const ta=S('cidrs');
+const raw=ta.value;
+const lines=raw.split('\n');
+const domains=[];const idxMap=[];
+const re=/^([^:#/\\?]+)/;
+for(let i=0;i<lines.length;i++){
+const s=lines[i].trim();
+if(!s||s.startsWith('http://')||s.startsWith('https://'))continue;
+const m=s.match(re);
+if(!m)continue;
+const host=m[1];
+if(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)||host.includes('/'))continue;
+if(!domains.includes(host))domains.push(host);
+idxMap.push(i);
+}
+if(!domains.length){showToast('未检测到需要解析的域名');return;}
+showToast('正在解析 '+domains.length+' 个域名...');
+try{
+const resolved={};
+for(const d of domains){
+const r=await fetch('/api/resolve-domain?domain='+encodeURIComponent(d));
+if(!r.ok){const e=await r.text();showToast(d+' 解析失败: '+e);return;}
+const data=await r.json();
+if(!data.cidrs||!data.cidrs.length){showToast(d+' 未解析到 IP');return;}
+resolved[d]=data.cidrs[0];
+}
+const out=[];
+for(let i=0;i<lines.length;i++){
+const s=lines[i].trim();
+if(!s){out.push('');continue;}
+if(idxMap.includes(i)){
+const m=s.match(re);
+if(m&&resolved[m[1]]){out.push(resolved[m[1]]);continue;}
+}
+out.push(lines[i]);
+}
+ta.value=out.join('\n');
+S('cidrCount').textContent=out.filter(s=>s.trim()).length+' 条';
+showToast('已完成域名解析');
 }catch(e){showToast('请求失败: '+e.message);}
 }
 function showToast(m){
