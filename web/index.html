@@ -195,11 +195,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .trace-badge.optimized{background:rgba(52,199,89,0.15);color:var(--success)}
 
 /* ===== History Expand ===== */
-.h-expand-bar{margin-top:8pt;padding-top:8pt;border-top:0.5px solid var(--glass-border);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:center;height:40pt;overflow:hidden}
+.h-expand-bar{margin-top:8pt;padding-top:8pt;border-top:0.5px solid var(--glass-border);display:flex;align-items:center;gap:4pt;min-height:40pt;flex-wrap:wrap}
 .h-expand-bar>*{min-width:0;overflow:hidden}
-.h-expand-bar>*:nth-child(1){text-align:left}
-.h-expand-bar>*:nth-child(2){text-align:center}
-.h-expand-bar>*:nth-child(3){text-align:right}
 .expand-btn{display:flex;align-items:center;gap:4pt;height:40pt;padding:0 8pt;border:none;border-radius:8pt;background:transparent;color:var(--primary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s;white-space:nowrap}
 .expand-btn:active{opacity:0.6}
 .expand-btn svg{transition:transform .2s ease;width:12pt;height:12pt}
@@ -1304,7 +1301,7 @@ html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><butt
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
 if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div></div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
-if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部</span><span class="expand-count" id="expandCount_'+hi+'">'+total+'</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button><button class="h-copy-all-btn" onclick="copyAllResults('+hi+')" title="复制全部">复制全部</button><button class="h-dns-btn" onclick="dnsUploadFromHistory('+hi+')" title="DNS上传">DNS上传</button><button class="h-dns-btn" onclick="githubUploadFromHistory('+hi+')" title="GIT上传">GIT上传</button></div>';
+if(total>1)html+='<div class="h-expand-bar"><button class="expand-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部</span><span class="expand-count" id="expandCount_'+hi+'">'+total+'</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button><button class="h-copy-all-btn" onclick="copyAllResults('+hi+')" title="复制全部">复制全部</button>'+(S('dnsEnableToggle').checked?'<button class="h-dns-btn" onclick="dnsUploadFromHistory('+hi+')" title="DNS上传">DNS上传</button>':'')+(S('gitEnableToggle').checked?'<button class="h-dns-btn" onclick="githubUploadFromHistory('+hi+')" title="GIT上传">GIT上传</button>':'')+'</div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
 if(ri===0)return;
