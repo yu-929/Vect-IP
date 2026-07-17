@@ -1372,7 +1372,7 @@ x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdo
 function githubUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
-const ips=h[idx].results.map(function(r){return r.ip});
+const ips=h[idx].results.map(function(r){return r.ip+':443#'+(r.colo||'');});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
 var repo=S('gitRepo').value.trim();
 repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
