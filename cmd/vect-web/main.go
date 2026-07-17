@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -353,6 +355,7 @@ func main() {
 	http.HandleFunc("/api/history", handleHistory)
 	http.HandleFunc("/api/history/", handleHistory)
 	http.HandleFunc("/api/history/list", handleHistoryList)
+	http.HandleFunc("/api/github-upload", handleGitHubUpload)
 	http.HandleFunc("/api/dns-upload", handleDNSUpload)
 	http.HandleFunc("/api/resolve-url", handleResolveURL)
 
@@ -1675,5 +1678,103 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"cidrs": cidrs,
 		"count": len(cidrs),
+	})
+}
+
+func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Token    string   `json:"token"`
+		Repo     string   `json:"repo"`
+		Path     string   `json:"path"`
+		Branch   string   `json:"branch"`
+		Message  string   `json:"message"`
+		Ips      []string `json:"ips"`
+		Filename string   `json:"filename"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", 400)
+		return
+	}
+	if req.Token == "" || req.Repo == "" || len(req.Ips) == 0 {
+		http.Error(w, "token, repo, ips required", 400)
+		return
+	}
+	if req.Branch == "" {
+		req.Branch = "main"
+	}
+	content := strings.Join(req.Ips, "\n") + "\n"
+	encoded := base64.StdEncoding.EncodeToString([]byte(content))
+
+	filePath := req.Path
+	if filePath == "" {
+		filePath = "ips.txt"
+	}
+	if req.Filename != "" {
+		filePath = req.Filename
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/contents/%s", req.Repo, filePath)
+
+	getReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	getReq.Header.Set("Authorization", "Bearer "+req.Token)
+	getReq.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	getResp, err := http.DefaultClient.Do(getReq)
+	var sha string
+	if err == nil && getResp.StatusCode == 200 {
+		var existing struct {
+			SHA string `json:"sha"`
+		}
+		json.NewDecoder(getResp.Body).Decode(&existing)
+		sha = existing.SHA
+	}
+	if getResp != nil {
+		getResp.Body.Close()
+	}
+
+	msg := req.Message
+	if msg == "" {
+		msg = fmt.Sprintf("update IPs (%d entries)", len(req.Ips))
+	}
+
+	payload := map[string]interface{}{
+		"message": msg,
+		"content": encoded,
+		"branch":  req.Branch,
+	}
+	if sha != "" {
+		payload["sha"] = sha
+	}
+
+	body, _ := json.Marshal(payload)
+	putReq, _ := http.NewRequestWithContext(ctx, http.MethodPut, apiURL, bytes.NewReader(body))
+	putReq.Header.Set("Authorization", "Bearer "+req.Token)
+	putReq.Header.Set("Content-Type", "application/json")
+	putReq.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	putResp, err := http.DefaultClient.Do(putReq)
+	if err != nil {
+		http.Error(w, "github api error: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer putResp.Body.Close()
+
+	respBody, _ := io.ReadAll(putResp.Body)
+	if putResp.StatusCode > 299 {
+		http.Error(w, "github api error: "+string(respBody), putResp.StatusCode)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok":    true,
+		"count": len(req.Ips),
 	})
 }
