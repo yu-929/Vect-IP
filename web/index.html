@@ -1349,7 +1349,6 @@ showToast('已删除');
 }
 
 function clearHistory(){
-if(!confirm('确认清空所有扫描记录？'))return;
 saveHistory([]);
 renderHistory();
 showToast('已清空');
