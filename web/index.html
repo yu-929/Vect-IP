@@ -1549,7 +1549,7 @@ const r=await fetch('/api/resolve-domain?domain='+encodeURIComponent(d));
 if(!r.ok){const e=await r.text();showToast(d+' 解析失败: '+e);return;}
 const data=await r.json();
 if(!data.cidrs||!data.cidrs.length){showToast(d+' 未解析到 IP');return;}
-resolved[d]=data.cidrs[0];
+resolved[d]=data.cidrs;
 }
 const out=[];
 for(let i=0;i<lines.length;i++){
@@ -1557,7 +1557,11 @@ const s=lines[i].trim();
 if(!s){out.push('');continue;}
 if(idxMap.includes(i)){
 const m=s.match(re);
-if(m&&resolved[m[1]]){out.push(resolved[m[1]]);continue;}
+if(m&&resolved[m[1]]){
+const cidrs=resolved[m[1]];
+for(let j=0;j<cidrs.length;j++)out.push(cidrs[j]);
+continue;
+}
 }
 out.push(lines[i]);
 }
