@@ -1303,7 +1303,7 @@ if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部</span><span class="expand-count" id="expandCount_'+hi+'">'+total+'</span><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3l7 7-7 7"/></svg></button>'+
 '<button class="seg-btn" onclick="copyAllResults('+hi+')">复制全部</button>'+
 (S('dnsEnableToggle').checked?'<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>':'')+
-(S('gitEnableToggle').checked?'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>:'')+
+(S('gitEnableToggle').checked?'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>':'')+
 '</div></div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
