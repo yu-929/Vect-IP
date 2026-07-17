@@ -1333,8 +1333,10 @@ if(!detail||!btn)return;
 const isHidden=detail.style.display==='none';
 const top=btn.getBoundingClientRect().top;
 detail.style.display=isHidden?'':'none';
-if(isHidden){btn.querySelector('span').textContent='收起';btn.querySelector('svg').style.transform='rotate(90deg)';}
-else{btn.querySelector('span').textContent='展开全部';btn.querySelector('svg').style.transform='';}
+const h=loadHistory();
+const total=h[hi]?h[hi].results.length:0;
+if(isHidden){btn.querySelector('span').textContent='收起';}
+else{btn.querySelector('span').textContent='展开全部|'+total;}
 window.scrollBy(0,btn.getBoundingClientRect().top-top);
 }
 
