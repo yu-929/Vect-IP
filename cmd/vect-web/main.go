@@ -1070,7 +1070,7 @@ func handleRouteInfo(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	info := lookupRoute(ctx, ip)
 	if info == nil {
-		http.Error(w, "lookup failed", 502)
+		http.Error(w, "lookup failed", http.StatusBadGateway)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
