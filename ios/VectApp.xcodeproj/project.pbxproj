@@ -223,7 +223,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/VectApp",
 				);
-				MARKETING_VERSION = 1.15;
+				MARKETING_VERSION = 1.16;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lvect",
@@ -256,7 +256,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/VectApp",
 				);
-				MARKETING_VERSION = 1.15;
+				MARKETING_VERSION = 1.16;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lvect",
