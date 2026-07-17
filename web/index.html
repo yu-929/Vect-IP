@@ -754,8 +754,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </button>
 </div>
 
-<script type="module">
-import {animate,spring,scroll} from 'motion';
+<script>
+// Load Motion library from CDN (ESM -> global bridge)
+(function(){var s=document.createElement('script');s.type='module';s.textContent='import{animate,spring,scroll}from"motion";window.Motion={animate,spring,scroll}';document.head.appendChild(s);})();
 let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, progressLocked=false;
 let tracerouteEnabled=localStorage.getItem('vect-traceroute')==='1';
 const S=document.getElementById.bind(document);
@@ -775,7 +776,7 @@ tabs.forEach(t=>{if(t!==activeTab&&t.classList.contains('active')){t.classList.r
 items.forEach(t=>{t.classList.toggle('active',t.dataset.tab===name);});
 if(activeTab&&!activeTab.classList.contains('active')){
 activeTab.classList.add('active');
-animate(activeTab,{opacity:[0,1],transform:['translateY(8px) scale(0.97)','translateY(0px) scale(1)']},{duration:0.45,easing:spring({bounce:0.2})});
+window.Motion.animate(activeTab,{opacity:[0,1],transform:['translateY(8px) scale(0.97)','translateY(0px) scale(1)']},{duration:0.45,easing:window.Motion.spring({bounce:0.2})});
 }
 if(name==='scan'&&curId){
 S('statusPanel').style.display='';
@@ -1595,8 +1596,8 @@ showToast('域名解析 '+ok+'/'+domains.length+' | 通过率 '+pct+'%');
 function showToast(m){
 const t=S('toast');t.textContent=m;t.classList.remove('hidden');
 t.classList.add('show');
-animate(t,{opacity:[0,1],transform:['translateX(-50%) translateY(12px)','translateX(-50%) translateY(0px)']},{duration:0.45,easing:spring({bounce:0.2})});
-clearTimeout(t._t);t._t=setTimeout(()=>{t.classList.remove('show');animate(t,{opacity:[1,0],transform:['translateX(-50%) translateY(0px)','translateX(-50%) translateY(8px)']},{duration:0.2,easing:'ease-out'});},2500);
+window.Motion.animate(t,{opacity:[0,1],transform:['translateX(-50%) translateY(12px)','translateX(-50%) translateY(0px)']},{duration:0.45,easing:window.Motion.spring({bounce:0.2})});
+clearTimeout(t._t);t._t=setTimeout(()=>{t.classList.remove('show');window.Motion.animate(t,{opacity:[1,0],transform:['translateX(-50%) translateY(0px)','translateX(-50%) translateY(8px)']},{duration:0.2,easing:'ease-out'});},2500);
 }
 function showError(m){
 S('errorText').textContent=m;S('error-msg').classList.remove('hidden');
