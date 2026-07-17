@@ -1626,6 +1626,7 @@ func handleResolveDomain(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "domain required", 400)
 		return
 	}
+	raw := r.URL.Query().Get("raw") == "1"
 
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
@@ -1640,7 +1641,7 @@ func handleResolveDomain(w http.ResponseWriter, r *http.Request) {
 	var cidrs []string
 	for _, ip := range ips {
 		cidr := ip.String()
-		if ip.Is4() {
+		if !raw && ip.Is4() {
 			parts := strings.Split(cidr, ".")
 			if len(parts) == 4 {
 				cidr = parts[0] + "." + parts[1] + "." + parts[2] + ".0/24"
@@ -1654,7 +1655,7 @@ func handleResolveDomain(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"cidrs": cidrs,
+		"ips":   cidrs,
 		"count": len(cidrs),
 	})
 }

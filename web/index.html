@@ -345,12 +345,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <div class="section">
 <div class="field">
-<div class="input-group" style="margin-bottom:5pt">
-<input id="domainInput" type="text" placeholder="输入域名解析 IP 并转为 /24" style="flex:1;height:30pt;padding:0 10pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:15pt;color:var(--text);font-size:12px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')resolveDomain()">
-<button class="btn-icon-sm" onclick="resolveDomain()" title="解析域名">
-<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
-</button>
-</div>
 <label>CIDR 前缀（每行一个）</label>
 <div class="input-group" style="margin-bottom:5pt">
 <button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
@@ -362,13 +356,16 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button type="button" class="btn-icon-sm" onclick="importFromUrl()" title="从链接导入">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 5H5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-4"/><path d="M12 3h5v5M10 10l7-7"/></svg>
 </button>
+<button type="button" class="btn-icon-sm" onclick="resolveDomains()" title="解析域名（将域名转为 IP）">
+<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 3v14M3 10h14"/><circle cx="10" cy="10" r="3"/></svg>
+</button>
 <button type="button" class="btn-icon-sm" onclick="S('cidrs').value='';updateCidrCount();" title="清空">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
 </button>
 <span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
 </div>
 <input type="file" id="cidrFile" accept=".txt,.csv" style="display:none" onchange="importCidrFile(event)">
-<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" autocomplete="off" oninput="updateCidrCount()"></textarea>
+<textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32&#10;example.com:443#备注（点击时钟按钮自动解析域名）" autocomplete="off" oninput="updateCidrCount()"></textarea>
 </div>
 </div>
 
@@ -1491,18 +1488,38 @@ updateCidrCount();
 showToast('已导入 '+data.count+' 条 CIDR');
 }catch(e){showToast('请求失败: '+e.message);}
 }
-async function resolveDomain(){
-const domain=S('domainInput').value.trim();
-if(!domain){showToast('请输入域名');return;}
-showToast('正在解析域名...');
+async function resolveDomains(){
+const ta=S('cidrs');
+const lines=ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+if(!lines.length){showToast('请在 CIDR 区域粘贴内容');return;}
+const hostRe=/^([^:#]+)/;
+const domains=[];
+const idxMap=[];
+for(let i=0;i<lines.length;i++){
+const m=lines[i].match(hostRe);
+if(!m)continue;
+const host=m[1];
+if(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)||host.includes('/'))continue;
+if(!domains.includes(host))domains.push(host);
+idxMap.push({i,host,rest:lines[i].slice(host.length)});
+}
+if(!domains.length){showToast('未检测到需要解析的域名');return;}
+showToast('正在解析 '+domains.length+' 个域名...');
 try{
-const r=await fetch('/api/resolve-domain?domain='+encodeURIComponent(domain));
-if(!r.ok){const e=await r.text();showToast('解析失败: '+e);return;}
+const resolved={};
+for(const d of domains){
+const r=await fetch('/api/resolve-domain?domain='+encodeURIComponent(d));
+if(!r.ok){showToast('解析失败: '+d);return;}
 const data=await r.json();
-if(!data.cidrs||!data.cidrs.length){showToast('未解析到有效 IP');return;}
-S('cidrs').value=data.cidrs.join('\n');
+if(!data.ips||!data.ips.length){showToast('未解析到 IP: '+d);return;}
+resolved[d]=data.ips[0];
+}
+for(const{item,host,rest}of idxMap){
+lines[item]=resolved[host];
+}
+ta.value=lines.join('\n');
 updateCidrCount();
-showToast('已导入 '+data.count+' 条 CIDR');
+showToast('已完成域名解析');
 }catch(e){showToast('请求失败: '+e.message);}
 }
 function showToast(m){
