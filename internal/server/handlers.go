@@ -1650,11 +1650,17 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 	if req.Filename != "" {
 		filePath = req.Filename
 	}
+	filePath = strings.TrimLeft(filePath, "/")
+	parts := strings.Split(filePath, "/")
+	for i, p := range parts {
+		parts[i] = url.PathEscape(p)
+	}
+	encodedPath := strings.Join(parts, "/")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/contents/%s", req.Repo, filePath)
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/contents/%s", req.Repo, encodedPath)
 
 	getReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	getReq.Header.Set("Authorization", "Bearer "+req.Token)
