@@ -1692,7 +1692,8 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 
 	msg := req.Message
 	if msg == "" {
-		msg = fmt.Sprintf("update IPs (%d entries)", len(req.Ips))
+		now := time.Now().In(time.FixedZone("CST", 8*3600))
+		msg = fmt.Sprintf("New IP list (%d items) Time: %s", len(req.Ips), now.Format("15:04 on January 2, 2006"))
 	}
 
 	payload := map[string]interface{}{
