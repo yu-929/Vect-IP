@@ -179,6 +179,7 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	mux.HandleFunc("/api/health", handleHealth)
 	mux.HandleFunc("/api/colo-discover", handleColoDiscover)
 	mux.HandleFunc("/api/resolve-url", handleResolveURL)
+	mux.HandleFunc("/api/route-info", handleRouteInfo)
 	mux.HandleFunc("/api/history/list", handleHistoryList)
 	mux.HandleFunc("/api/github-upload", handleGitHubUpload)
 	mux.HandleFunc("/api/resolve-domain", handleResolveDomain)
@@ -710,6 +711,7 @@ var optimizedASNs = map[int]string{
 
 type RouteInfo struct {
 	ASN       int    `json:"asn"`
+	ASName    string `json:"asname"`
 	Org       string `json:"org"`
 	RouteType string `json:"routeType"`
 	RouteLine string `json:"routeLine"`
@@ -805,6 +807,7 @@ func lookupRoute(ctx context.Context, ip string) *RouteInfo {
 	routeType, routeLine := classifyRoute(asn)
 	return &RouteInfo{
 		ASN:       asn,
+		ASName:    data.ASName,
 		Org:       data.Org,
 		RouteType: routeType,
 		RouteLine: routeLine,
@@ -891,6 +894,23 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 		info.PublicIP = "unknown"
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(info)
+}
+
+func handleRouteInfo(w http.ResponseWriter, r *http.Request) {
+	ip := r.URL.Query().Get("ip")
+	if ip == "" || net.ParseIP(ip) == nil {
+		http.Error(w, "invalid IP", 400)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	info := lookupRoute(ctx, ip)
+	if info == nil {
+		http.Error(w, "lookup failed", 502)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
 }

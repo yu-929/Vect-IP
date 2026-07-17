@@ -359,6 +359,7 @@ func main() {
 	http.HandleFunc("/api/resolve-domain", handleResolveDomain)
 	http.HandleFunc("/api/dns-upload", handleDNSUpload)
 	http.HandleFunc("/api/resolve-url", handleResolveURL)
+	http.HandleFunc("/api/route-info", handleRouteInfo)
 
 	log.Printf("Vect Web UI starting on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
@@ -898,6 +899,7 @@ var optimizedASNs = map[int]string{
 
 type RouteInfo struct {
 	ASN       int    `json:"asn"`
+	ASName    string `json:"asname"`
 	Org       string `json:"org"`
 	RouteType string `json:"routeType"`
 	RouteLine string `json:"routeLine"`
@@ -962,6 +964,7 @@ func lookupRoute(ctx context.Context, ip string) *RouteInfo {
 	routeType, routeLine := classifyRoute(asn)
 	return &RouteInfo{
 		ASN:       asn,
+		ASName:    data.ASName,
 		Org:       data.Org,
 		RouteType: routeType,
 		RouteLine: routeLine,
@@ -1054,6 +1057,23 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	json.NewEncoder(w).Encode(info)
+}
+
+func handleRouteInfo(w http.ResponseWriter, r *http.Request) {
+	ip := r.URL.Query().Get("ip")
+	if ip == "" || net.ParseIP(ip) == nil {
+		http.Error(w, "invalid IP", 400)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	info := lookupRoute(ctx, ip)
+	if info == nil {
+		http.Error(w, "lookup failed", 502)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
 }
 

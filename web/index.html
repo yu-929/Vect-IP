@@ -77,27 +77,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .row .field label{white-space:nowrap}
 /* ===== Colo Filter ===== */
 .colo-filter{display:grid;grid-template-columns:1fr 1fr;gap:8pt}
-.colo-filter .colo-trigger{height:40pt;padding:0 10pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:16pt;color:var(--text);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .2s;font-family:inherit;box-sizing:border-box}
-.colo-filter .colo-trigger:hover{border-color:var(--primary)}
-.colo-filter .colo-trigger .placeholder{color:var(--muted2)}
-.colo-filter .colo-trigger svg{color:var(--muted2);flex-shrink:0}
-.colo-filter input{height:40pt;padding:0 10pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:16pt;color:var(--text);font-size:12px;outline:none;font-family:inherit;transition:all .2s;box-sizing:border-box}
-.colo-filter input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,119,237,0.12)}
-.colo-filter input::placeholder{color:var(--muted2)}
-.colo-field{position:relative}
-.colo-dropdown{position:absolute;top:calc(100% + 4pt);left:0;right:0;background:var(--glass-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:0.5px solid var(--glass-border);border-radius:14pt;box-shadow:0 8px 30px rgba(0,0,0,0.12);z-index:100;max-height:240pt;overflow-y:auto;display:none}
-.colo-dropdown.show{display:block}
-.colo-dropdown .mode-row{display:flex;padding:8pt 8pt 6pt;gap:6pt;border-bottom:0.5px solid var(--glass-border)}
-.colo-dropdown .mode-btn{flex:1;height:30pt;border-radius:8pt;border:0.5px solid transparent;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;background:var(--input-bg);color:var(--secondary)}
-.colo-dropdown .mode-btn.active{background:var(--primary);color:#FFF;border-color:var(--primary)}
-.colo-dropdown .colo-list{max-height:140pt;overflow-y:auto}
-.colo-dropdown .colo-item{display:flex;align-items:center;justify-content:space-between;padding:7pt 10pt;cursor:pointer;transition:background .1s;font-size:12px;color:var(--text)}
-.colo-dropdown .colo-item:hover{background:var(--input-bg)}
-.colo-dropdown .colo-item .colo-count{font-size:10px;color:var(--muted2)}
-.colo-dropdown .colo-item.selected{background:rgba(0,119,237,0.08);color:var(--primary)}
-.colo-dropdown .empty{text-align:center;padding:14pt;font-size:11px;color:var(--muted2)}
-.colo-dropdown .manual-input{padding:5pt 8pt 8pt;border-top:0.5px solid var(--glass-border)}
-.colo-dropdown .manual-input input{width:100%;height:30pt;padding:0 8pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:6pt;color:var(--text);font-size:11px;outline:none;font-family:inherit}
+.colo-filter select{height:40pt;padding:10pt 14pt;padding-right:36pt;background:var(--input-bg);background-image:url("data:image/svg+xml,%3Csvg width='9' height='5' fill='%238E8E93' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3L8 1'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16pt center;border:0.5px solid transparent;border-radius:16pt;color:var(--text);font-size:15px;font-weight:500;outline:none;font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;box-sizing:border-box}
+.colo-filter select:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0.15)}
+.colo-filter input{height:40pt;padding:10pt 14pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:16pt;color:var(--text);font-size:15px;font-weight:500;outline:none;font-family:inherit;box-sizing:border-box}
+.colo-filter input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0.15)}
+.colo-filter input::placeholder{color:var(--muted);font-weight:400;font-size:13px}
+.colo-filter input:disabled{opacity:0.3}
 
 /* ===== Button ===== */
 .btn{display:flex;align-items:center;justify-content:center;gap:6pt;border:none;border-radius:18pt;font-size:16px;font-weight:590;cursor:pointer;transition:all .25s cubic-bezier(0.25,0.1,0.25,1);font-family:inherit;height:58pt;width:calc(100% - 32pt);margin:0 16pt;letter-spacing:0.1px}
@@ -176,6 +161,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .history-metrics{display:flex;flex-direction:column;gap:4pt;margin-bottom:4pt}
 .history-metrics .hm-row{display:grid;grid-template-columns:1fr 1fr;gap:4pt 12pt;position:relative}
 .history-metrics .hm-row::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:0.5px;background:var(--glass-border);transform:translateX(-50%)}
+.history-metrics .hm-row-single{display:flex;gap:4pt;position:relative}
+.history-metrics .hm-row-single .hm{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-metrics .hm{font-size:12px;color:var(--label);letter-spacing:-0.1px;line-height:1.4;display:flex;gap:3px}
 .history-metrics .hm strong{font-weight:590;color:var(--text)}
 .history-metrics .hm .ok{color:var(--success)}
@@ -279,9 +266,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 /* ===== Responsive ===== */
 
-/* ===== Discover button ===== */
-.discover-chip{height:40pt;padding:0 14pt;border-radius:16pt;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--primary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6pt;transition:all .15s}
-.discover-chip:active{background:rgba(0,119,237,0.10)}
 </style>
 </head>
 <body>
@@ -345,7 +329,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <div class="section">
 <div class="field">
-<label>CIDR 前缀（每行一个）</label>
+<label>CIDR 网段 | 单行单条</label>
 <div class="input-group" style="margin-bottom:5pt">
 <button class="btn-icon-sm" onclick="document.getElementById('cidrFile').click()" title="导入文件">
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v14M3 10h14"/></svg>
@@ -371,7 +355,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <div class="section">
 <div class="field">
-<label>ASN 自动解析</label>
+<label>ASN 自治系统编号 | 自动解析</label>
 <div class="input-group">
 <input id="asn" type="number" placeholder="例如 13335">
 <button class="btn-icon" onclick="S('asn').value=''" aria-label="清空 ASN">
@@ -407,31 +391,14 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field">
 <label>机房过滤</label>
 <div class="colo-filter">
-<div class="colo-field">
-<div class="colo-trigger" id="coloToggle" onclick="toggleColoDropdown()">
-<span class="placeholder" id="coloLabel">关闭</span>
-<svg width="9" height="5" fill="currentColor" viewBox="0 0 9 5"><path d="M1 1l3.5 3L8 1"/></svg>
-</div>
-<div class="colo-dropdown" id="coloDropdown">
-<div class="mode-row">
-<button class="mode-btn active" data-mode="" onclick="setColoMode(this,'')">关闭</button>
-<button class="mode-btn" data-mode="allow" onclick="setColoMode(this,'allow')">白名单</button>
-<button class="mode-btn" data-mode="exclude" onclick="setColoMode(this,'exclude')">黑名单</button>
-</div>
-<div class="colo-list" id="coloList"><div class="empty">请先发现机房或手动输入</div></div>
-<div class="manual-input"><input id="coloManual" placeholder="手动输入，如 HKG·香港,SJC·圣何塞" oninput="applyManualColos()"></div>
+<select id="coloFilterMode" onchange="onColoModeChange()">
+<option value="">关闭</option>
+<option value="allow">白名单</option>
+<option value="exclude">黑名单</option>
+</select>
+<input id="coloInput" placeholder="输入机房代码，逗号分隔" disabled>
 </div>
 </div>
-<input id="coloInput" placeholder="HKG·香港, SJC·圣何塞, NRT·东京">
-</div>
-</div>
-</div>
-
-<div class="section" id="coloDiscoverSection" style="display:none">
-<button class="discover-chip" id="discoverBtn" onclick="discoverColos()">
-<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 2v16M2 10h16"/></svg>
-发现机房
-</button>
 </div>
 </div>
 
@@ -507,6 +474,11 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="stage-top"><span class="stage-name">下载测速</span><span class="stage-count" id="s5Count">--</span></div>
 <div class="stage-bar"><div class="stage-fill" id="s5Fill"></div></div>
 <div class="stage-footer" id="s5Status"></div>
+</div>
+<div class="stage-item" id="stage6Item" style="display:none">
+<div class="stage-top"><span class="stage-name">ASN 查询</span><span class="stage-count" id="s6Count">--</span></div>
+<div class="stage-bar"><div class="stage-fill" id="s6Fill"></div></div>
+<div class="stage-footer"><span id="s6Est">预计 --</span><span id="s6Rem">--</span></div>
 </div>
 </div>
 
@@ -698,6 +670,22 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <div class="settings-group">
+<div class="sg-title">ASN 自治系统 | 自动解析</div>
+<div class="settings-row">
+<div style="flex:1">
+<div class="sl-label">启用 ASN 查询</div>
+<div class="sl-desc">开启后复制和 GIT 上传的格式变为 IP:443#colo-asname</div>
+</div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="asnTrack" onclick="toggleASN()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="asnToggle" aria-label="启用 ASN 查询">
+</div>
+</div>
+</div>
+</div>
+
+<div class="settings-group">
 <div class="sg-title">关于</div>
 <div class="settings-row">
 <div style="flex:1">
@@ -736,7 +724,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <script>
-let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], coloData=[], polling=false, progressLocked=false;
+let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, progressLocked=false;
 let tracerouteEnabled=localStorage.getItem('vect-traceroute')==='1';
 const S=document.getElementById.bind(document);
 const stageConfig=[
@@ -823,6 +811,13 @@ const on=S('gitEnableTrack').classList.toggle('on');
 S('gitEnableToggle').checked=on;
 S('gitConfigFields').style.display=on?'':'none';
 localStorage.setItem('vect-git-enabled',on?'1':'0');
+renderHistory();
+}
+
+function toggleASN(){
+const on=S('asnTrack').classList.toggle('on');
+S('asnToggle').checked=on;
+localStorage.setItem('vect-asn',on?'1':'0');
 renderHistory();
 }
 
@@ -950,70 +945,22 @@ if(d.cidrs&&d.cidrs.length){
 			updateCidrCount();
 btn.innerHTML='<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#34C759" stroke-width="2"><path d="M4 10l4 4 8-8"/></svg>';
 showToast('已添加 '+d.cidrs.length+' 条前缀');
-S('coloDiscoverSection').style.display='';
-S('coloList').innerHTML='<div class="empty">请先发现机房</div>';
 }else{btn.innerHTML='<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#E53935" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg>';showToast('未找到前缀');}
 setTimeout(()=>{btn.innerHTML='<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3l6 6-6 6M4 9h12"></svg>';btn.disabled=false;},2000);
 }catch(e){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#E53935" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg>';btn.disabled=false;showError('ASN 解析失败');}
 }
 
-async function discoverColos(){
-const cidrs=S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean);
-if(!cidrs.length){showError('请先输入 CIDR 或解析 ASN');return;}
-const btn=S('discoverBtn');
-btn.disabled=true;
-btn.innerHTML='<div class="loading-ring" style="width:10px;height:10px;margin-right:4px;display:inline-block"></div>发现中...';
-try{
-const r=await fetch('/api/colo-discover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cidrs})});
-const list=await r.json();
-if(!list||!list.length){S('coloList').innerHTML='<div class="empty">未发现机房</div>';return;}
-coloData=list;
-let html='';
-list.forEach(e=>{html+='<div class="colo-item" data-colo="'+e.colo+'" onclick="toggleColoItem(this,\''+e.colo+'\')">'+e.colo+'<span class="colo-count">'+e.count+'</span></div>';});
-S('coloList').innerHTML=html;
-showToast('发现 '+list.length+' 个机房');
-}catch(e){showError('机房发现失败');}
-btn.disabled=false;
-btn.innerHTML='<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 2v16M2 10h16"/></svg>发现机房';
-}
-
-// Colo dropdown
-function toggleColoDropdown(){S('coloDropdown').classList.toggle('show')}
-document.addEventListener('click',e=>{if(!e.target.closest('.colo-field'))S('coloDropdown').classList.remove('show')});
-
-function setColoMode(el,mode){
-S('coloDropdown').querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
-el.classList.add('active');
+function onColoModeChange(){
+const mode=S('coloFilterMode').value;
 coloMode=mode;
-const labels={off:'关闭',allow:'白名单',exclude:'黑名单'};
-S('coloLabel').textContent=labels[mode]||'关闭';
-if(mode===''){coloSelected=[];S('coloDropdown').querySelectorAll('.colo-item').forEach(i=>i.classList.remove('selected'));}
-updateColoInput();
+const input=S('coloInput');
+if(!mode){
+input.disabled=true;
+input.value='';
+coloSelected=[];
+}else{
+input.disabled=false;
 }
-
-function toggleColoItem(el,colo){
-if(!coloMode)return;
-const idx=coloSelected.indexOf(colo);
-if(idx>=0){coloSelected.splice(idx,1);el.classList.remove('selected');}
-else{coloSelected.push(colo);el.classList.add('selected');}
-updateColoInput();
-}
-
-function updateColoInput(){
-const manual=S('coloInput');
-if(!coloMode||!coloSelected.length){manual.value='';manual.placeholder=coloMode==='allow'?'请选择机房':coloMode==='exclude'?'请选择机房':'关闭';return;}
-manual.value=coloSelected.join(', ');
-S('coloLabel').textContent=coloMode==='allow'?'允许: '+coloSelected.length+' 个':'排除: '+coloSelected.length+' 个';
-}
-
-function applyManualColos(){
-if(!coloMode)return;
-const raw=S('coloManual').value.trim();
-if(!raw){if(!coloData.length)coloSelected=[];updateColoInput();return;}
-const manual=raw.split(',').map(s=>s.trim().split('·')[0].trim().toUpperCase()).filter(Boolean);
-coloSelected=manual;
-S('coloInput').value=manual.join(', ');
-S('coloLabel').textContent=coloMode==='allow'?'允许: '+manual.length+' 个':'排除: '+manual.length+' 个';
 }
 
 // Start scan
@@ -1047,8 +994,8 @@ const body={cidrs:normalizeCidrs(S('cidrs').value.split('\n')),asn:parseInt(asn)
 budget:parseInt(S('budget').value)||2000,concurrency:parseInt(S('concurrency').value)||200,
 downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').value,
 topN:parseInt(S('topN').value)||20,
-coloAllow:coloMode==='allow'?coloSelected.join(','):'',
-coloExclude:coloMode==='exclude'?coloSelected.join(','):'',
+	coloAllow:coloMode==='allow'?S('coloInput').value:coloMode==='allow'?S('coloInput').value:'',
+	coloExclude:coloMode==='exclude'?S('coloInput').value:'',
 ipVersion:parseInt(S('ipVersion').value)||4,
 downloadBytes:parseInt(S('downloadBytes').value)*1000*1000||0,
 downloadTimeout:parseInt(S('downloadTimeout').value)||0,
@@ -1117,13 +1064,14 @@ function resetStages(){
 	S('skeletonPanel').style.display='';
 	S('progressContent').style.display='none';
 	S('collapseBtn').textContent='展开';
-[1,2,3,4,5].forEach(i=>{
+[1,2,3,4,5,6].forEach(i=>{
 const fill=S('s'+i+'Fill');if(fill)fill.style.width='0%';
 const cnt=S('s'+i+'Count');if(cnt)cnt.textContent='--';
 const est=S('s'+i+'Est');if(est)est.textContent='预计 --';
 const rem=S('s'+i+'Rem');if(rem)rem.textContent='--';
 });
 S('stage5Item').style.display='none';
+S('stage6Item').style.display='none';
 S('s5Status').textContent='';
 S('pAvail').textContent='0';
 S('pBestScore').textContent='-';
@@ -1177,11 +1125,38 @@ const d=await r.json();
 if(d.status==='completed'){
 	progressLocked=false;
 	S('s5Status').textContent='';
+	const results=d.result||[];
+	if(localStorage.getItem('vect-asn')==='1'&&results.length){
+		S('stage6Item').style.display='';
+		const ips=[...new Set(results.map(x=>x.ip))];
+		const total=ips.length;
+		const asnMap={};
+		const estTotal=total*1.2;
+		S('s6Count').textContent='0/'+total;
+		S('s6Est').textContent='预计 '+fmtDur(estTotal);
+		for(let i=0;i<ips.length;i++){
+			const pct=((i+1)/total*100);
+			S('s6Fill').style.width=pct+'%';
+			S('s6Count').textContent=(i+1)+'/'+total;
+			S('s6Rem').textContent='剩余 '+fmtDur((total-i-1)*1.2);
+			try{
+				const resp=await fetch('/api/route-info?ip='+ips[i]);
+				if(resp.ok){
+					const data=await resp.json();
+					if(data.asname)asnMap[ips[i]]=data.asname;
+				}
+			}catch(e){}
+			if(i<ips.length-1)await new Promise(r=>setTimeout(r,1200));
+		}
+		S('s6Fill').style.width='100%';
+		S('s6Count').textContent=total+'/'+total;
+		S('s6Rem').textContent='已完成';
+		results.forEach(x=>{if(asnMap[x.ip])x.asname=asnMap[x.ip];});
+	}
 	renderResults(d.result||[]);
-resetButtons();
-// completion label removed, toast used instead
-showToast('扫描完成');
-notifyComplete(d.result);
+	resetButtons();
+	showToast('扫描完成');
+	notifyComplete(d.result);
 }else if(d.status==='failed'){
 	progressLocked=false;
 	showError(d.error||'扫描失败');
@@ -1246,7 +1221,7 @@ x.setRequestHeader('Content-Type','application/json');
 x.send(JSON.stringify(h));
 }
 
-function renderResults(r){
+async function renderResults(r){
 	results=r;
 	if(!r||!r.length)return;
 	const valid=r.filter(x=>x.score_ms<6000);
@@ -1273,7 +1248,8 @@ function renderResults(r){
 			dlOk:x.download_ok,
 			dlMbps:x.download_mbps,
 			dlPeakMbps:x.download_peak_mbps||0,
-			dlError:x.download_error
+			dlError:x.download_error,
+			asname:x.asname||''
 		}))
 	};
 	history.unshift(entry);
@@ -1323,6 +1299,12 @@ YXE:'CA',YYC:'CA',YYZ:'CA',YZH:'CN',ZAG:'HR',ZAM:'PH',ZHA:'CN',ZRH:'CH',
 };
 function coloFlag(c){return coloCountry[c]?'-'+coloCountry[c]:'';}
 function coloSuffix(c){return coloCountry[c]||c||'';}
+function resultSuffix(r){
+	if(localStorage.getItem('vect-asn')==='1'&&r.asname){
+		return coloSuffix(r.colo)+'-'+r.asname;
+	}
+	return coloSuffix(r.colo);
+}
 
 function renderHistory(){
 const history=loadHistory();
@@ -1337,7 +1319,7 @@ const total=h.results.length;
 html+='<div class="glass-card history-item">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="copy-btn" onclick="copyAllResults('+hi+')" title="复制全部"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="12" height="12" rx="2"/><path d="M3 3h12v2"/></svg></button><button class="del-btn" onclick="deleteHistory('+hi+')" title="删除"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M6 6V4a1 1 0 011-1h6a1 1 0 011 1v2M8 9v6M12 9v6M3 6l1 12h12l1-12"/></svg></button></div></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
-if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div></div>';
+if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asname?'<div class="hm-row-single"><span class="hm">ASN自治系统机构: <strong>'+r0.asname+'</strong></span></div>':'')+'</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
@@ -1353,7 +1335,7 @@ html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</div>'
 html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-jitter">'+(r.jitter!==undefined?r.jitter.toFixed(1)+'ms':'--')+'</span>';
-html+='<span class="h-detail-colo">'+(r.colo||'-')+coloFlag(r.colo)+'</span>';
+html+='<span class="h-detail-colo">'+(r.colo||'-')+coloFlag(r.colo)+(r.asname?'-'+r.asname:'')+'</span>';
 html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
 				if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
 html+='</div>';
@@ -1411,7 +1393,7 @@ x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdo
 function githubUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
-const ips=h[idx].results.map(function(r){return r.ip+':443#'+coloSuffix(r.colo);});
+const ips=h[idx].results.map(function(r){return r.ip+':443#'+resultSuffix(r);});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
 var repo=S('gitRepo').value.trim();
 repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
@@ -1468,14 +1450,13 @@ function copyAllResults(hi){
 const history=loadHistory();
 const h=history[hi];
 if(!h||!h.results||!h.results.length)return;
-const text=h.results.map(r=>r.ip+':443#'+coloSuffix(r.colo)).join('\n');
+const text=h.results.map(r=>r.ip+':443#'+resultSuffix(r)).join('\n');
 copyText(text,true);
 }
 function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
 function updateCidrCount(){
 const v=S('cidrs').value.split('\n').filter(s=>s.trim()).length;
 S('cidrCount').textContent=v+' 条';
-S('coloDiscoverSection').style.display=v?'':'';
 }
 function importCidrFile(e){
 const file=e.target.files[0];if(!file)return;
@@ -1610,6 +1591,11 @@ if(localStorage.getItem('vect-git-enabled')==='1'){
 S('gitEnableTrack').classList.add('on');
 S('gitEnableToggle').checked=true;
 S('gitConfigFields').style.display='';
+}
+// Init ASN toggle from storage
+if(localStorage.getItem('vect-asn')==='1'){
+S('asnTrack').classList.add('on');
+S('asnToggle').checked=true;
 }
 
 // Nav large title collapse on scroll
