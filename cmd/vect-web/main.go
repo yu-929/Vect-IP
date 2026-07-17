@@ -1706,6 +1706,11 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 	if req.Branch == "" {
 		req.Branch = "main"
 	}
+	req.Repo = strings.TrimSpace(strings.TrimRight(req.Repo, "/"))
+	if strings.Count(req.Repo, "/") != 1 {
+		http.Error(w, "invalid repo format, expected owner/repo", 400)
+		return
+	}
 	content := strings.Join(req.Ips, "\n") + "\n"
 	encoded := base64.StdEncoding.EncodeToString([]byte(content))
 
@@ -1717,6 +1722,9 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 		filePath = req.Filename
 	}
 	filePath = strings.TrimLeft(filePath, "/")
+	if filePath == "" {
+		filePath = "ips.txt"
+	}
 	parts := strings.Split(filePath, "/")
 	for i, p := range parts {
 		parts[i] = url.PathEscape(p)
@@ -1731,6 +1739,7 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 	getReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	getReq.Header.Set("Authorization", "Bearer "+req.Token)
 	getReq.Header.Set("Accept", "application/vnd.github.v3+json")
+	getReq.Header.Set("User-Agent", "Vect-IP/1.14")
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	var sha string
@@ -1766,6 +1775,7 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 	putReq.Header.Set("Authorization", "Bearer "+req.Token)
 	putReq.Header.Set("Content-Type", "application/json")
 	putReq.Header.Set("Accept", "application/vnd.github.v3+json")
+	putReq.Header.Set("User-Agent", "Vect-IP/1.14")
 
 	putResp, err := http.DefaultClient.Do(putReq)
 	if err != nil {
