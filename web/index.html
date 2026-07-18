@@ -639,12 +639,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="dnsConfigFields" style="display:none">
-<div class="field" style="margin-top:6pt"><label>服务商</label><select id="dnsProvider" onchange="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
-<div class="field" style="margin-top:6pt"><label>API Token</label><input id="dnsToken" type="password" oninput="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
-<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="dnsZone" type="text" oninput="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
-<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" oninput="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
-<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" onchange="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
-<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="dnsRecordType" onchange="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
+<div class="field" style="margin-top:6pt"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
+<div class="field" style="margin-top:6pt"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
+<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
+<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
+<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
+<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="dnsRecordType" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
 <div class="settings-row" style="margin-top:4pt">
 <div style="flex:1">
 <div class="sl-label">IPv6落地过滤</div>
@@ -678,10 +678,10 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="gitConfigFields" style="display:none">
-<div class="field" style="margin-top:4pt"><label>GitHub Token</label><input id="gitToken" type="password" oninput="saveGitConfig()" placeholder="Personal Access Token"></div>
-<div class="field" style="margin-top:4pt"><label>仓库 (owner/repo)</label><input id="gitRepo" type="text" oninput="saveGitConfig()" placeholder="例: user/my-ips"></div>
-<div class="field" style="margin-top:4pt"><label>文件路径</label><input id="gitPath" type="text" oninput="saveGitConfig()" placeholder="例: ips.txt (默认 ips.txt)"></div>
-<div class="field" style="margin-top:4pt"><label>分支</label><input id="gitBranch" type="text" oninput="saveGitConfig()" placeholder="main"></div>
+<div class="field" style="margin-top:4pt"><label>GitHub Token</label><input id="gitToken" type="password" placeholder="Personal Access Token"></div>
+<div class="field" style="margin-top:4pt"><label>仓库 (owner/repo)</label><input id="gitRepo" type="text" placeholder="例: user/my-ips"></div>
+<div class="field" style="margin-top:4pt"><label>文件路径</label><input id="gitPath" type="text" placeholder="例: ips.txt (默认 ips.txt)"></div>
+<div class="field" style="margin-top:4pt"><label>分支</label><input id="gitBranch" type="text" placeholder="main"></div>
 <div class="segmented" style="margin-top:6pt;margin-bottom:0">
 <button class="seg-btn-plain" onclick="saveGitConfig()" style="color:var(--primary);font-weight:600">保存设置</button>
 <button class="seg-btn-plain" onclick="clearGitConfig()" style="color:var(--danger)">移除设置</button>

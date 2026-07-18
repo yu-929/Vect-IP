@@ -11,7 +11,7 @@ struct WebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
+        config.websiteDataStore = .default()
         let userContent = WKUserContentController()
         userContent.add(context.coordinator, name: "vectNotify")
         let bridgeJS = """
