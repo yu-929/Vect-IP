@@ -205,11 +205,11 @@
 			name = Release;
 		};
 		F10007 /* Debug */ = {
-			isa = XCBuildConfiguration;
+isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VectApp/Info.plist;
@@ -223,7 +223,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/VectApp",
 				);
-				MARKETING_VERSION = 1.21;
+				MARKETING_VERSION = 1.23;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lvect",
@@ -242,7 +242,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VectApp/Info.plist;
@@ -256,7 +256,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/VectApp",
 				);
-				MARKETING_VERSION = 1.21;
+				MARKETING_VERSION = 1.23;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lvect",
@@ -270,7 +270,7 @@
 			};
 			name = Release;
 		};
-/* End XCBuildConfiguration section */
+		/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		F10003 /* Build configuration list for PBXNativeTarget "VectApp" */ = {
