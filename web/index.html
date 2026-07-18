@@ -64,6 +64,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .seg-btn{flex:1;padding:6pt 6pt;border:none;border-radius:8pt;background:transparent;color:var(--secondary);font-size:12px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),background .35s var(--ease-spring),color .25s ease,box-shadow .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
 .seg-btn:active{transform:scale(0.95)}
 .seg-btn.active{background:var(--primary);color:#FFFFFF;font-weight:600;box-shadow:0 2px 8px rgba(0,119,237,0.28)}
+.seg-btn-plain{flex:1;padding:6pt 6pt;border:0.5px solid var(--glass-border);border-radius:8pt;background:transparent;font-size:12px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),color .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
+.seg-btn-plain:active{transform:scale(0.95)}
 
 /* ===== Inputs ===== */
 .field{margin-bottom:8pt;width:100%}
@@ -525,9 +527,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
         <path d="M28 68l-8-8M52 68l8-8"/>
       </svg>
       <div class="empty-title">暂无扫描记录</div>
-      <div class="empty-desc">完成一次扫描后，结果将出现在这里<br>点击「扫描」Tab 开始</div>
+<div class="empty-desc">完成一次扫描后，结果将出现在这里<br>点击「扫描」Tab 开始</div>
 </div>
-	</div>
+</div>
 </div>
 </div>
 
@@ -637,12 +639,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="dnsConfigFields" style="display:none">
-<div class="field" style="margin-top:6pt"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
-<div class="field" style="margin-top:6pt"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
-<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
-<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
-<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
-<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="dnsRecordType" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
+<div class="field" style="margin-top:6pt"><label>服务商</label><select id="dnsProvider" onchange="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
+<div class="field" style="margin-top:6pt"><label>API Token</label><input id="dnsToken" type="password" oninput="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
+<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="dnsZone" type="text" oninput="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
+<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" oninput="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
+<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" onchange="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
+<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="dnsRecordType" onchange="saveDnsConfig()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
 <div class="settings-row" style="margin-top:4pt">
 <div style="flex:1">
 <div class="sl-label">IPv6落地过滤</div>
@@ -654,6 +656,10 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <input type="checkbox" class="toggle-input" id="filterIpv6OnlyToggle" aria-label="过滤仅IPv6节点">
 </div>
 </div>
+</div>
+<div class="segmented" style="margin-top:6pt;margin-bottom:0">
+<button class="seg-btn-plain" onclick="saveDnsConfig()" style="color:var(--primary);font-weight:600">保存设置</button>
+<button class="seg-btn-plain" onclick="clearDnsConfig()" style="color:var(--danger)">移除设置</button>
 </div>
 </div>
 </div>
@@ -672,10 +678,14 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="gitConfigFields" style="display:none">
-<div class="field" style="margin-top:4pt"><label>GitHub Token</label><input id="gitToken" type="password" placeholder="Personal Access Token"></div>
-<div class="field" style="margin-top:4pt"><label>仓库 (owner/repo)</label><input id="gitRepo" type="text" placeholder="例: user/my-ips"></div>
-<div class="field" style="margin-top:4pt"><label>文件路径</label><input id="gitPath" type="text" placeholder="例: ips.txt (默认 ips.txt)"></div>
-<div class="field" style="margin-top:4pt"><label>分支</label><input id="gitBranch" type="text" placeholder="main"></div>
+<div class="field" style="margin-top:4pt"><label>GitHub Token</label><input id="gitToken" type="password" oninput="saveGitConfig()" placeholder="Personal Access Token"></div>
+<div class="field" style="margin-top:4pt"><label>仓库 (owner/repo)</label><input id="gitRepo" type="text" oninput="saveGitConfig()" placeholder="例: user/my-ips"></div>
+<div class="field" style="margin-top:4pt"><label>文件路径</label><input id="gitPath" type="text" oninput="saveGitConfig()" placeholder="例: ips.txt (默认 ips.txt)"></div>
+<div class="field" style="margin-top:4pt"><label>分支</label><input id="gitBranch" type="text" oninput="saveGitConfig()" placeholder="main"></div>
+<div class="segmented" style="margin-top:6pt;margin-bottom:0">
+<button class="seg-btn-plain" onclick="saveGitConfig()" style="color:var(--primary);font-weight:600">保存设置</button>
+<button class="seg-btn-plain" onclick="clearGitConfig()" style="color:var(--danger)">移除设置</button>
+</div>
 </div>
 </div>
 
@@ -822,12 +832,14 @@ function toggleDnsEnable(){
 const on=S('dnsEnableTrack').classList.toggle('on');
 S('dnsEnableToggle').checked=on;
 S('dnsConfigFields').style.display=on?'':'none';
+localStorage.setItem('vect-dns-enabled',on?'1':'0');
 renderHistory();
 }
 
 function toggleFilterIpv6Only(){
 const on=S('filterIpv6OnlyTrack').classList.toggle('on');
 S('filterIpv6OnlyToggle').checked=on;
+saveDnsConfig();
 }
 
 function toggleGitEnable(){
@@ -843,6 +855,47 @@ const on=S('asnTrack').classList.toggle('on');
 S('asnToggle').checked=on;
 localStorage.setItem('vect-asn',on?'1':'0');
 renderHistory();
+}
+
+function saveDnsConfig(){
+const data={
+	provider:S('dnsProvider').value,
+	token:S('dnsToken').value,
+	zone:S('dnsZone').value,
+	subdomain:S('dnsSubdomain').value,
+	count:S('dnsCount').value,
+	recordType:S('dnsRecordType').value,
+	filterIpv6Only:S('filterIpv6OnlyToggle').checked
+};
+localStorage.setItem('vect-dns-config',JSON.stringify(data));
+showToast('DNS 设置已保存');
+}
+
+function clearDnsConfig(){
+if(!confirm('确定移除 DNS 设置？'))return;
+['dnsProvider','dnsToken','dnsZone','dnsSubdomain','dnsCount','dnsRecordType'].forEach(id=>S(id).value=['dnsProvider','dnsRecordType'].includes(id)?S(id).querySelector('option').value:'');
+S('filterIpv6OnlyToggle').checked=false;
+S('filterIpv6OnlyTrack').classList.remove('on');
+localStorage.removeItem('vect-dns-config');
+showToast('DNS 设置已移除');
+}
+
+function saveGitConfig(){
+const data={
+	token:S('gitToken').value,
+	repo:S('gitRepo').value,
+	path:S('gitPath').value,
+	branch:S('gitBranch').value
+};
+localStorage.setItem('vect-git-config',JSON.stringify(data));
+showToast('Git 设置已保存');
+}
+
+function clearGitConfig(){
+if(!confirm('确定移除 Git 设置？'))return;
+['gitToken','gitRepo','gitPath','gitBranch'].forEach(id=>S(id).value='');
+localStorage.removeItem('vect-git-config');
+showToast('Git 设置已移除');
 }
 
 function toggleAdv(){
@@ -1631,6 +1684,33 @@ if(localStorage.getItem('vect-asn')!=='0'){
 	S('asnTrack').classList.add('on');
 	S('asnToggle').checked=true;
 }
+
+// Restore DNS config from storage
+try{
+const dns=JSON.parse(localStorage.getItem('vect-dns-config'));
+if(dns){
+	if(dns.provider)S('dnsProvider').value=dns.provider;
+	if(dns.token)S('dnsToken').value=dns.token;
+	if(dns.zone)S('dnsZone').value=dns.zone;
+	if(dns.subdomain)S('dnsSubdomain').value=dns.subdomain;
+	if(dns.count)S('dnsCount').value=dns.count;
+	if(dns.recordType)S('dnsRecordType').value=dns.recordType;
+	if(dns.filterIpv6Only){
+		S('filterIpv6OnlyToggle').checked=true;
+		S('filterIpv6OnlyTrack').classList.add('on');
+	}
+}
+}catch(e){}
+// Restore Git config from storage
+try{
+const git=JSON.parse(localStorage.getItem('vect-git-config'));
+if(git){
+	if(git.token)S('gitToken').value=git.token;
+	if(git.repo)S('gitRepo').value=git.repo;
+	if(git.path)S('gitPath').value=git.path;
+	if(git.branch)S('gitBranch').value=git.branch;
+}
+}catch(e){}
 
 // Nav large title collapse on scroll + scroll edge effect
 let navTicking=false;
