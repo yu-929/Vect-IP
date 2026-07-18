@@ -1108,11 +1108,12 @@ func translateISP(isp string) string {
 		return v
 	}
 	prefix := map[string]string{
-		"Chinanet":   "中国电信",
-		"China169":   "中国联通",
-		"CMNET":      "中国移动",
-		"CNCN":       "中国网通",
-		"BGP.CN":     "中国BGP",
+		"CNC Group":    "中国网通",
+		"Chinanet":     "中国电信",
+		"China169":     "中国联通",
+		"CMNET":        "中国移动",
+		"CNCN":         "中国网通",
+		"BGP.CN":       "中国BGP",
 	}
 	for k, v := range prefix {
 		if strings.HasPrefix(isp, k) {
