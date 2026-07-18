@@ -1192,6 +1192,7 @@ function fmtDur(s){if(s<60)return Math.round(s)+'s';const m=Math.floor(s/60);con
 
 async function pollResult(id,attempt){
 if(polling)return;polling=true;
+S('s5Status').textContent='';
 if(!attempt)attempt=1;
 try{
 const r=await fetch('/api/scan/'+id);
@@ -1239,10 +1240,8 @@ resetButtons();
 // failure label removed
 showToast('扫描失败');
 }else{polling=false;setTimeout(()=>pollResult(id),1000);}
-}catch(e){
-if(attempt<5){polling=false;setTimeout(()=>pollResult(id,attempt+1),1000*attempt);return;}
-showError('获取结果失败');resetButtons();polling=false;
-}}
+}catch(e){if(attempt<5){polling=false;setTimeout(()=>pollResult(id,attempt+1),1000*attempt);return;}
+showError('获取结果失败');resetButtons();polling=false;}}
 
 function notifyComplete(results){
 if(!results||!results.length)return;
