@@ -1392,6 +1392,9 @@ function resultSuffix(r){
 function resultSuffixWithAsn(r){
 	return coloSuffix(r.colo)+(r.asname?'-'+r.asname:'');
 }
+function resultSuffixWithBandwidth(r){
+	return resultSuffixWithAsn(r)+(r.dlOk?' '+(r.dlMbps.toFixed(1)+' Mbps'):'');
+}
 
 function renderHistory(){
 const history=loadHistory();
@@ -1405,7 +1408,7 @@ const r0=h.results[0];
 const total=h.results.length;
 html+='<div class="glass-card history-item stagger-enter" data-idx="'+hi+'">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyAllResults('+hi+')">复制</button><button class="btn-text" onclick="deleteHistory('+hi+')">删除</button></div></div>';
-html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip+':443#'+resultSuffix(r0):'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip+':443#'+resultSuffix(r0):'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
+html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
 if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asname?'<div class="hm-row-single"><span class="hm">ASN机构: <strong>'+r0.asname+'</strong></span></div>':'')+'</div>';
 if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
@@ -1491,6 +1494,7 @@ S('asTitle').textContent='GitHub 上传';
 S('asDesc').textContent='选择要上传的节点范围';
 S('asBtn1').onclick=function(){hideActionSheet();doGithubUpload(sheetIdx,false);};
 S('asBtn2').onclick=function(){hideActionSheet();doGithubUpload(sheetIdx,true);};
+S('asBtn3').onclick=function(){hideActionSheet();doGithubUploadWithBandwidth(sheetIdx);};
 S('actionSheet').classList.add('show');
 }
 function doGithubUpload(idx,onlyDlOk){
@@ -1498,6 +1502,21 @@ var results=loadHistory()[idx].results;
 if(onlyDlOk)results=results.filter(function(r){return r.dlOk;});
 const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithAsn(r);});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
+var repo=S('gitRepo').value.trim();
+repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
+if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('settings');return;}
+const cfg={token:S('gitToken').value,repo:repo,path:S('gitPath').value,branch:S('gitBranch').value};
+if(!cfg.token||!cfg.repo){showToast('请先在设置中配置 GIT 参数');switchTab('settings');return;}
+showToast('正在上传到 GitHub...');
+const x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);
+x.setRequestHeader('Content-Type','application/json');
+x.onload=function(){if(x.status===200){showToast('GIT 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('GIT 上传失败: '+x.responseText);}};
+x.send(JSON.stringify({token:cfg.token,repo:cfg.repo,path:cfg.path||'ips.txt',branch:cfg.branch||'main',ips:ips}));
+}
+function doGithubUploadWithBandwidth(idx){
+var results=loadHistory()[idx].results.filter(function(r){return r.dlOk;});
+if(!results.length){showToast('没有测速成功的节点');return;}
+const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithBandwidth(r);});
 var repo=S('gitRepo').value.trim();
 repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
 if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('settings');return;}
@@ -1553,7 +1572,7 @@ function copyAllResults(hi){
 const history=loadHistory();
 const h=history[hi];
 if(!h||!h.results||!h.results.length)return;
-const text=h.results.map(r=>r.ip+':443#'+resultSuffix(r)).join('\n');
+const text=h.results.map(r=>r.ip+':443#'+resultSuffixWithAsn(r)).join('\n');
 copyText(text,true);
 }
 function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
@@ -1758,6 +1777,7 @@ setTimeout(function(){Notification.requestPermission();localStorage.setItem('vec
     <div class="as-desc" id="asDesc">选择要上传的节点</div>
     <button class="as-btn" id="asBtn1" onclick="hideActionSheet()">全部 IP</button>
     <button class="as-btn" id="asBtn2" onclick="hideActionSheet()">仅测速成功的 IP</button>
+    <button class="as-btn" id="asBtn3" onclick="hideActionSheet()">测速成功+带宽</button>
     <button class="as-btn danger as-cancel" onclick="hideActionSheet()">取消</button>
   </div>
 </div>
