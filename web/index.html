@@ -1299,13 +1299,17 @@ if(d.status==='completed'){
 			S('s6Fill').style.width=pct+'%';
 			S('s6Count').textContent=(i+1)+'/'+total;
 			S('s6Rem').textContent='剩余 '+fmtDur((total-i-1)*1.2);
-			try{
-				const resp=await fetch('/api/route-info?ip='+ips[i]);
-				if(resp.ok){
-					const data=await resp.json();
-					if(data.asn)asnMap[ips[i]]={asn:data.asn,asname:data.asname||''};
-				}
-			}catch(e){}
+			for(let retry=0;retry<3;retry++){
+				try{
+					const resp=await fetch('/api/route-info?ip='+ips[i]);
+					if(resp.ok){
+						const data=await resp.json();
+						if(data.asn)asnMap[ips[i]]={asn:data.asn,asname:data.asname||''};
+						break;
+					}
+				}catch(e){}
+				if(retry<2)await new Promise(r=>setTimeout(r,500));
+			}
 			if(i<ips.length-1)await new Promise(r=>setTimeout(r,1200));
 		}
 		S('s6Fill').style.width='100%';

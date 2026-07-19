@@ -433,6 +433,7 @@ dlBytes := req.DownloadBytes
 			var (
 				mu           sync.Mutex
 				successCount int
+				inFlight     int
 				wg           sync.WaitGroup
 				workCh       = make(chan int, dlTop)
 			)
@@ -446,11 +447,11 @@ dlBytes := req.DownloadBytes
 					defer wg.Done()
 					for idx := range workCh {
 						mu.Lock()
-						if successCount >= dlTop {
+						if successCount+inFlight >= dlTop {
 							mu.Unlock()
 							continue
 						}
-						successCount++
+						inFlight++
 						mu.Unlock()
 
 						r := &session.result[idx]
@@ -470,9 +471,10 @@ dlBytes := req.DownloadBytes
 						r.DownloadMbps = dr.Mbps
 						r.DownloadPeakMbps = dr.PeakMbps
 						r.DownloadError = dr.Error
-						if !dr.OK && isSequential {
-							successCount--
+						if dr.OK {
+							successCount++
 						}
+						inFlight--
 						// Send download progress
 						session.progress.Stage = 5
 						session.progress.Completed = successCount
