@@ -1601,10 +1601,19 @@ reader.readAsText(file);
 e.target.value='';
 }
 function pasteCidr(){
+showToast('正在读取剪贴板...');
 const ta=S('cidrs');
 ta.focus();
-document.execCommand('paste');
-setTimeout(updateCidrCount,200);
+if(navigator.clipboard&&navigator.clipboard.readText){
+navigator.clipboard.readText().then(text=>{
+const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
+if(!lines.length){showToast('剪贴板为空');return;}
+const existing=ta.value;
+ta.value=existing+(existing?'\n':'')+lines.join('\n');
+updateCidrCount();
+showToast('已粘贴 '+lines.length+' 条');
+}).catch(function(){showToast('请允许剪贴板权限后再次点击粘贴');});
+}else{showToast('当前浏览器不支持剪贴板读取');}
 }
 async function importFromUrl(){
 const ta=S('cidrs');
