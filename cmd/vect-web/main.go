@@ -617,6 +617,12 @@ go func() {
 				go func() {
 					defer wg.Done()
 					for idx := range workCh {
+						mu.Lock()
+						enough := successCount >= dlTop
+						mu.Unlock()
+						if enough {
+							continue
+						}
 						r := &session.result[idx]
 						var dr probe.DownloadResult
 						for attempt := 0; attempt < 3; attempt++ {
@@ -652,7 +658,7 @@ go func() {
 			}
 
 			// Send work items
-			for i := 0; i < len(session.result) && successCount < dlTop; i++ {
+			for i := 0; i < len(session.result); i++ {
 				workCh <- i
 			}
 			close(workCh)
