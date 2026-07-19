@@ -779,7 +779,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <script>
-let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, progressLocked=false;
+let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false;
 let tracerouteEnabled=localStorage.getItem('vect-traceroute')==='1';
 const S=document.getElementById.bind(document);
 if(window.visualViewport){
@@ -846,8 +846,10 @@ es.onerror=function(){
 if(this.readyState===2&&curId)pollResult(curId);
 };
 es.addEventListener('done',function(){
-es.close();
-if(!polling)pollResult(curId);
+	es.close();
+	scanDone=true;
+	S('s5Status').textContent='';
+	if(!polling)pollResult(curId);
 });
 }
 }
@@ -1211,15 +1213,19 @@ updateProgress(p);
 es.onerror=function(){console.error('EventSource error',this.readyState);
 if(this.readyState===2&&curId)pollResult(curId);};
 es.addEventListener('done',()=>{
-es.close();
-if(polling)return;
-pollResult(d.id);
+	es.close();
+	scanDone=true;
+	S('s5Status').textContent='';
+	if(polling)return;
+	pollResult(d.id);
 });
 }catch(e){showError('请求失败');resetButtons();}
 }
 
 function resetStages(){
 	progressLocked=false;
+	scanDone=false;
+	polling=false;
 	S('skeletonPanel').style.display='';
 	S('progressContent').style.display='none';
 	S('collapseBtn').textContent='展开';
@@ -1264,11 +1270,10 @@ if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='<1s';S('s4Rem').textContent='已完成';
 }
 if(stage===5){
-S('stage5Item').style.display='';
-S('s5Fill').style.width='100%';
-S('s5Count').textContent=done+'/'+budget;
-S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
-// download speed stage label removed
+	S('stage5Item').style.display='';
+	S('s5Fill').style.width='100%';
+	S('s5Count').textContent=done+'/'+budget;
+	if(!polling&&!scanDone)S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
 }
 }
 

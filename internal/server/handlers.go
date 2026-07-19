@@ -481,10 +481,11 @@ dlBytes := req.DownloadBytes
 						session.progress.Budget = dlTop
 						session.progress.DownloadIP = r.IP.String()
 						session.progress.DownloadMbps = dr.Mbps
+						localProgress := session.progress
 						dlSubs := make([]chan ProgressData, len(session.subs))
 						copy(dlSubs, session.subs)
 						mu.Unlock()
-						sendProgress(session.progress, dlSubs)
+						sendProgress(localProgress, dlSubs)
 					}
 				}()
 			}
@@ -1232,9 +1233,15 @@ func runGoTraceroute(ctx context.Context, ip string) []TracerouteHop {
 	}
 	defer syscall.Close(probeFd)
 
-	icmpFd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_ICMP)
-	if err != nil {
-		return nil
+	useRaw := false
+	icmpFd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
+	if err == nil {
+		useRaw = true
+	} else {
+		icmpFd, err = syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_ICMP)
+		if err != nil {
+			return nil
+		}
 	}
 	defer syscall.Close(icmpFd)
 
@@ -1274,8 +1281,15 @@ func runGoTraceroute(ctx context.Context, ip string) []TracerouteHop {
 		}
 
 		if n >= 8 {
-			icmpType := buf[0]
-			icmpCode := buf[1]
+			var icmpType, icmpCode byte
+			if useRaw {
+				ipHeaderLen := int(buf[0]&0x0F) * 4
+				icmpType = buf[ipHeaderLen]
+				icmpCode = buf[ipHeaderLen+1]
+			} else {
+				icmpType = buf[0]
+				icmpCode = buf[1]
+			}
 
 			fromAddr, ok := from.(*syscall.SockaddrInet4)
 			if !ok {
