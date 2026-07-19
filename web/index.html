@@ -786,10 +786,27 @@ if(window.visualViewport){
 window.visualViewport.addEventListener('resize',function(){
 var bar=document.querySelector('.tab-bar');
 if(!bar)return;
-var isKeyboardOpen=window.visualViewport.height<window.innerHeight*0.8;
-bar.style.display=isKeyboardOpen?'none':'';
+var kb=window.visualViewport.height<window.innerHeight*0.6;
+bar.style.display=kb?'none':'';
 });
 }
+document.addEventListener('focusin',function(e){
+var t=e.target;
+if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
+var bar=document.querySelector('.tab-bar');
+if(bar)bar.style.display='none';
+}
+});
+document.addEventListener('focusout',function(e){
+var t=e.target;
+if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
+setTimeout(function(){
+if(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA'||document.activeElement.tagName==='SELECT'))return;
+var bar=document.querySelector('.tab-bar');
+if(bar)bar.style.display='';
+},200);
+}
+});
 const stageConfig=[
 {id:'s1',total:1,label:'网段解析'},
 {id:'s2',total:1,label:'IP抽样'},
