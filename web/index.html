@@ -67,6 +67,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .seg-btn-plain{flex:1;padding:6pt 6pt;border:0.5px solid var(--glass-border);border-radius:8pt;background:transparent;font-size:12px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),color .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
 .seg-btn-plain:active{transform:scale(0.95)}
 
+/* ===== Action Sheet ===== */
+.action-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:flex-end;padding:0 14pt;padding-bottom:calc(env(safe-area-inset-bottom) + 14pt);animation:fadeIn .2s ease}
+.action-overlay.show{display:flex}
+.action-sheet{background:var(--glass-bg);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);border-radius:var(--radius-card);width:100%;max-width:360pt;overflow:hidden;box-shadow:var(--glass-shadow);animation:slideUp .35s var(--ease-spring)}
+.action-sheet .as-title{padding:14pt 16pt 4pt;font-size:13px;font-weight:600;color:var(--text);text-align:center}
+.action-sheet .as-desc{padding:0 16pt 10pt;font-size:11px;color:var(--label);text-align:center}
+.action-sheet .as-btn{display:block;width:100%;padding:14pt 16pt;border:none;background:transparent;font-size:15px;font-weight:500;color:var(--primary);cursor:pointer;font-family:inherit;transition:background .15s ease;border-top:0.5px solid var(--glass-border)}
+.action-sheet .as-btn:active{background:rgba(0,119,237,0.06)}
+.action-sheet .as-btn.danger{color:var(--danger)}
+.action-sheet .as-cancel{margin-top:8pt;border-radius:var(--radius-card);text-align:center;font-weight:600}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
 /* ===== Inputs ===== */
 .field{margin-bottom:8pt;width:100%}
 .field:last-child{margin-bottom:0}
@@ -1473,8 +1486,15 @@ x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdo
 function githubUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
-const onlyDlOk=confirm('仅上传测速成功的节点？\n「确定」= 仅测速成功  「取消」= 全部上传');
-var results=h[idx].results;
+var sheetIdx=idx;
+S('asTitle').textContent='GitHub 上传';
+S('asDesc').textContent='选择要上传的节点范围';
+S('asBtn1').onclick=function(){hideActionSheet();doGithubUpload(sheetIdx,false);};
+S('asBtn2').onclick=function(){hideActionSheet();doGithubUpload(sheetIdx,true);};
+S('actionSheet').classList.add('show');
+}
+function doGithubUpload(idx,onlyDlOk){
+var results=loadHistory()[idx].results;
 if(onlyDlOk)results=results.filter(function(r){return r.dlOk;});
 const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithAsn(r);});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
@@ -1647,6 +1667,9 @@ t.classList.add('show');
 t.style.transform='translateX(-50%) translateY(0px)';t.style.opacity='1';
 clearTimeout(t._t);t._t=setTimeout(()=>{t.style.transform='translateX(-50%) translateY(8px)';t.style.opacity='0';setTimeout(()=>{t.classList.remove('show');t.style.transition='';t.style.transform='';t.style.opacity='';},250);},2500);
 }
+function hideActionSheet(){
+S('actionSheet').classList.remove('show');
+}
 function showError(m){
 S('errorText').textContent=m;S('error-msg').classList.remove('hidden');
 }
@@ -1729,5 +1752,14 @@ setTimeout(function(){Notification.requestPermission();localStorage.setItem('vec
 }
 }
 </script>
+<div class="action-overlay" id="actionSheet" onclick="hideActionSheet()">
+  <div class="action-sheet" onclick="event.stopPropagation()">
+    <div class="as-title" id="asTitle">上传到 GitHub</div>
+    <div class="as-desc" id="asDesc">选择要上传的节点</div>
+    <button class="as-btn" id="asBtn1" onclick="hideActionSheet()">全部 IP</button>
+    <button class="as-btn" id="asBtn2" onclick="hideActionSheet()">仅测速成功的 IP</button>
+    <button class="as-btn danger as-cancel" onclick="hideActionSheet()">取消</button>
+  </div>
+</div>
 </body>
 </html>
