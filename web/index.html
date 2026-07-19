@@ -1146,6 +1146,7 @@ body.maxBitsV6=parseInt(S('maxBitsV6').value)||56;
 body.rounds=parseInt(S('rounds')?S('rounds').value:6)||6;
 }
 if(localStorage.getItem('vect-armstrong')==='1'){
+if(parseInt(S('ipVersion').value)===6||S('ipVersion').value==='6'){showError('完全体模式仅支持 IPv4，请关闭后重试');return;}
 body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=10;
 body.splitStepV4=8;body.maxBitsV4=32;body.rounds=10;body.skipFirst=3;
 body.heads=parseInt(S('heads')?S('heads').value:4)||4;
