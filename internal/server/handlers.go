@@ -425,12 +425,13 @@ dlBytes := req.DownloadBytes
 			}
 
 			var (
-				claimedCount atomic.Int32
 				mu           sync.Mutex
 				successCount int
 				wg           sync.WaitGroup
 				workCh       = make(chan int, dlTop)
 			)
+
+			isSequential := req.DownloadMode == "sequential"
 
 			// Start workers
 			for w := 0; w < dlConc; w++ {
@@ -438,10 +439,13 @@ dlBytes := req.DownloadBytes
 				go func() {
 					defer wg.Done()
 					for idx := range workCh {
-						claimed := claimedCount.Add(1)
-						if claimed > int32(dlTop) {
-							claimedCount.Add(-1)
-							continue
+						if isSequential {
+							mu.Lock()
+							enough := successCount >= dlTop
+							mu.Unlock()
+							if enough {
+								continue
+							}
 						}
 						r := &session.result[idx]
 						var dr probe.DownloadResult
@@ -478,8 +482,14 @@ dlBytes := req.DownloadBytes
 			}
 
 			// Send work items
-			for i := 0; i < len(session.result); i++ {
-				workCh <- i
+			if isSequential {
+				for i := 0; i < len(session.result); i++ {
+					workCh <- i
+				}
+			} else {
+				for i := 0; i < dlTop; i++ {
+					workCh <- i
+				}
 			}
 			close(workCh)
 			wg.Wait()
