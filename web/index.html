@@ -1643,7 +1643,7 @@ showToast('请粘贴 IP 列表链接');
 ta.focus();
 return;
 }
-if(!url.startsWith('http'))url='https://'+url;
+if(!url.startsWith('http')&&!url.startsWith('sub://'))url='https://'+url;
 showToast('正在解析链接...');
 try{
 const r=await fetch('/api/resolve-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});

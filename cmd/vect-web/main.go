@@ -1713,14 +1713,21 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "url is required", 400)
 		return
 	}
-	u, err := url.Parse(req.URL)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
-		http.Error(w, "invalid url", 400)
-		return
+
+	var fetchURL string
+	if strings.HasPrefix(req.URL, "sub://") {
+		fetchURL = "https://" + req.URL[6:]
+	} else {
+		u, err := url.Parse(req.URL)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+			http.Error(w, "invalid url", 400)
+			return
+		}
+		fetchURL = req.URL
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	req2, _ := http.NewRequest("GET", req.URL, nil)
+	req2, _ := http.NewRequest("GET", fetchURL, nil)
 	req2.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15")
 	resp, err := client.Do(req2)
 	if err != nil {
@@ -1735,23 +1742,46 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ipRe := regexp.MustCompile(`^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
+	content := string(body)
+	// Try base64 decode for sub content
+	if strings.HasPrefix(req.URL, "sub://") {
+		if decoded, err := base64.StdEncoding.DecodeString(content); err == nil {
+			content = string(decoded)
+		} else if decoded, err := base64.RawStdEncoding.DecodeString(content); err == nil {
+			content = string(decoded)
+		}
+	}
+
+	ipRe := regexp.MustCompile(`(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
 	var cidrs []string
 	seen := map[string]bool{}
-	for _, line := range strings.Split(string(body), "\n") {
+	for _, line := range strings.Split(content, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		m := ipRe.FindStringSubmatch(line)
-		if m == nil {
+		ip := extractIPFromProxyURI(line)
+		if ip == "" {
+			m := ipRe.FindStringSubmatch(line)
+			if m != nil {
+				ip = m[1]
+			}
+		}
+		if ip == "" {
 			continue
 		}
-		ip := m[1]
-		rest := strings.TrimSpace(line[len(m[0]):])
+		rest := strings.TrimSpace(line[len(ip):])
 		cidr := ip + "/24"
-		if strings.HasPrefix(rest, "/") {
-			cidr = line
+		// Find actual prefix if present after the IP
+		parts := strings.Fields(rest)
+		for _, p := range parts {
+			if strings.Contains(p, "/") {
+				var pp netip.Prefix
+				if err := pp.UnmarshalText([]byte(p)); err == nil && pp.IsValid() {
+					cidr = p
+					break
+				}
+			}
 		}
 		if !seen[cidr] {
 			cidrs = append(cidrs, cidr)
@@ -1764,6 +1794,102 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 		"cidrs": cidrs,
 		"count": len(cidrs),
 	})
+}
+
+func extractIPFromProxyURI(uri string) string {
+	// vmess://base64 -> decode JSON, extract "add" or "host"
+	if strings.HasPrefix(uri, "vmess://") {
+		if b, err := base64.StdEncoding.DecodeString(uri[8:]); err == nil {
+			var v struct {
+				Add  string `json:"add"`
+				Host string `json:"host"`
+			}
+			if json.Unmarshal(b, &v) == nil {
+				if net.ParseIP(v.Add) != nil {
+					return v.Add
+				}
+				if net.ParseIP(v.Host) != nil {
+					return v.Host
+				}
+			}
+		} else if b, err := base64.RawStdEncoding.DecodeString(uri[8:]); err == nil {
+			var v struct {
+				Add  string `json:"add"`
+				Host string `json:"host"`
+			}
+			if json.Unmarshal(b, &v) == nil {
+				if net.ParseIP(v.Add) != nil {
+					return v.Add
+				}
+				if net.ParseIP(v.Host) != nil {
+					return v.Host
+				}
+			}
+		}
+		return ""
+	}
+
+	// ss://base64 -> decode as "method:password@host:port"
+	if strings.HasPrefix(uri, "ss://") {
+		raw := uri[5:]
+		if idx := strings.IndexByte(raw, '#'); idx >= 0 {
+			raw = raw[:idx]
+		}
+		if b, err := base64.StdEncoding.DecodeString(raw); err == nil {
+			if h, _, err := net.SplitHostPort(string(b)); err == nil && net.ParseIP(h) != nil {
+				return h
+			}
+		} else if b, err := base64.RawStdEncoding.DecodeString(raw); err == nil {
+			if h, _, err := net.SplitHostPort(string(b)); err == nil && net.ParseIP(h) != nil {
+				return h
+			}
+		}
+		// Also try as SIP002 format: ss://base64@host:port
+		if idx := strings.Index(raw, "@"); idx >= 0 {
+			if h, _, err := net.SplitHostPort(raw[idx+1:]); err == nil && net.ParseIP(h) != nil {
+				return h
+			}
+		}
+		return ""
+	}
+
+	// ssr://base64 -> decode as "server:port:protocol:method:obfs:password"
+	if strings.HasPrefix(uri, "ssr://") {
+		raw := uri[6:]
+		if b, err := base64.StdEncoding.DecodeString(raw); err == nil {
+			parts := strings.SplitN(string(b), ":", 2)
+			if len(parts) >= 1 && net.ParseIP(parts[0]) != nil {
+				return parts[0]
+			}
+		} else if b, err := base64.RawStdEncoding.DecodeString(raw); err == nil {
+			parts := strings.SplitN(string(b), ":", 2)
+			if len(parts) >= 1 && net.ParseIP(parts[0]) != nil {
+				return parts[0]
+			}
+		}
+		return ""
+	}
+
+	// trojan://, vless://, hysteria2://, hysteria://, tuic://, socks5://
+	// All have format: scheme://[userinfo@]host:port
+	if strings.HasPrefix(uri, "trojan://") || strings.HasPrefix(uri, "vless://") ||
+		strings.HasPrefix(uri, "hysteria2://") || strings.HasPrefix(uri, "hysteria://") ||
+		strings.HasPrefix(uri, "tuic://") || strings.HasPrefix(uri, "socks5://") {
+		u, err := url.Parse(uri)
+		if err != nil {
+			return ""
+		}
+		if net.ParseIP(u.Hostname()) != nil {
+			return u.Hostname()
+		}
+		// Some formats have ip in the userinfo part for trojan
+		if u.User != nil && net.ParseIP(u.User.String()) != nil {
+			return u.User.String()
+		}
+		return ""
+	}
+
+	return ""
 }
 
 func handleResolveDomain(w http.ResponseWriter, r *http.Request) {
