@@ -172,13 +172,13 @@ jobs:
         with: { fetch-depth: 0 }
 
       - uses: actions/download-artifact@v4
-        with: { name: cli-desktop, path: build/ }
+        with: { name: cli-desktop, path: build/cli-desktop }
 
       - uses: actions/download-artifact@v4
-        with: { name: apk, path: build/ }
+        with: { name: apk, path: build/apk }
 
       - uses: actions/download-artifact@v4
-        with: { name: ipa, path: build/ }
+        with: { name: ipa, path: build/ipa }
 
       - name: 读取版本号
         id: ver
@@ -198,21 +198,20 @@ jobs:
             git log --oneline --no-merges -20 > /tmp/changelog
           fi
           {
-            echo "body<<CHANGELOG"
             echo "## 变更"
             [ -s /tmp/changelog ] && cat /tmp/changelog || echo "首次发版"
-            echo "CHANGELOG"
-          } >> $GITHUB_OUTPUT
+          } > /tmp/release-body.md
+          cat /tmp/release-body.md
 
       - name: 列出产物
-        run: ls -lh build/
+        run: find build/ -type f | sort
 
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          name: ${{ steps.title.outputs.title }}
-          body: ${{ steps.log.outputs.body }}
-          files: build/*
+          tag_name: v$(cat VERSION)
+          name: Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')
+          body_path: /tmp/release-body.md
+          files: build/**
           draft: false
           prerelease: false
