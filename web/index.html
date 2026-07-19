@@ -1398,7 +1398,8 @@ if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
 '<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>'+
-'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>'+
+'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+',true)">GIT(测速)</button>'+
+'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+',false)">GIT(全部)</button>'+
 '</div></div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
@@ -1470,10 +1471,12 @@ x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse
 x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:ips,filter_ipv6_only:cfg.filter_ipv6_only,record_type:cfg.record_type}));
 }
 
-function githubUploadFromHistory(idx){
+function githubUploadFromHistory(idx,onlyDlOk){
 const h=loadHistory();
 if(!h[idx])return;
-const ips=h[idx].results.map(function(r){return r.ip+':443#'+resultSuffixWithAsn(r);});
+var results=h[idx].results;
+if(onlyDlOk)results=results.filter(function(r){return r.dlOk;});
+const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithAsn(r);});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
 var repo=S('gitRepo').value.trim();
 repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
