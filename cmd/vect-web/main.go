@@ -341,6 +341,8 @@ func main() {
 		port = p
 	}
 
+	initPrefixDB()
+
 	http.Handle("/", noCache(http.FileServer(http.FS(web.FS))))
 
 	http.HandleFunc("/api/scan", handleScan)
@@ -937,6 +939,57 @@ var optimizedASNs = map[int]string{
 	132203: "CNI",
 }
 
+var prefixDB map[int][]*net.IPNet
+
+func initPrefixDB() {
+	prefixDB = make(map[int][]*net.IPNet)
+	files := []string{"asn_prefixes_v4.json", "asn_prefixes_v6.json"}
+	for _, f := range files {
+		data, err := os.ReadFile(f)
+		if err != nil {
+			log.Printf("warning: cannot read %s: %v", f, err)
+			continue
+		}
+		var raw map[string][]string
+		if err := json.Unmarshal(data, &raw); err != nil {
+			log.Printf("warning: cannot parse %s: %v", f, err)
+			continue
+		}
+		for asnKey, prefixes := range raw {
+			asn := 0
+			fmt.Sscanf(asnKey, "AS%d", &asn)
+			if asn == 0 {
+				continue
+			}
+			for _, cidr := range prefixes {
+				_, ipNet, err := net.ParseCIDR(cidr)
+				if err != nil {
+					continue
+				}
+				prefixDB[asn] = append(prefixDB[asn], ipNet)
+			}
+		}
+	}
+	log.Printf("loaded %d ASNs from prefix files", len(prefixDB))
+}
+
+func classifyByPrefix(ip net.IP) (routeType, routeLine string) {
+	for asn, nets := range prefixDB {
+		for _, n := range nets {
+			if n.Contains(ip) {
+				if line, ok := premiumASNs[asn]; ok {
+					return "Premium", line
+				}
+				if line, ok := optimizedASNs[asn]; ok {
+					return "Optimized", line
+				}
+				return "Normal", ""
+			}
+		}
+	}
+	return "", ""
+}
+
 type RouteInfo struct {
 	ASN       int    `json:"asn"`
 	ASName    string `json:"asname"`
@@ -1018,6 +1071,16 @@ func batchClassifyRoutes(ctx context.Context, ips []string) map[string]*RouteInf
 	sem := make(chan struct{}, 5)
 
 	for _, ip := range ips {
+		parsed := net.ParseIP(ip)
+		if parsed != nil {
+			if rt, rl := classifyByPrefix(parsed); rt != "" {
+				results[ip] = &RouteInfo{
+					RouteType: rt,
+					RouteLine: rl,
+				}
+				continue
+			}
+		}
 		wg.Add(1)
 		go func(ip string) {
 			defer wg.Done()
