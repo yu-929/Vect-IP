@@ -820,8 +820,9 @@ applyTheme(theme);
 if(theme==='system'){systemDark.addEventListener('change',()=>applyTheme('system'));}
 }
 applyTheme(storedTheme);
+if(storedTheme==='system')systemDark.addEventListener('change',()=>applyTheme('system'));
 function updateThemeOpts(){
-document.querySelectorAll('.seg-btn[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===localStorage.getItem('vect-theme')||'system'));
+document.querySelectorAll('.seg-btn[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===(localStorage.getItem('vect-theme')||'system')));
 }
 
 // Traceroute toggle
