@@ -785,7 +785,9 @@ const S=document.getElementById.bind(document);
 if(window.visualViewport){
 window.visualViewport.addEventListener('resize',function(){
 var bar=document.querySelector('.tab-bar');
-if(bar)bar.style.display=window.visualViewport.height<window.innerHeight?'none':'';
+if(!bar)return;
+var isKeyboardOpen=window.visualViewport.height<window.innerHeight*0.8;
+bar.style.display=isKeyboardOpen?'none':'';
 });
 }
 const stageConfig=[
