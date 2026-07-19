@@ -1603,15 +1603,7 @@ e.target.value='';
 function pasteCidr(){
 const ta=S('cidrs');
 ta.focus();
-if(navigator.clipboard&&navigator.clipboard.readText){
-navigator.clipboard.readText().then(text=>{
-const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
-if(!lines.length)return;
-const existing=ta.value;
-ta.value=existing+(existing?'\n':'')+lines.join('\n');
-updateCidrCount();
-}).catch(()=>document.execCommand('paste'));
-}else{document.execCommand('paste');}
+document.execCommand('paste');
 setTimeout(updateCidrCount,200);
 }
 async function importFromUrl(){
