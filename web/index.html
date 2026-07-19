@@ -623,18 +623,17 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="settings-group">
 <div class="sg-title">下载测速</div>
 <div class="field"><label>测速网址</label>
-<div style="width:100%"><select id="dlUrlPreset" onchange="toggleDlUrlInput()">
+<select id="dlUrlPreset" onchange="toggleDlUrlInput()" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box">
 <option value="auto">自动选择</option>
 <option value="speed.cloudflare.com/__down?bytes=99999999">Cloudflare</option>
 <option value="cf.090227.xyz/__down?bytes=99999999">CMLiussss</option>
 <option value="speed.okl.abrdns.com">CMCC专属</option>
 <option value="__custom__">自定义测速地址</option>
 </select></div>
-</div>
-<div class="field" id="customDlUrlField" style="display:none;margin-top:6pt"><label>自定义测速地址</label><input id="customDlUrl" type="text" placeholder="https://example.com/100mb.bin"></div>
+<div class="field" id="customDlUrlField" style="display:none;margin-top:6pt"><label>自定义测速地址</label><input id="customDlUrl" type="text" placeholder="https://example.com/100mb.bin" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
 <div class="row" style="margin-top:6pt">
-<div class="field"><label>测速文件大小 (MB)</label><input id="downloadBytes" type="number" value="1" min="1" max="1000"></div>
-<div class="field"><label>单次超时 (s)</label><input id="downloadTimeout" type="number" value="3" min="1" max="120"></div>
+<div class="field"><label>测速文件大小 (MB)</label><input id="downloadBytes" type="number" value="1" min="1" max="1000" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
+<div class="field"><label>单次超时 (s)</label><input id="downloadTimeout" type="number" value="3" min="1" max="120" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
 </div>
 </div>
 
