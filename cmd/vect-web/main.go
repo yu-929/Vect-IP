@@ -1752,7 +1752,7 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ipRe := regexp.MustCompile(`(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
+ipRe := regexp.MustCompile(`(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
 	var cidrs []string
 	seen := map[string]bool{}
 	for _, line := range strings.Split(content, "\n") {
@@ -1762,17 +1762,19 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 		}
 		ip := extractIPFromProxyURI(line)
 		if ip == "" {
-			m := ipRe.FindStringSubmatch(line)
-			if m != nil {
+			if m := ipRe.FindStringSubmatch(line); m != nil {
 				ip = m[1]
 			}
 		}
-		if ip == "" {
+		if ip == "" || net.ParseIP(ip) == nil {
 			continue
 		}
-		rest := strings.TrimSpace(line[len(ip):])
+		idx := strings.Index(line, ip)
+		if idx < 0 {
+			idx = 0
+		}
+		rest := strings.TrimSpace(line[idx+len(ip):])
 		cidr := ip + "/24"
-		// Find actual prefix if present after the IP
 		parts := strings.Fields(rest)
 		for _, p := range parts {
 			if strings.Contains(p, "/") {
