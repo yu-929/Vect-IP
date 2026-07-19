@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -924,6 +925,9 @@ type LocalIPInfo struct {
 	Location  string   `json:"location,omitempty"`
 }
 
+//go:embed asn_prefixes_v4.json asn_prefixes_v6.json
+var prefixData embed.FS
+
 var premiumASNs = map[int]string{
 	4809:  "CN2",
 	9929:  "CUII",
@@ -945,7 +949,7 @@ func initPrefixDB() {
 	prefixDB = make(map[int][]*net.IPNet)
 	files := []string{"asn_prefixes_v4.json", "asn_prefixes_v6.json"}
 	for _, f := range files {
-		data, err := os.ReadFile(f)
+		data, err := prefixData.ReadFile(f)
 		if err != nil {
 			log.Printf("warning: cannot read %s: %v", f, err)
 			continue

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -30,6 +31,9 @@ import (
 	"github.com/yu-929/Vect-IP/internal/engine"
 	"github.com/yu-929/Vect-IP/internal/probe"
 )
+
+//go:embed asn_prefixes_v4.json asn_prefixes_v6.json
+var prefixData embed.FS
 
 type ScanRequest struct {
 	CIDRs           []string `json:"cidrs"`
@@ -757,7 +761,7 @@ func initPrefixDB() {
 	prefixDB = make(map[int][]*net.IPNet)
 	files := []string{"asn_prefixes_v4.json", "asn_prefixes_v6.json"}
 	for _, f := range files {
-		data, err := os.ReadFile(f)
+		data, err := prefixData.ReadFile(f)
 		if err != nil {
 			log.Printf("warning: cannot read %s: %v", f, err)
 			continue
