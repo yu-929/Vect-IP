@@ -425,6 +425,7 @@ dlBytes := req.DownloadBytes
 			}
 
 			var (
+				claimedCount atomic.Int32
 				mu           sync.Mutex
 				successCount int
 				wg           sync.WaitGroup
@@ -437,10 +438,9 @@ dlBytes := req.DownloadBytes
 				go func() {
 					defer wg.Done()
 					for idx := range workCh {
-						mu.Lock()
-						enough := successCount >= dlTop
-						mu.Unlock()
-						if enough {
+						claimed := claimedCount.Add(1)
+						if claimed > int32(dlTop) {
+							claimedCount.Add(-1)
 							continue
 						}
 						r := &session.result[idx]
