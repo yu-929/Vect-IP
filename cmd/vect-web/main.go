@@ -542,7 +542,6 @@ go func() {
 			session.status = "failed"
 			session.err = err.Error()
 		} else {
-			session.status = "completed"
 			session.result = resp.Top
 		}
 		// Filter out results with latency >= 6000ms
@@ -686,9 +685,10 @@ go func() {
 
 		// Close SSE channels after all processing is done
 		session.mu.Lock()
+		allSubs := session.subs
 		session.subs = nil
 		session.mu.Unlock()
-		for _, ch := range subs {
+		for _, ch := range allSubs {
 			close(ch)
 		}
 
@@ -795,6 +795,12 @@ func handleProgressSSE(w http.ResponseWriter, r *http.Request, id string) {
 
 	ch := make(chan ProgressData, 8)
 	session.mu.Lock()
+	if session.status == "completed" || session.status == "failed" {
+		session.mu.Unlock()
+		fmt.Fprintf(w, "event: done\ndata: \n\n")
+		flusher.Flush()
+		return
+	}
 	session.subs = append(session.subs, ch)
 	ch <- session.progress
 	session.mu.Unlock()

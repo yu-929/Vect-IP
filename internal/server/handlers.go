@@ -25,6 +25,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/yu-929/Vect-IP/internal/dns"
@@ -368,7 +369,6 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			session.status = "failed"
 			session.err = err.Error()
 		} else {
-			session.status = "completed"
 			session.result = resp.Top
 		}
 		// Filter out results with latency >= 6000ms
@@ -513,9 +513,10 @@ dlBytes := req.DownloadBytes
 
 		// Close SSE channels after all processing is done
 		session.mu.Lock()
+		allSubs := session.subs
 		session.subs = nil
 		session.mu.Unlock()
-		for _, ch := range subs {
+		for _, ch := range allSubs {
 			close(ch)
 		}
 
@@ -612,6 +613,12 @@ func handleProgressSSE(w http.ResponseWriter, r *http.Request, id string) {
 
 	ch := make(chan ProgressData, 8)
 	session.mu.Lock()
+	if session.status == "completed" || session.status == "failed" {
+		session.mu.Unlock()
+		fmt.Fprintf(w, "event: done\ndata: \n\n")
+		flusher.Flush()
+		return
+	}
 	session.subs = append(session.subs, ch)
 	ch <- session.progress
 	session.mu.Unlock()
@@ -624,6 +631,7 @@ func handleProgressSSE(w http.ResponseWriter, r *http.Request, id string) {
 		case data, ok := <-ch:
 			if !ok {
 				fmt.Fprintf(w, "event: done\ndata: \n\n")
+				flusher.Flush()
 				return
 			}
 			b, _ := json.Marshal(data)
@@ -1208,7 +1216,97 @@ func handleTraceroute(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(hops)
 }
 
+func runGoTraceroute(ctx context.Context, ip string) []TracerouteHop {
+	target := net.ParseIP(ip)
+	if target == nil {
+		return nil
+	}
+	target4 := target.To4()
+	if target4 == nil {
+		return nil
+	}
+
+	probeFd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
+	if err != nil {
+		return nil
+	}
+	defer syscall.Close(probeFd)
+
+	icmpFd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_ICMP)
+	if err != nil {
+		return nil
+	}
+	defer syscall.Close(icmpFd)
+
+	tv := syscall.NsecToTimeval(3 * 1e9)
+	syscall.SetsockoptTimeval(icmpFd, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &tv)
+
+	var addr syscall.SockaddrInet4
+	copy(addr.Addr[:], target4)
+
+	var hops []TracerouteHop
+	destReached := false
+
+	for ttl := 1; ttl <= 30 && !destReached; ttl++ {
+		select {
+		case <-ctx.Done():
+			return hops
+		default:
+		}
+
+		syscall.SetsockoptInt(probeFd, syscall.IPPROTO_IP, syscall.IP_TTL, ttl)
+		addr.Port = 33434 + ttl
+		start := time.Now()
+
+		err := syscall.Sendto(probeFd, nil, 0, &addr)
+		if err != nil {
+			hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
+			continue
+		}
+
+		buf := make([]byte, 512)
+		n, from, err := syscall.Recvfrom(icmpFd, buf, 0)
+		elapsed := time.Since(start)
+
+		if err != nil {
+			hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
+			continue
+		}
+
+		if n >= 8 {
+			icmpType := buf[0]
+			icmpCode := buf[1]
+
+			fromAddr, ok := from.(*syscall.SockaddrInet4)
+			if !ok {
+				hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
+				continue
+			}
+			hopIP := net.IP(fromAddr.Addr[:]).String()
+			ms := fmt.Sprintf("%.1f", float64(elapsed.Microseconds())/1000.0)
+
+			switch {
+			case icmpType == 11 && icmpCode == 0:
+				hops = append(hops, TracerouteHop{Hop: ttl, IP: hopIP, MS: ms, Lost: false})
+			case icmpType == 3:
+				hops = append(hops, TracerouteHop{Hop: ttl, IP: hopIP, MS: ms, Lost: false})
+				destReached = true
+			default:
+				hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
+			}
+		} else {
+			hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
+		}
+	}
+
+	return hops
+}
+
 func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
+	// Try Go-based traceroute first (works on both iOS and desktop without external deps)
+	if hops := runGoTraceroute(ctx, ip); hops != nil {
+		return hops
+	}
 	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
 		if globalTracerouteBaseURL == "" {
 			return nil
