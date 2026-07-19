@@ -1421,7 +1421,7 @@ h.results.forEach((r,ri)=>{
 if(ri===0)return;
 html+='<div class="h-detail-row">';
 html+='<div class="h-detail-rank">#'+(ri+1)+'</div>';
-html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+':443#'+resultSuffix(r)+'\')">'+r.ip+'</div>';
+html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+'</div>';
 html+='<div class="h-detail-meta">';
 html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-jitter">'+(r.jitter!==undefined?r.jitter.toFixed(1)+'ms':'--')+'</span>';
@@ -1775,9 +1775,9 @@ setTimeout(function(){Notification.requestPermission();localStorage.setItem('vec
   <div class="action-sheet" onclick="event.stopPropagation()">
     <div class="as-title" id="asTitle">上传到 GitHub</div>
     <div class="as-desc" id="asDesc">选择要上传的节点</div>
-    <button class="as-btn" id="asBtn1" onclick="hideActionSheet()">全部 IP</button>
-    <button class="as-btn" id="asBtn2" onclick="hideActionSheet()">仅测速成功的 IP</button>
-    <button class="as-btn" id="asBtn3" onclick="hideActionSheet()">测速成功+带宽</button>
+    <button class="as-btn" id="asBtn1" onclick="hideActionSheet()">All IP</button>
+    <button class="as-btn" id="asBtn2" onclick="hideActionSheet()">SPEED IP</button>
+    <button class="as-btn" id="asBtn3" onclick="hideActionSheet()">SPEED IP「带宽」</button>
     <button class="as-btn danger as-cancel" onclick="hideActionSheet()">取消</button>
   </div>
 </div>
