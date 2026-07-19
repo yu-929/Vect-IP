@@ -1279,9 +1279,13 @@ btn.classList.add('btn-primary');
 
 function cancelScan(){
 	progressLocked=false;
+	polling=true;
+	S('s5Status').textContent='';
 	if(!curId)return;
-fetch('/api/cancel/'+curId);
-if(es)es.close();
+	fetch('/api/cancel/'+curId);
+	if(es)es.close();
+	es=null;
+	curId=null;
 resetButtons();
 // cancelled label removed
 }
