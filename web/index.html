@@ -760,6 +760,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, progressLocked=false;
 let tracerouteEnabled=localStorage.getItem('vect-traceroute')==='1';
 const S=document.getElementById.bind(document);
+if(window.visualViewport){
+window.visualViewport.addEventListener('resize',function(){
+var bar=document.querySelector('.tab-bar');
+if(bar)bar.style.display=window.visualViewport.height<window.innerHeight?'none':'';
+});
+}
 const stageConfig=[
 {id:'s1',total:1,label:'网段解析'},
 {id:'s2',total:1,label:'IP抽样'},
