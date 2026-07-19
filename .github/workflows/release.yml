@@ -209,8 +209,8 @@ jobs:
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v$(cat VERSION)
-          name: Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.title.outputs.title }}
           body_path: /tmp/release-body.md
           files: build/**
           draft: false
