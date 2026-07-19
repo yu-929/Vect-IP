@@ -1473,7 +1473,11 @@ function deleteHistory(idx){
 let history=loadHistory();
 history.splice(idx,1);
 saveHistory(history);
+var scrollY=window.scrollY;
+var docH=document.documentElement.scrollHeight||1;
 renderHistory();
+var newDocH=document.documentElement.scrollHeight||1;
+window.scrollTo(0,Math.round(scrollY*newDocH/docH));
 showToast('已删除');
 }
 
