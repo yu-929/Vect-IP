@@ -1398,8 +1398,7 @@ if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
 '<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>'+
-'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+',true)">GIT(测速)</button>'+
-'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+',false)">GIT(全部)</button>'+
+'<button class="seg-btn" onclick="githubUploadFromHistory('+hi+')">GIT上传</button>'+
 '</div></div>';
 html+='<div class="h-detail" id="hDetail_'+hi+'" style="display:none">';
 h.results.forEach((r,ri)=>{
@@ -1471,9 +1470,10 @@ x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse
 x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:ips,filter_ipv6_only:cfg.filter_ipv6_only,record_type:cfg.record_type}));
 }
 
-function githubUploadFromHistory(idx,onlyDlOk){
+function githubUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
+const onlyDlOk=confirm('仅上传测速成功的节点？\n「确定」= 仅测速成功  「取消」= 全部上传');
 var results=h[idx].results;
 if(onlyDlOk)results=results.filter(function(r){return r.dlOk;});
 const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithAsn(r);});
