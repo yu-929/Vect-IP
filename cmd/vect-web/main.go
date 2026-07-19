@@ -335,6 +335,8 @@ func noCache(next http.Handler) http.Handler {
 }
 
 func main() {
+	initPrefixDB()
+
 	port := "8080"
 	if p := os.Getenv("PORT"); p != "" {
 		port = p
@@ -671,7 +673,11 @@ go func() {
 						routeLine = ri.RouteLine
 					}
 					if routeLine != "" {
-						session.result[i].Trace["route"] = fmt.Sprintf("%s｜%s｜%s", ri.Org, routeLine, routeLabel)
+						if ri.Org != "" {
+							session.result[i].Trace["route"] = fmt.Sprintf("%s｜%s｜%s", ri.Org, routeLine, routeLabel)
+						} else {
+							session.result[i].Trace["route"] = fmt.Sprintf("%s｜%s", routeLine, routeLabel)
+						}
 					} else {
 						session.result[i].Trace["route"] = routeLabel
 					}
@@ -892,9 +898,61 @@ var optimizedASNs = map[int]string{
 	58453: "CMI",
 	4134:  "163",
 	4837:  "169",
+	4812:  "CT",
 	4538:  "CERNET",
 	24445: "CMHK",
 	132203: "CNI",
+}
+
+var prefixDB map[int][]*net.IPNet
+
+func initPrefixDB() {
+	prefixDB = make(map[int][]*net.IPNet)
+	files := []string{"asn_prefixes_v4.json", "asn_prefixes_v6.json"}
+	for _, f := range files {
+		data, err := os.ReadFile(f)
+		if err != nil {
+			log.Printf("warning: cannot read %s: %v", f, err)
+			continue
+		}
+		var raw map[string][]string
+		if err := json.Unmarshal(data, &raw); err != nil {
+			log.Printf("warning: cannot parse %s: %v", f, err)
+			continue
+		}
+		for asnKey, prefixes := range raw {
+			asn := 0
+			fmt.Sscanf(asnKey, "AS%d", &asn)
+			if asn == 0 {
+				continue
+			}
+			for _, cidr := range prefixes {
+				_, ipNet, err := net.ParseCIDR(cidr)
+				if err != nil {
+					continue
+				}
+				prefixDB[asn] = append(prefixDB[asn], ipNet)
+			}
+		}
+	}
+	log.Printf("loaded %d ASNs from prefix files", len(prefixDB))
+}
+
+func classifyByPrefix(ip net.IP) (routeType, routeLine string) {
+	for asn, nets := range prefixDB {
+		for _, n := range nets {
+			if n.Contains(ip) {
+				if line, ok := premiumASNs[asn]; ok {
+					return "Premium", line
+				}
+				if line, ok := optimizedASNs[asn]; ok {
+					return "Optimized", line
+				}
+				return "Normal", ""
+			}
+		}
+	}
+	return "", ""
 }
 
 type RouteInfo struct {
@@ -977,7 +1035,17 @@ func batchClassifyRoutes(ctx context.Context, ips []string) map[string]*RouteInf
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, 5)
 
-	for _, ip := range ips {
+	for _, ipStr := range ips {
+		parsed := net.ParseIP(ipStr)
+		if parsed != nil {
+			if rt, rl := classifyByPrefix(parsed); rt != "" {
+				results[ipStr] = &RouteInfo{
+					RouteType: rt,
+					RouteLine: rl,
+				}
+				continue
+			}
+		}
 		wg.Add(1)
 		go func(ip string) {
 			defer wg.Done()
@@ -987,7 +1055,7 @@ func batchClassifyRoutes(ctx context.Context, ips []string) map[string]*RouteInf
 			mu.Lock()
 			results[ip] = info
 			mu.Unlock()
-		}(ip)
+		}(ipStr)
 	}
 	wg.Wait()
 	return results
