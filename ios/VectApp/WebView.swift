@@ -14,9 +14,13 @@ struct WebView: UIViewRepresentable {
         config.websiteDataStore = .default()
         let userContent = WKUserContentController()
         userContent.add(context.coordinator, name: "vectNotify")
+        userContent.add(context.coordinator, name: "clipboardRead")
         let bridgeJS = """
         window.vectNotify = function(data) {
             window.webkit.messageHandlers.vectNotify.postMessage(data);
+        };
+        window.iOSClipboard = function() {
+            window.webkit.messageHandlers.clipboardRead.postMessage("");
         };
         """
         let script = WKUserScript(source: bridgeJS, injectionTime: .atDocumentStart, forMainFrameOnly: false)
@@ -52,6 +56,13 @@ struct WebView: UIViewRepresentable {
                 content.sound = .default
                 let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
                 UNUserNotificationCenter.current().add(request)
+            } else if message.name == "clipboardRead" {
+                let text = UIPasteboard.general.string ?? ""
+                let escaped = text.replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "'", with: "\\'")
+                    .replacingOccurrences(of: "\n", with: "\\n")
+                    .replacingOccurrences(of: "\r", with: "\\r")
+                message.webView?.evaluateJavaScript("window.__clipboardResolve('\(escaped)')")
             }
         }
 

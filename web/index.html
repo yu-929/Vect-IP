@@ -1604,7 +1604,17 @@ function pasteCidr(){
 showToast('正在读取剪贴板...');
 const ta=S('cidrs');
 ta.focus();
-if(navigator.clipboard&&navigator.clipboard.readText){
+if(window.iOSClipboard){
+const orig=ta.value;
+window.__clipboardResolve=function(text){
+const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
+if(!lines.length){showToast('剪贴板为空');return;}
+ta.value=orig+(orig?'\n':'')+lines.join('\n');
+updateCidrCount();
+showToast('已粘贴 '+lines.length+' 条');
+};
+window.iOSClipboard();
+}else if(navigator.clipboard&&navigator.clipboard.readText){
 navigator.clipboard.readText().then(text=>{
 const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
 if(!lines.length){showToast('剪贴板为空');return;}
