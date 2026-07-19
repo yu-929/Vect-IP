@@ -429,6 +429,7 @@ dlBytes := req.DownloadBytes
 				successCount int
 				wg           sync.WaitGroup
 				workCh       = make(chan int, dlTop)
+				done         atomic.Bool
 			)
 
 			isSequential := req.DownloadMode == "sequential"
@@ -439,13 +440,8 @@ dlBytes := req.DownloadBytes
 				go func() {
 					defer wg.Done()
 					for idx := range workCh {
-						if isSequential {
-							mu.Lock()
-							enough := successCount >= dlTop
-							mu.Unlock()
-							if enough {
-								continue
-							}
+						if done.Load() {
+							continue
 						}
 						r := &session.result[idx]
 						var dr probe.DownloadResult
@@ -466,6 +462,9 @@ dlBytes := req.DownloadBytes
 						r.DownloadError = dr.Error
 						if dr.OK {
 							successCount++
+							if isSequential && successCount >= dlTop {
+								done.Store(true)
+							}
 						}
 						// Send download progress
 						session.progress.Stage = 5
