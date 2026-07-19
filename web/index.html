@@ -636,6 +636,16 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>测速文件大小 (MB)</label><input id="downloadBytes" type="number" value="1" min="1" max="1000"></div>
 <div class="field"><label>单次超时 (s)</label><input id="downloadTimeout" type="number" value="3" min="1" max="120"></div>
 </div>
+<div class="field" style="margin-top:0">
+<label>测速并发</label>
+<div class="colo-filter">
+<select id="dlConcurrencyToggle" onchange="toggleDlConcurrency()">
+<option value="">关闭</option>
+<option value="1" selected>开启</option>
+</select>
+<input id="dlConcurrency" type="number" value="1" min="1" max="10" placeholder="并发数">
+</div>
+</div>
 </div>
 
 <div class="settings-group">
@@ -846,6 +856,12 @@ if(toggle)toggle.checked=tracerouteEnabled;
 
 function toggleDlUrlInput(){
 S('customDlUrlField').style.display=S('dlUrlPreset').value==='__custom__'?'':'none';
+}
+function toggleDlConcurrency(){
+var on=S('dlConcurrencyToggle').value!=='';
+S('dlConcurrency').disabled=!on;
+if(!on)S('dlConcurrency').value=1;
+localStorage.setItem('vect-dl-concurrency',S('dlConcurrencyToggle').value);
 }
 
 function toggleDnsEnable(){
@@ -1094,6 +1110,7 @@ topN:parseInt(S('topN').value)||20,
 ipVersion:parseInt(S('ipVersion').value)||4,
 downloadBytes:parseInt(S('downloadBytes').value)*1000*1000||0,
 downloadTimeout:parseInt(S('downloadTimeout').value)||0,
+downloadConcurrency:S('dlConcurrencyToggle').value!==''?parseInt(S('dlConcurrency').value)||1:0,
 customDownloadUrl:S('dlUrlPreset').value==='__custom__'?S('customDlUrl').value:S('dlUrlPreset').value,
 customDownloadEnabled:S('dlUrlPreset').value!=='auto'};
 if(adv){
@@ -1762,6 +1779,9 @@ if(localStorage.getItem('vect-asn')!=='0'){
 	S('asnTrack').classList.add('on');
 	S('asnToggle').checked=true;
 }
+// Init download concurrency from storage
+var dlc=localStorage.getItem('vect-dl-concurrency');
+if(dlc){S('dlConcurrencyToggle').value=dlc;toggleDlConcurrency();}
 
 // Restore DNS config from storage
 try{

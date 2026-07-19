@@ -60,6 +60,7 @@ type ScanRequest struct {
 	CustomDownloadEnabled bool   `json:"customDownloadEnabled"`
 	DownloadBytes   int64    `json:"downloadBytes"`
 	DownloadTimeout int      `json:"downloadTimeout"`
+	DownloadConcurrency int  `json:"downloadConcurrency"`
 }
 
 type ScanStatus struct {
@@ -595,44 +596,67 @@ go func() {
 			}
 
 			dlp := probe.NewDownloadProber(dlCfg)
-			maxTests := dlTop
-			if req.DownloadMode == "sequential" {
-				maxTests = len(session.result)
+			dlConc := req.DownloadConcurrency
+			if dlConc <= 1 {
+				dlConc = 1
+			}
+			if dlConc > dlTop {
+				dlConc = dlTop
 			}
 
-			successCount := 0
-			for i := 0; i < maxTests && successCount < dlTop; i++ {
-				r := &session.result[i]
-				var dr probe.DownloadResult
-				for attempt := 0; attempt < 3; attempt++ {
-					dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
-					dr = dlp.Download(dlCtx, r.IP)
-					dlCancel()
-					if dr.OK {
-						break
+			var (
+				mu           sync.Mutex
+				successCount int
+				wg           sync.WaitGroup
+				workCh       = make(chan int, dlTop)
+			)
+
+			// Start workers
+			for w := 0; w < dlConc; w++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					for idx := range workCh {
+						r := &session.result[idx]
+						var dr probe.DownloadResult
+						for attempt := 0; attempt < 3; attempt++ {
+							dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
+							dr = dlp.Download(dlCtx, r.IP)
+							dlCancel()
+							if dr.OK {
+								break
+							}
+						}
+						mu.Lock()
+						r.DownloadOK = dr.OK
+						r.DownloadBytes = dr.Bytes
+						r.DownloadMS = dr.TotalMS
+						r.DownloadMbps = dr.Mbps
+						r.DownloadPeakMbps = dr.PeakMbps
+						r.DownloadError = dr.Error
+						if dr.OK {
+							successCount++
+						}
+						// Send download progress
+						session.progress.Stage = 5
+						session.progress.Completed = successCount
+						session.progress.Budget = dlTop
+						session.progress.DownloadIP = r.IP.String()
+						session.progress.DownloadMbps = dr.Mbps
+						dlSubs := make([]chan ProgressData, len(session.subs))
+						copy(dlSubs, session.subs)
+						mu.Unlock()
+						sendProgress(session.progress, dlSubs)
 					}
-				}
-				r.DownloadOK = dr.OK
-				r.DownloadBytes = dr.Bytes
-				r.DownloadMS = dr.TotalMS
-				r.DownloadMbps = dr.Mbps
-				r.DownloadPeakMbps = dr.PeakMbps
-				r.DownloadError = dr.Error
-				if dr.OK {
-					successCount++
-				}
-				// Send download progress with per-IP details
-				session.mu.Lock()
-				session.progress.Stage = 5
-				session.progress.Completed = successCount
-				session.progress.Budget = dlTop
-				session.progress.DownloadIP = r.IP.String()
-				session.progress.DownloadMbps = dr.Mbps
-				dlSubs := make([]chan ProgressData, len(session.subs))
-				copy(dlSubs, session.subs)
-				session.mu.Unlock()
-				sendProgress(session.progress, dlSubs)
+				}()
 			}
+
+			// Send work items
+			for i := 0; i < len(session.result) && successCount < dlTop; i++ {
+				workCh <- i
+			}
+			close(workCh)
+			wg.Wait()
 		}
 
 		session.mu.Lock()
