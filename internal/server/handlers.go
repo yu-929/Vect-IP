@@ -59,6 +59,8 @@ type ScanRequest struct {
 DownloadBytes   int64    `json:"downloadBytes"`
 	DownloadTimeout int      `json:"downloadTimeout"`
 	DownloadConcurrency int  `json:"downloadConcurrency"`
+	CustomDownloadURL   string `json:"customDownloadUrl"`
+	CustomDownloadEnabled bool `json:"customDownloadEnabled"`
 }
 
 type ScanStatus struct {
