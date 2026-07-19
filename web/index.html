@@ -731,6 +731,18 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="sg-title">关于</div>
 <div class="settings-row">
 <div style="flex:1">
+<div class="sl-label">阿姆斯特朗完全体IPV4模式</div>
+<div class="sl-desc">开启后覆盖高级参数配置</div>
+</div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="armstrongTrack" onclick="toggleArmstrong()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="armstrongToggle" aria-label="阿姆斯特朗完全体IPV4模式">
+</div>
+</div>
+</div>
+<div class="settings-row">
+<div style="flex:1">
 <div class="sl-label">作者</div>
 </div>
 <div class="sl-desc">小钱</div>
@@ -862,6 +874,11 @@ var on=S('dlConcurrencyToggle').value!=='';
 S('dlConcurrency').disabled=!on;
 if(!on)S('dlConcurrency').value=1;
 localStorage.setItem('vect-dl-concurrency',S('dlConcurrencyToggle').value);
+}
+function toggleArmstrong(){
+var on=S('armstrongTrack').classList.toggle('on');
+S('armstrongToggle').checked=on;
+localStorage.setItem('vect-armstrong',on?'1':'0');
 }
 
 function toggleDnsEnable(){
@@ -1126,6 +1143,16 @@ body.splitInterval=parseInt(S('splitInterval').value)||20;
 body.minSamplesSplit=parseInt(S('minSamplesSplit').value)||5;
 body.maxBitsV4=parseInt(S('maxBitsV4').value)||24;
 body.maxBitsV6=parseInt(S('maxBitsV6').value)||56;
+body.rounds=parseInt(S('rounds')?S('rounds').value:6)||6;
+}
+if(localStorage.getItem('vect-armstrong')==='1'){
+body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=10;
+body.splitStepV4=8;body.maxBitsV4=32;body.rounds=10;body.skipFirst=3;
+body.heads=parseInt(S('heads')?S('heads').value:4)||4;
+body.timeout=(parseFloat(S('timeout')?S('timeout').value:3)||3)+'s';
+body.host=S('host')?S('host').value:'example.com';
+body.splitStepV6=parseInt(S('splitStepV6')?S('splitStepV6').value:4)||4;
+body.maxBitsV6=parseInt(S('maxBitsV6')?S('maxBitsV6').value:56)||56;
 }
 if(!body.cidrs.length&&!body.asn){showError('请输入 CIDR 或 ASN');return;}
 hideError();
@@ -1782,6 +1809,11 @@ if(localStorage.getItem('vect-asn')!=='0'){
 // Init download concurrency from storage
 var dlc=localStorage.getItem('vect-dl-concurrency');
 if(dlc){S('dlConcurrencyToggle').value=dlc;toggleDlConcurrency();}
+// Init Armstrong toggle from storage
+if(localStorage.getItem('vect-armstrong')==='1'){
+S('armstrongTrack').classList.add('on');
+S('armstrongToggle').checked=true;
+}
 
 // Restore DNS config from storage
 try{
