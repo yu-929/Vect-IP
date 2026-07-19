@@ -1489,6 +1489,9 @@ function githubUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
 if(localStorage.getItem('vect-git-enabled')!=='1'){showToast('请开启 GIT 上传并配置参数');switchTab('settings');return;}
+var repoCheck=S('gitRepo').value.trim();
+repoCheck=repoCheck.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
+if(!S('gitToken').value.trim()||repoCheck.split('/').length!==2){showToast('请先配置 GIT 参数');switchTab('settings');return;}
 var sheetIdx=idx;
 showActionSheet('GitHub 上传','选择要上传的节点范围',[
 {label:'All IP',fn:function(){doGithubUpload(sheetIdx,false);}},
