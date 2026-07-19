@@ -1243,12 +1243,21 @@ func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
 		return hops
 	}
 
-	cmd := exec.CommandContext(ctx, "traceroute", "-T", "-p", "443", "-n", "-q", "1", "-w", "2", ip)
-	stdout, err := cmd.StdoutPipe()
+	// Fall back to system traceroute with platform-specific flags
+	var tracerouteCmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		tracerouteCmd = exec.CommandContext(ctx, "tracert", "-d", "-h", "30", "-w", "2000", ip)
+	case "darwin":
+		tracerouteCmd = exec.CommandContext(ctx, "traceroute", "-n", "-q", "1", "-w", "2", "-p", "443", ip)
+	default:
+		tracerouteCmd = exec.CommandContext(ctx, "traceroute", "-T", "-p", "443", "-n", "-q", "1", "-w", "2", ip)
+	}
+	stdout, err := tracerouteCmd.StdoutPipe()
 	if err != nil {
 		return nil
 	}
-	if err := cmd.Start(); err != nil {
+	if err := tracerouteCmd.Start(); err != nil {
 		return nil
 	}
 
@@ -1274,7 +1283,7 @@ func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
 		}
 		hops = append(hops, TracerouteHop{Hop: hopNum, IP: hopIP, MS: ms})
 	}
-	cmd.Wait()
+	tracerouteCmd.Wait()
 	return hops
 }
 
@@ -2050,7 +2059,7 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 	getReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	getReq.Header.Set("Authorization", "Bearer "+req.Token)
 	getReq.Header.Set("Accept", "application/vnd.github.v3+json")
-	getReq.Header.Set("User-Agent", "Vect-IP/1.14")
+	getReq.Header.Set("User-Agent", "Vect-IP/1.31")
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	var sha string
@@ -2087,7 +2096,7 @@ func handleGitHubUpload(w http.ResponseWriter, r *http.Request) {
 	putReq.Header.Set("Authorization", "Bearer "+req.Token)
 	putReq.Header.Set("Content-Type", "application/json")
 	putReq.Header.Set("Accept", "application/vnd.github.v3+json")
-	putReq.Header.Set("User-Agent", "Vect-IP/1.14")
+	putReq.Header.Set("User-Agent", "Vect-IP/1.31")
 
 	putResp, err := http.DefaultClient.Do(putReq)
 	if err != nil {
