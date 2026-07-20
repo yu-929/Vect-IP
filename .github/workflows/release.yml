@@ -172,13 +172,13 @@ jobs:
         with: { fetch-depth: 0 }
 
       - uses: actions/download-artifact@v4
-        with: { name: cli-desktop, path: build }
+        with: { name: cli-desktop, path: build, merge-multiple: true }
 
       - uses: actions/download-artifact@v4
-        with: { name: apk, path: build }
+        with: { name: apk, path: build, merge-multiple: true }
 
       - uses: actions/download-artifact@v4
-        with: { name: ipa, path: build }
+        with: { name: ipa, path: build, merge-multiple: true }
 
       - name: 读取版本号
         id: ver
@@ -210,22 +210,21 @@ jobs:
         run: |
           set -e
           TAG="v$(cat VERSION)"
+          echo "TAG=$TAG"
+
+          ls -la build/
 
           # 删除已有 Release
           gh release delete "$TAG" --yes --repo ${{ github.repository }} 2>/dev/null || true
 
-          # 创建 Release
+          # 创建 Release 并上传产物
           gh release create "$TAG" \
             --title "Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')" \
             --notes-file /tmp/release-body.md \
             --target ${{ github.sha }} \
-            --repo ${{ github.repository }}
+            --repo ${{ github.repository }} \
+            build/*
 
-          # 上传产物
-          find build -type f 2>/dev/null | while read f; do
-            echo "Uploading $f..."
-            gh release upload "$TAG" "$f" --repo ${{ github.repository }} --clobber
-          done
           echo "Release $TAG 完成"
         env:
           GH_TOKEN: ${{ github.token }}
