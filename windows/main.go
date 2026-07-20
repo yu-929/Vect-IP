@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"runtime"
 	"time"
 
@@ -16,6 +14,12 @@ import (
 )
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC: %v", r)
+		}
+	}()
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(os.Stdout)
 
@@ -38,18 +42,8 @@ func main() {
 	fmt.Printf("Opening browser: %s\n", url)
 	openBrowser(url)
 
-	fmt.Println("Press Ctrl+C to exit...")
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
-	defer signal.Stop(sigCh)
-
-	<-sigCh
-	fmt.Println("\nShutting down...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	srv.Shutdown(ctx)
+	fmt.Println("Running... Press Ctrl+C or close the console to exit.")
+	select {}
 }
 
 func openBrowser(url string) {
