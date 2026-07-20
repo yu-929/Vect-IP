@@ -210,44 +210,22 @@ jobs:
         run: |
           set -e
           TAG="v$(cat VERSION)"
-          BODY=$(cat /tmp/release-body.md | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
 
-          # 检查 Release 是否存在
-          EXISTING=$(curl -s -H "Authorization: token ${{ github.token }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
-
-          if [ -n "$EXISTING" ]; then
-            echo "Release $TAG 已存在 (ID: $EXISTING)，删除后重建"
-            curl -s -X DELETE -H "Authorization: token ${{ github.token }}" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/$EXISTING"
-            curl -s -X DELETE -H "Authorization: token ${{ github.token }}" \
-              "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$TAG" || true
-          fi
+          # 删除已有 Release
+          gh release delete "$TAG" --yes --repo ${{ github.repository }} 2>/dev/null || true
 
           # 创建 Release
-          RESP=$(curl -s -X POST -H "Authorization: token ${{ github.token }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"tag_name\":\"$TAG\",\"name\":\"Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')\",\"body\":$BODY,\"target_commitish\":\"${{ github.sha }}\",\"draft\":false,\"prerelease\":false}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases")
-          echo "创建 Release 响应: $RESP" | head -5
-          RELEASE_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
-          echo "Release ID: $RELEASE_ID"
-
-          if [ -z "$RELEASE_ID" ]; then
-            echo "创建 Release 失败"
-            exit 1
-          fi
+          gh release create "$TAG" \
+            --title "Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')" \
+            --notes-file /tmp/release-body.md \
+            --target ${{ github.sha }} \
+            --repo ${{ github.repository }}
 
           # 上传产物
           find build -type f 2>/dev/null | while read f; do
-            fname=$(basename "$f")
-            fsize=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null)
-            echo "Uploading $f ($fsize bytes)..."
-            UPLOAD_RESP=$(curl -s -X POST -H "Authorization: token ${{ github.token }}" \
-              -H "Content-Type: application/octet-stream" \
-              "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$fname" \
-              --data-binary "@$f")
-            echo "Upload response: $UPLOAD_RESP" | head -3
+            echo "Uploading $f..."
+            gh release upload "$TAG" "$f" --repo ${{ github.repository }} --clobber
           done
           echo "Release $TAG 完成"
+        env:
+          GH_TOKEN: ${{ github.token }}
