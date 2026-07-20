@@ -16,7 +16,9 @@ import (
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("PANIC: %v", r)
+			msg := fmt.Sprintf("PANIC: %v\n", r)
+			log.Printf(msg)
+			os.WriteFile("C:\\Users\\Public\\vect_debug.log", []byte(msg), 0644)
 		}
 	}()
 
@@ -31,6 +33,13 @@ func main() {
 	srv := server.SetupServer(8080, web.FS)
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				msg := fmt.Sprintf("server goroutine PANIC: %v\n", r)
+				log.Printf(msg)
+				os.WriteFile("C:\\Users\\Public\\vect_debug.log", []byte(msg), 0644)
+			}
+		}()
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("server error: %v", err)
 		}
