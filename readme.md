@@ -1,4 +1,4 @@
-# CloudFlare VECT-IP 矢量优选工具 
+# CloudFlare VECT 矢量优选工具 
 
 > 高宽之网、低延之址，可遇而不可强求。
 
