@@ -207,15 +207,12 @@ jobs:
         run: ls -la *.exe *.apk *.ipa vect-* 2>/dev/null || true
 
       - name: 创建 Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          name: ${{ steps.title.outputs.title }}
-          body_path: /tmp/release-body.md
-          files: |
-            vect-*
-            Vect.exe
-            Vect.apk
-            VectApp.ipa
-          draft: false
-          prerelease: false
+        run: |
+          gh release delete v$(cat VERSION) --yes --repo ${{ github.repository }} 2>/dev/null || true
+          gh release create v$(cat VERSION) \
+            --title "Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')" \
+            --notes-file /tmp/release-body.md \
+            --target ${{ github.sha }} \
+            vect-* Vect.exe Vect.apk VectApp.ipa
+        env:
+          GH_TOKEN: ${{ github.token }}
