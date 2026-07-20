@@ -200,10 +200,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .trace-asn{color:var(--muted2);font-size:10px;width:38pt;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trace-isp{color:var(--muted2);font-size:10px;max-width:50pt;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trace-flag{font-size:12px;width:14pt;flex-shrink:0;text-align:center}
-.trace-badge{font-size:9px;font-weight:600;padding:1pt 4pt;border-radius:4pt;flex-shrink:0;line-height:1.3}
-.trace-badge.premium,.premium-text{background:rgba(0,119,237,0.15);color:var(--primary)}
-.trace-badge.optimized,.normal-text{background:rgba(52,199,89,0.15);color:var(--success)}
-.premium-text,.normal-text{display:inline;padding:1pt 4pt;border-radius:4pt;font-weight:600}
 
 /* ===== History Expand ===== */
 .h-expand-bar{margin-top:6pt;padding-top:6pt;border-top:0.5px solid var(--glass-border);display:flex;gap:2pt;flex-wrap:wrap}
@@ -568,22 +564,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <div class="settings-group">
-<div class="sg-title">网络</div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">路由追踪</div>
-<div class="sl-desc">扫描后显示路由追踪信息</div>
-</div>
-<div class="toggle-wrap">
-<div class="toggle-track" id="tracerouteTrack" onclick="toggleTraceroute()">
-<div class="toggle-knob"></div>
-<input type="checkbox" class="toggle-input" id="tracerouteToggle" aria-label="路由追踪">
-</div>
-</div>
-</div>
-</div>
-
-<div class="settings-group">
 <div class="settings-row">
 <div class="sl-label" style="flex:1">高级参数</div>
 <div class="toggle-wrap">
@@ -781,7 +761,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <script>
 let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false;
-let tracerouteEnabled=localStorage.getItem('vect-traceroute')==='1';
 const S=document.getElementById.bind(document);
 if(window.visualViewport){
 window.visualViewport.addEventListener('resize',function(){
@@ -875,43 +854,6 @@ applyTheme(storedTheme);
 if(storedTheme==='system')systemDark.addEventListener('change',()=>applyTheme('system'));
 function updateThemeOpts(){
 document.querySelectorAll('.seg-btn[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===(localStorage.getItem('vect-theme')||'system')));
-}
-
-// Traceroute toggle
-function toggleTraceroute(){
-tracerouteEnabled=!tracerouteEnabled;
-localStorage.setItem('vect-traceroute',tracerouteEnabled?'1':'0');
-updateTracerouteUI();
-if(tracerouteEnabled)fillRouteTypesForAll();
-}
-function fillRouteTypesForAll(){
-const history=loadHistory();
-let changed=false;
-const promises=[];
-history.forEach((h,hi)=>{
-h.results.forEach((r,ri)=>{
-if(r.route)return;
-promises.push((async()=>{
-try{
-const resp=await fetch('/api/route-type/'+r.ip);
-const data=await resp.json();
-if(data&&data.routeType){
-r.route=data.routeType;
-changed=true;
-}
-}catch(e){}
-})());
-});
-});
-Promise.all(promises).then(()=>{
-if(changed){saveHistory(history);renderHistory();}
-});
-}
-function updateTracerouteUI(){
-const track=S('tracerouteTrack');
-const toggle=S('tracerouteToggle');
-if(track)track.classList.toggle('on',tracerouteEnabled);
-if(toggle)toggle.checked=tracerouteEnabled;
 }
 
 function toggleDlUrlInput(){
@@ -1297,11 +1239,11 @@ if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='<1s';S('s4Rem').textContent='已完成';
 }
 if(stage===5){
-	S('stage5Item').style.display='';
-	S('s5Fill').style.width='100%';
-	S('s5Count').textContent=done+'/'+budget;
-	if(!polling&&!scanDone)S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
-}
+		S('stage5Item').style.display='';
+		S('s5Fill').style.width='100%';
+		S('s5Count').textContent=done+'/'+budget;
+		if(!polling&&!scanDone)S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
+	}
 }
 
 function fmtDur(s){if(s<60)return Math.round(s)+'s';const m=Math.floor(s/60);const sec=Math.round(s%60);return m+':'+(sec<10?'0':'')+sec;}
@@ -1531,8 +1473,7 @@ const total=h.results.length;
 html+='<div class="glass-card history-item stagger-enter" data-idx="'+hi+'">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyAllResults('+hi+')">复制</button><button class="btn-text" onclick="deleteHistory('+hi+')">删除</button></div></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
-if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN信息: <strong>AS'+r0.asn+(r0.asname?' | '+r0.asname:'')+'</strong></span></div>':'')+(tracerouteEnabled?function(){var rl='';var rt=r0.route||'';if(rt.indexOf('Premium')!==-1)rl='精品线路';else rl='普通线路';return '<div class="hm-row-single"><span class="hm">路由线路: <strong class="'+(rt.indexOf('Premium')!==-1?'premium-text':'normal-text')+'">'+rl+'</strong></span></div>';}():'')+'</div>';
-		if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'" class="tr-auto"></div>';
+if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN信息: <strong>AS'+r0.asn+(r0.asname?' | '+r0.asname:'')+'</strong></span></div>':'')+'</div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
 '<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>'+
@@ -1549,9 +1490,7 @@ html+='<span class="h-detail-score">'+r.score.toFixed(1)+'ms</span>';
 html+='<span class="h-detail-jitter">'+(r.jitter!==undefined?r.jitter.toFixed(1)+'ms':'--')+'</span>';
 html+='<span class="h-detail-colo">'+(r.colo||'-')+coloFlag(r.colo)+'</span>';
 html+='<span class="h-detail-dl">'+(r.dlOk?r.dlMbps.toFixed(1)+' Mbps':'--')+'</span>';
-				if(tracerouteEnabled)html+='<span class="h-detail-tr" onclick="runTracerouteHist(\''+r.ip+'\',\''+hi+'_'+ri+'\')">路由</span>';
 			html+='</div>';
-			if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'_'+ri+'" class="h-detail-tr-wrap tr-auto"></div>';
 html+='</div>';
 });
 html+='</div>';
@@ -1572,22 +1511,6 @@ setTimeout(()=>el.classList.add('enter'),i*50);
 tmp.querySelectorAll('.stagger-enter').forEach(el=>el.classList.add('enter'));
 while(tmp.firstChild)frag.appendChild(tmp.firstChild);
 	list.replaceChildren(frag);
-}
-if(tracerouteEnabled){
-	const autoEls=list.querySelectorAll('.tr-auto');
-	autoEls.forEach((el,i)=>{
-		setTimeout(()=>{
-			const id=el.id;
-			if(!id)return;
-			const hi=id.replace('tr_hist_','');
-			// Only auto-trigger for main results (no underscore in hi)
-			if(hi.indexOf('_')!==-1)return;
-			const h=loadHistory();
-			const idx=parseInt(hi);
-			if(!h[idx]||!h[idx].results[0])return;
-			checkRouteType(h[idx].results[0].ip,hi);
-		},i*200);
-	});
 }
 }
 
@@ -1680,59 +1603,6 @@ const x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);
 x.setRequestHeader('Content-Type','application/json');
 x.onload=function(){if(x.status===200){showToast('GIT 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('GIT 上传失败: '+x.responseText);}};
 x.send(JSON.stringify({token:cfg.token,repo:cfg.repo,path:cfg.path||'ips.txt',branch:cfg.branch||'main',ips:ips}));
-}
-
-// Traceroute
-const tracerouteCache={};
-async function runTracerouteHist(ip,hi){
-const trEl=S('tr_hist_'+hi);
-if(tracerouteCache[ip]){renderTracerouteHist(ip,tracerouteCache[ip],hi);return;}
-if(trEl)trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">追踪中...</span>';
-try{
-const r=await fetch('/api/traceroute/'+ip);
-const hops=await r.json();
-tracerouteCache[ip]=hops;
-renderTracerouteHist(ip,hops,hi);
-}catch(e){if(trEl)trEl.innerHTML='<span style="color:var(--danger);font-size:12px">失败</span>';}
-}
-
-function renderTracerouteHist(ip,hops,hi){
-const trEl=S('tr_hist_'+hi);
-if(!trEl)return;
-if(!hops||!hops.length){trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">无路由</span>';return;}
-if(hops.length===1&&hops[0].ip==='N/A'){trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">iOS 不支持</span>';return;}
-function flagEmoji(c){if(!c||c.length!==2)return'';return String.fromCodePoint(c.codePointAt(0)-0x41+0x1F1E6,c.codePointAt(1)-0x41+0x1F1E6)}
-function badge(hh){if(hh.routeType==='Premium')return'<span class="trace-badge premium">'+hh.routeLine+'</span>';if(hh.routeType==='Optimized')return'<span class="trace-badge optimized">'+hh.routeLine+'</span>';return''}
-let html='<div class="trace-wrap">';
-hops.forEach(h=>{
-if(h.lost)html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-lost">*</span></div>';
-else{
-const flag=flagEmoji(h.countryCode||h.country);
-html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-flag">'+flag+'</span><span class="trace-ip">'+h.ip+'</span><span class="trace-asn">'+(h.asn||'')+'</span><span class="trace-ms">'+(h.ms||'')+'</span>'+badge(h)+'</div>';
-if(h.isp)html+='<div class="trace-row" style="padding-left:36px;font-size:10px;color:var(--muted2)">'+h.isp+(h.city?' · '+h.city:'')+'</div>';
-}
-});
-html+='</div>';
-trEl.innerHTML=html;
-}
-
-async function checkRouteType(ip,hi){
-const trEl=S('tr_hist_'+hi);
-if(!trEl)return;
-trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">查询中...</span>';
-try{
-const r=await fetch('/api/route-type/'+ip);
-const data=await r.json();
-if(data&&data.routeType){
-const isPremium=data.routeType==='Premium';
-const label=isPremium?'精品线路':'普通线路';
-trEl.innerHTML='<span style="font-size:12px">路由线路: <strong class="'+(isPremium?'premium-text':'normal-text')+'">'+label+'</strong>'+(data.routeLine?' <span class="trace-badge '+(isPremium?'premium':'optimized')+'">'+data.routeLine+'</span>':'')+'</span>';
-}else{
-trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">无法识别</span>';
-}
-}catch(e){
-trEl.innerHTML='<span style="color:var(--danger);font-size:12px">查询失败</span>';
-}
 }
 
 function copyText(t,silent){
@@ -1897,7 +1767,6 @@ bootApp();
 function bootApp(){
 renderHistory();
 syncHistoryFromServer();
-updateTracerouteUI();
 updateCidrCount();
 updateThemeOpts();
 // Init DNS toggle from storage

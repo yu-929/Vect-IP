@@ -1,10 +1,8 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -16,13 +14,11 @@ import (
 	"net/netip"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
-"strings"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -31,9 +27,6 @@ import (
 	"github.com/yu-929/Vect-IP/internal/engine"
 	"github.com/yu-929/Vect-IP/internal/probe"
 )
-
-//go:embed asn_prefixes_v4.json asn_prefixes_v6.json
-var prefixData embed.FS
 
 type ScanRequest struct {
 	CIDRs           []string `json:"cidrs"`
@@ -142,9 +135,6 @@ func sendProgress(progress ProgressData, subs []chan ProgressData) {
 	}
 }
 
-// tracerouteBaseURL is set per-platform (empty on desktop, "http://127.0.0.1:8091" on mobile)
-var globalTracerouteBaseURL string
-
 func historyFilePath() string {
 	dir := filepath.Join(os.TempDir(), "vect-history")
 	os.MkdirAll(dir, 0755)
@@ -197,9 +187,7 @@ func handleHistoryList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
-	globalTracerouteBaseURL = tracerouteBaseURL
-	initPrefixDB()
+func SetupServer(port int, webFS fs.FS) *http.Server {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", noCache(http.FileServer(http.FS(webFS))))
@@ -208,14 +196,10 @@ func SetupServer(port int, webFS fs.FS, tracerouteBaseURL string) *http.Server {
 	mux.HandleFunc("/api/resolve-asn/", handleResolveASN)
 	mux.HandleFunc("/api/cancel/", handleCancel)
 	mux.HandleFunc("/api/local-ip", handleLocalIP)
-	mux.HandleFunc("/api/traceroute/", handleTraceroute)
-	mux.HandleFunc("/api/route-type/", handleRouteType)
-	mux.HandleFunc("/api/route-type", handleBatchRouteType)
 	mux.HandleFunc("/api/dns-upload", handleDNSUpload)
 	mux.HandleFunc("/api/health", handleHealth)
 	mux.HandleFunc("/api/colo-discover", handleColoDiscover)
 	mux.HandleFunc("/api/resolve-url", handleResolveURL)
-	mux.HandleFunc("/api/route-info", handleRouteInfo)
 	mux.HandleFunc("/api/history/list", handleHistoryList)
 	mux.HandleFunc("/api/github-upload", handleGitHubUpload)
 	mux.HandleFunc("/api/resolve-domain", handleResolveDomain)
@@ -234,6 +218,21 @@ func noCache(next http.Handler) http.Handler {
 		w.Header().Set("Expires", "0")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func compositeScore(r *engine.TopResult) float64 {
+	score := r.ScoreMS
+	if r.DownloadOK && r.DownloadMbps > 0 {
+		dlBonus := r.DownloadMbps * 0.5
+		if dlBonus > 100 {
+			dlBonus = 100
+		}
+		score -= dlBonus
+	}
+	if r.JitterMS > 0 {
+		score += r.JitterMS * 0.5
+	}
+	return score
 }
 
 func handleScan(w http.ResponseWriter, r *http.Request) {
@@ -552,38 +551,6 @@ dlBytes := req.DownloadBytes
 		for _, ch := range allSubs {
 			close(ch)
 		}
-
-		if len(session.result) > 0 {
-			ips := make([]string, len(session.result))
-			for i, r := range session.result {
-				ips[i] = r.IP.String()
-			}
-
-			rctx, rcancel := context.WithTimeout(context.Background(), 120*time.Second)
-			routeResults := batchClassifyRoutes(rctx, ips)
-			rcancel()
-
-			session.mu.Lock()
-			for i := range session.result {
-				if ri, ok := routeResults[session.result[i].IP.String()]; ok {
-					if session.result[i].Trace == nil {
-						session.result[i].Trace = make(map[string]string)
-					}
-					routeLabel := "Normal"
-					routeLine := ""
-					if ri != nil {
-						routeLabel = ri.RouteType
-						routeLine = ri.RouteLine
-					}
-					if routeLine != "" {
-						session.result[i].Trace["route"] = fmt.Sprintf("%s｜%s｜%s", ri.Org, routeLine, routeLabel)
-					} else {
-						session.result[i].Trace["route"] = routeLabel
-					}
-				}
-			}
-			session.mu.Unlock()
-		}
 	}()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -789,217 +756,6 @@ type LocalIPInfo struct {
 	Location  string   `json:"location,omitempty"`
 }
 
-var premiumASNs = map[int]string{
-	4809:  "CN2",
-	9929:  "CUII",
-	58807: "CMIN2",
-}
-
-var optimizedASNs = map[int]string{
-	58453:  "CMI",
-	4134:   "163",
-	4837:   "169",
-	4538:   "CERNET",
-	24445:  "CMHK",
-	132203: "CNI",
-}
-
-var prefixDB map[int][]*net.IPNet
-
-func initPrefixDB() {
-	prefixDB = make(map[int][]*net.IPNet)
-	files := []string{"asn_prefixes_v4.json", "asn_prefixes_v6.json"}
-	for _, f := range files {
-		data, err := prefixData.ReadFile(f)
-		if err != nil {
-			log.Printf("warning: cannot read %s: %v", f, err)
-			continue
-		}
-		var raw map[string][]string
-		if err := json.Unmarshal(data, &raw); err != nil {
-			log.Printf("warning: cannot parse %s: %v", f, err)
-			continue
-		}
-		for asnKey, prefixes := range raw {
-			asn := 0
-			fmt.Sscanf(asnKey, "AS%d", &asn)
-			if asn == 0 {
-				continue
-			}
-			for _, cidr := range prefixes {
-				_, ipNet, err := net.ParseCIDR(cidr)
-				if err != nil {
-					continue
-				}
-				prefixDB[asn] = append(prefixDB[asn], ipNet)
-			}
-		}
-	}
-	log.Printf("loaded %d ASNs from prefix files", len(prefixDB))
-}
-
-func classifyByPrefix(ip net.IP) (routeType, routeLine string) {
-	keys := make([]int, 0, len(prefixDB))
-	for asn := range prefixDB {
-		keys = append(keys, asn)
-	}
-	sort.Ints(keys)
-	for _, asn := range keys {
-		nets := prefixDB[asn]
-		for _, n := range nets {
-			if n.Contains(ip) {
-				if line, ok := premiumASNs[asn]; ok {
-					return "Premium", line
-				}
-				if line, ok := optimizedASNs[asn]; ok {
-					return "Optimized", line
-				}
-				return "Normal", ""
-			}
-		}
-	}
-	return "", ""
-}
-
-type RouteInfo struct {
-	ASN       int    `json:"asn"`
-	ASName    string `json:"asname"`
-	Org       string `json:"org"`
-	RouteType string `json:"routeType"`
-	RouteLine string `json:"routeLine"`
-}
-
-func classifyRoute(asn int) (routeType, routeLine string) {
-	if line, ok := premiumASNs[asn]; ok {
-		return "Premium", line
-	}
-	if line, ok := optimizedASNs[asn]; ok {
-		return "Optimized", line
-	}
-	return "Normal", ""
-}
-
-// compositeScore computes a comprehensive score for ranking results.
-// Lower is better. Considers latency, download speed, jitter, and route type.
-func compositeScore(r *engine.TopResult) float64 {
-	score := r.ScoreMS
-
-	// Download speed bonus: reduce score for high bandwidth
-	if r.DownloadOK && r.DownloadMbps > 0 {
-		dlBonus := r.DownloadMbps * 0.5
-		if dlBonus > 100 {
-			dlBonus = 100
-		}
-		score -= dlBonus
-	}
-
-	// Jitter penalty: absolute penalty for unstable connections
-	if r.JitterMS > 0 {
-		score += r.JitterMS * 0.5
-	}
-
-	// Route type bonus
-	if r.Trace != nil {
-		if route, ok := r.Trace["route"]; ok {
-			if strings.Contains(route, "Premium") {
-				score -= 50
-			} else if strings.Contains(route, "Optimized") {
-				score -= 20
-			}
-		}
-	}
-
-	return score
-}
-
-var hopPrefixPatterns = []struct {
-	prefix    string
-	line      string
-	routeType string
-}{
-	{"59.43.", "CN2", "Premium"},
-	{"223.120.", "CUII", "Premium"},
-	{"219.158.", "CMI", "Optimized"},
-	{"202.97.", "163", "Optimized"},
-}
-
-func matchHopPrefix(ip string) (routeType, line string) {
-	for _, p := range hopPrefixPatterns {
-		if strings.HasPrefix(ip, p.prefix) {
-			return p.routeType, p.line
-		}
-	}
-	return "", ""
-}
-
-func lookupRoute(ctx context.Context, ip string) *RouteInfo {
-	client := &http.Client{Timeout: 5 * time.Second}
-	url := fmt.Sprintf("http://ip-api.com/json/%s?fields=query,as,asname,org,isp", ip)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil
-	}
-	defer resp.Body.Close()
-
-	var data struct {
-		AS     string `json:"as"`
-		ASName string `json:"asname"`
-		Org    string `json:"org"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return nil
-	}
-
-	asn := 0
-	fmt.Sscanf(data.AS, "AS%d", &asn)
-	routeType, routeLine := classifyRoute(asn)
-	return &RouteInfo{
-		ASN:       asn,
-		ASName:    data.ASName,
-		Org:       data.Org,
-		RouteType: routeType,
-		RouteLine: routeLine,
-	}
-}
-
-func batchClassifyRoutes(ctx context.Context, ips []string) map[string]*RouteInfo {
-	results := make(map[string]*RouteInfo)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, 5)
-
-	for _, ip := range ips {
-		parsed := net.ParseIP(ip)
-		if parsed != nil {
-			if rt, rl := classifyByPrefix(parsed); rt != "" {
-				mu.Lock()
-				results[ip] = &RouteInfo{
-					RouteType: rt,
-					RouteLine: rl,
-				}
-				mu.Unlock()
-				continue
-			}
-		}
-		wg.Add(1)
-		go func(ip string) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			info := classifyRouteByTrace(ctx, ip)
-			mu.Lock()
-			results[ip] = info
-			mu.Unlock()
-		}(ip)
-	}
-	wg.Wait()
-	return results
-}
-
 func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 	info := LocalIPInfo{}
 
@@ -1058,23 +814,6 @@ func handleLocalIP(w http.ResponseWriter, r *http.Request) {
 		info.PublicIP = "unknown"
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(info)
-}
-
-func handleRouteInfo(w http.ResponseWriter, r *http.Request) {
-	ip := r.URL.Query().Get("ip")
-	if ip == "" || net.ParseIP(ip) == nil {
-		http.Error(w, "invalid IP", 400)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-	info := lookupRoute(ctx, ip)
-	if info == nil {
-		http.Error(w, "lookup failed", http.StatusBadGateway)
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
 }
@@ -1225,426 +964,6 @@ func translateLocation(loc string) string {
 		loc = strings.ReplaceAll(loc, en, zh)
 	}
 	return loc
-}
-
-type TracerouteHop struct {
-	Hop         int    `json:"hop"`
-	IP          string `json:"ip"`
-	MS          string `json:"ms"`
-	Lost        bool   `json:"lost"`
-	ASN         string `json:"asn,omitempty"`
-	Country     string `json:"country,omitempty"`
-	CountryCode string `json:"countryCode,omitempty"`
-	City        string `json:"city,omitempty"`
-	ISP         string `json:"isp,omitempty"`
-	RouteType   string `json:"routeType,omitempty"`
-	RouteLine   string `json:"routeLine,omitempty"`
-}
-
-func handleTraceroute(w http.ResponseWriter, r *http.Request) {
-	ip := strings.TrimPrefix(r.URL.Path, "/api/traceroute/")
-	if ip == "" {
-		http.Error(w, "missing IP", 400)
-		return
-	}
-
-	if parsed := net.ParseIP(ip); parsed == nil {
-		http.Error(w, "invalid IP", 400)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-
-	hops := runTraceroute(ctx, ip)
-	hops = enrichHops(ctx, hops)
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(hops)
-}
-
-func runTraceroute(ctx context.Context, ip string) []TracerouteHop {
-	// Try Go-based traceroute first (works on both iOS and desktop without external deps)
-	if hops := runGoTraceroute(ctx, ip); hops != nil {
-		return hops
-	}
-	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
-		if globalTracerouteBaseURL == "" {
-			return nil
-		}
-		client := &http.Client{Timeout: 30 * time.Second}
-		url := fmt.Sprintf("%s/traceroute/%s", globalTracerouteBaseURL, ip)
-		resp, err := client.Get(url)
-		if err != nil {
-			return nil
-		}
-		defer resp.Body.Close()
-		var hops []TracerouteHop
-		if err := json.NewDecoder(resp.Body).Decode(&hops); err != nil {
-			return nil
-		}
-		return hops
-	}
-	hops := runNextTrace(ctx, ip)
-	if hops != nil {
-		return hops
-	}
-
-	// Fall back to system traceroute with platform-specific flags
-	var tracerouteCmd *exec.Cmd
-	switch runtime.GOOS {
-	case "windows":
-		tracerouteCmd = exec.CommandContext(ctx, "tracert", "-d", "-h", "30", "-w", "2000", ip)
-	case "darwin":
-		tracerouteCmd = exec.CommandContext(ctx, "traceroute", "-n", "-q", "1", "-w", "2", "-p", "443", ip)
-	default:
-		tracerouteCmd = exec.CommandContext(ctx, "traceroute", "-T", "-p", "443", "-n", "-q", "1", "-w", "2", ip)
-	}
-	stdout, err := tracerouteCmd.StdoutPipe()
-	if err != nil {
-		return nil
-	}
-	if err := tracerouteCmd.Start(); err != nil {
-		return nil
-	}
-
-	var scanner *bufio.Scanner
-	for scanner = bufio.NewScanner(stdout); scanner.Scan(); {
-		line := scanner.Text()
-		parts := strings.Fields(line)
-		if len(parts) < 2 {
-			continue
-		}
-		hopNum, err := strconv.Atoi(parts[0])
-		if err != nil {
-			continue
-		}
-		hopIP := parts[1]
-		if hopIP == "*" {
-			hops = append(hops, TracerouteHop{Hop: hopNum, Lost: true})
-			continue
-		}
-		ms := ""
-		if len(parts) >= 3 {
-			ms = strings.TrimSuffix(parts[2], "ms")
-		}
-		hops = append(hops, TracerouteHop{Hop: hopNum, IP: hopIP, MS: ms})
-	}
-	tracerouteCmd.Wait()
-	return hops
-}
-
-func enrichHops(ctx context.Context, hops []TracerouteHop) []TracerouteHop {
-	type hopInfo struct {
-		ASN         string
-		Country     string
-		CountryCode string
-		City        string
-		ISP         string
-		RouteType   string
-		RouteLine   string
-	}
-	cache := make(map[string]*hopInfo)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, 5)
-
-	for i := range hops {
-		if hops[i].Lost || hops[i].IP == "" || hops[i].ASN != "" {
-			continue
-		}
-		ip := hops[i].IP
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			mu.Lock()
-			if cached, ok := cache[ip]; ok {
-				mu.Unlock()
-				if cached != nil {
-					hops[idx].ASN = cached.ASN
-					hops[idx].Country = cached.Country
-					hops[idx].CountryCode = cached.CountryCode
-					hops[idx].City = cached.City
-					hops[idx].ISP = cached.ISP
-					hops[idx].RouteType = cached.RouteType
-					hops[idx].RouteLine = cached.RouteLine
-				}
-				return
-			}
-			cache[ip] = nil
-			mu.Unlock()
-
-			sem <- struct{}{}
-			defer func() { <-sem }()
-
-			client := &http.Client{Timeout: 3 * time.Second}
-			url := fmt.Sprintf("http://ip-api.com/json/%s?fields=query,as,asname,org,isp,country,countryCode,city", ip)
-			req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
-			resp, err := client.Do(req)
-			if err != nil {
-				return
-			}
-			defer resp.Body.Close()
-			var data struct {
-				Query       string `json:"query"`
-				AS          string `json:"as"`
-				Org         string `json:"org"`
-				ISP         string `json:"isp"`
-				Country     string `json:"country"`
-				CountryCode string `json:"countryCode"`
-				City        string `json:"city"`
-			}
-			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-				return
-			}
-
-			asn := 0
-			fmt.Sscanf(data.AS, "AS%d", &asn)
-			routeType, routeLine := classifyRoute(asn)
-
-			info := &hopInfo{
-				ASN:         data.AS,
-				Country:     data.Country,
-				CountryCode: data.CountryCode,
-				City:        data.City,
-				ISP:         data.Org,
-				RouteType:   routeType,
-				RouteLine:   routeLine,
-			}
-
-			mu.Lock()
-			cache[ip] = info
-			hops[idx].ASN = info.ASN
-			hops[idx].Country = info.Country
-			hops[idx].CountryCode = info.CountryCode
-			hops[idx].City = info.City
-			hops[idx].ISP = info.ISP
-			hops[idx].RouteType = info.RouteType
-			hops[idx].RouteLine = info.RouteLine
-			mu.Unlock()
-		}(i)
-	}
-	wg.Wait()
-	return hops
-}
-
-type nextTraceGeo struct {
-	ASN     string `json:"ASN"`
-	Country string `json:"Country"`
-	City    string `json:"City"`
-	Owner   string `json:"Owner"`
-}
-
-type nextTraceHop struct {
-	Success bool           `json:"Success"`
-	Address *string        `json:"Address"`
-	TTL     int            `json:"TTL"`
-	RTT     float64        `json:"RTT"`
-	Geo     *nextTraceGeo `json:"Geo"`
-}
-
-type nextTraceResult struct {
-	Hops [][]nextTraceHop `json:"Hops"`
-}
-
-func runNextTrace(ctx context.Context, ip string) []TracerouteHop {
-	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
-		return nil
-	}
-	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "3", ip)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil
-	}
-	if err := cmd.Start(); err != nil {
-		return nil
-	}
-
-	var output []byte
-	if output, err = io.ReadAll(stdout); err != nil {
-		cmd.Wait()
-		return nil
-	}
-	cmd.Wait()
-
-	var result nextTraceResult
-	if err := json.Unmarshal(output, &result); err != nil {
-		return nil
-	}
-
-	var hops []TracerouteHop
-	for _, hopGroup := range result.Hops {
-		if len(hopGroup) == 0 {
-			continue
-		}
-		h := hopGroup[0]
-		hop := TracerouteHop{Hop: h.TTL}
-		if !h.Success || h.Address == nil {
-			hop.Lost = true
-		} else {
-			hop.IP = *h.Address
-			hop.MS = fmt.Sprintf("%.2f", h.RTT)
-			if h.Geo != nil {
-				hop.ASN = h.Geo.ASN
-				hop.Country = h.Geo.Country
-				hop.City = h.Geo.City
-				hop.ISP = h.Geo.Owner
-				asn := 0
-				fmt.Sscanf(h.Geo.ASN, "AS%d", &asn)
-				if asn > 0 {
-					hop.RouteType, hop.RouteLine = classifyRoute(asn)
-				}
-			}
-		}
-		hops = append(hops, hop)
-	}
-	if len(hops) > 0 {
-		return hops
-	}
-	return nil
-}
-
-func classifyRouteByTrace(ctx context.Context, ip string) *RouteInfo {
-	if runtime.GOOS == "ios" || runtime.GOOS == "android" {
-		return lookupRoute(ctx, ip)
-	}
-	cmd := exec.CommandContext(ctx, "nexttrace", "-T", "-p", "443", "-j", "-m", "30", "-q", "1", "--timeout", "5", ip)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil
-	}
-	if err := cmd.Start(); err != nil {
-		return nil
-	}
-	var output []byte
-	if output, err = io.ReadAll(stdout); err != nil {
-		cmd.Wait()
-		return nil
-	}
-	cmd.Wait()
-
-	var result nextTraceResult
-	if err := json.Unmarshal(output, &result); err != nil {
-		return nil
-	}
-
-	seenASNs := make(map[int]bool)
-	var lastASN int
-	var lastOwner string
-	premiumFound := ""
-	optimizedFound := ""
-	for _, hopGroup := range result.Hops {
-		if len(hopGroup) == 0 {
-			continue
-		}
-		h := hopGroup[0]
-		if h.Geo != nil && h.Geo.ASN != "" {
-			asn := 0
-			fmt.Sscanf(h.Geo.ASN, "AS%d", &asn)
-			if asn > 0 {
-				seenASNs[asn] = true
-				lastASN = asn
-				lastOwner = h.Geo.Owner
-			}
-		}
-		if h.Address != nil && *h.Address != "" {
-			if rt, line := matchHopPrefix(*h.Address); rt != "" {
-				if rt == "Premium" {
-					premiumFound = line
-				} else if rt == "Optimized" && premiumFound == "" {
-					optimizedFound = line
-				}
-			}
-		}
-	}
-
-	if premiumFound == "" {
-		for asn := range seenASNs {
-			if line, ok := premiumASNs[asn]; ok {
-				premiumFound = line
-				break
-			}
-		}
-	}
-	if premiumFound == "" && optimizedFound == "" {
-		for asn := range seenASNs {
-			if line, ok := optimizedASNs[asn]; ok {
-				optimizedFound = line
-				break
-			}
-		}
-	}
-
-	if premiumFound != "" {
-		return &RouteInfo{ASN: lastASN, Org: lastOwner, RouteType: "Premium", RouteLine: premiumFound}
-	}
-	if optimizedFound != "" {
-		return &RouteInfo{ASN: lastASN, Org: lastOwner, RouteType: "Optimized", RouteLine: optimizedFound}
-	}
-
-	return lookupRoute(ctx, ip)
-}
-
-func handleRouteType(w http.ResponseWriter, r *http.Request) {
-	ip := strings.TrimPrefix(r.URL.Path, "/api/route-type/")
-	if ip == "" {
-		http.Error(w, "missing IP", 400)
-		return
-	}
-	if parsed := net.ParseIP(ip); parsed == nil {
-		http.Error(w, "invalid IP", 400)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-
-	info := lookupRoute(ctx, ip)
-	if info == nil {
-		http.Error(w, "route lookup failed", 500)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(info)
-}
-
-func handleBatchRouteType(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		IPs []string `json:"ips"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", 400)
-		return
-	}
-	if len(req.IPs) == 0 {
-		json.NewEncoder(w).Encode(map[string]*RouteInfo{})
-		return
-	}
-
-	results := make(map[string]*RouteInfo)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, 10)
-
-	for _, ip := range req.IPs {
-		wg.Add(1)
-		go func(ip string) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-			defer cancel()
-			info := lookupRoute(ctx, ip)
-			mu.Lock()
-			results[ip] = info
-			mu.Unlock()
-		}(ip)
-	}
-	wg.Wait()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(results)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
