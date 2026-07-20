@@ -171,13 +171,13 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v3
         with: { name: cli-desktop }
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v3
         with: { name: apk }
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v3
         with: { name: ipa }
 
       - name: 读取版本号
@@ -204,7 +204,7 @@ jobs:
           cat /tmp/release-body.md
 
       - name: 列出产物
-        run: ls -laR . || true
+        run: find . -type f -name "vect-*" -o -name "Vect*" -o -name "*.apk" -o -name "*.ipa" 2>/dev/null | sort || true
 
       - name: 创建 Release
         run: |
@@ -240,16 +240,14 @@ jobs:
           fi
 
           # 上传产物
-          for f in vect-* Vect.exe Vect.apk VectApp.ipa; do
-            if [ -f "$f" ]; then
-              echo "Uploading $f ($(stat -c%s "$f") bytes)..."
-              UPLOAD_RESP=$(curl -s -X POST -H "Authorization: token ${{ github.token }}" \
-                -H "Content-Type: application/octet-stream" \
-                "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$f" \
-                --data-binary "@$f")
-              echo "Upload response: $UPLOAD_RESP" | head -3
-            else
-              echo "File not found: $f"
-            fi
+          find . -type f -name "vect-*" -o -name "Vect*" -o -name "*.apk" -o -name "*.ipa" 2>/dev/null | while read f; do
+            fname=$(basename "$f")
+            fsize=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null)
+            echo "Uploading $f ($fsize bytes)..."
+            UPLOAD_RESP=$(curl -s -X POST -H "Authorization: token ${{ github.token }}" \
+              -H "Content-Type: application/octet-stream" \
+              "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$fname" \
+              --data-binary "@$f")
+            echo "Upload response: $UPLOAD_RESP" | head -3
           done
           echo "Release $TAG 完成"
