@@ -38,24 +38,14 @@ func main() {
 	fmt.Printf("Opening browser: %s\n", url)
 	openBrowser(url)
 
-	fmt.Println("Press Ctrl+C or Enter to exit...")
+	fmt.Println("Press Ctrl+C to exit...")
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
 
-	done := make(chan struct{})
-	go func() {
-		fmt.Scanln()
-		close(done)
-	}()
-
-	select {
-	case <-sigCh:
-		fmt.Println("\nShutting down...")
-	case <-done:
-		fmt.Println("\nShutting down...")
-	}
+	<-sigCh
+	fmt.Println("\nShutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
