@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"sync"
+	"time"
 )
 
 const cloudflareAPIBase = "https://api.cloudflare.com/client/v4"
@@ -17,9 +20,10 @@ const cloudflareAPIBase = "https://api.cloudflare.com/client/v4"
 type CloudflareProvider struct {
 	token      string
 	zoneID     string
-	zoneName   string // cached zone name (e.g., "example.com")
-	recordType string // "A" or "TXT"
+	recordType string
 	client     *http.Client
+	zoneName   string
+	zoneNameMu sync.RWMutex
 }
 
 // NewCloudflareProvider creates a new Cloudflare DNS provider.
@@ -31,7 +35,7 @@ func NewCloudflareProvider(token, zoneID, recordType string) *CloudflareProvider
 		token:      token,
 		zoneID:     zoneID,
 		recordType: recordType,
-		client:     &http.Client{},
+		client:     &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -85,6 +89,16 @@ type cfZoneResponse struct {
 
 // getZoneName fetches and caches the zone name (domain).
 func (p *CloudflareProvider) getZoneName(ctx context.Context) (string, error) {
+	p.zoneNameMu.RLock()
+	if p.zoneName != "" {
+		name := p.zoneName
+		p.zoneNameMu.RUnlock()
+		return name, nil
+	}
+	p.zoneNameMu.RUnlock()
+
+	p.zoneNameMu.Lock()
+	defer p.zoneNameMu.Unlock()
 	if p.zoneName != "" {
 		return p.zoneName, nil
 	}
@@ -195,10 +209,14 @@ func (p *CloudflareProvider) CreateRecords(ctx context.Context, subdomain string
 	wg.Wait()
 	close(errCh)
 
+	var errs []error
 	for err := range errCh {
 		if err != nil {
-			return err
+			errs = append(errs, err)
 		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 
 	return nil
@@ -334,9 +352,10 @@ func (p *CloudflareProvider) doBatch(ctx context.Context, deletes []map[string]s
 }
 
 func (p *CloudflareProvider) listRecords(ctx context.Context, name, recordType string) ([]cfDNSRecord, error) {
-	url := fmt.Sprintf("%s/zones/%s/dns_records?type=%s&name=%s", cloudflareAPIBase, p.zoneID, recordType, name)
+	u := fmt.Sprintf("%s/zones/%s/dns_records?type=%s&name=%s",
+		cloudflareAPIBase, p.zoneID, url.QueryEscape(recordType), url.QueryEscape(name))
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -88,13 +88,14 @@ type ProgressData struct {
 }
 
 type ScanSession struct {
-	mu       sync.RWMutex
-	status   string
-	progress ProgressData
-	result   []engine.TopResult
-	err      string
-	cancel   context.CancelFunc
-	subs     []chan ProgressData
+	mu         sync.RWMutex
+	status     string
+	progress   ProgressData
+	result     []engine.TopResult
+	err        string
+	cancel     context.CancelFunc
+	subs       []chan ProgressData
+	finishedAt time.Time
 }
 
 var (
@@ -103,6 +104,24 @@ var (
 	nextID    int64
 	historyMu sync.Mutex
 )
+
+func sessionCleanupLoop() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		scansMu.Lock()
+		for id, s := range scans {
+			s.mu.RLock()
+			terminal := s.status == "completed" || s.status == "failed" || s.status == "cancelled"
+			expired := !s.finishedAt.IsZero() && time.Since(s.finishedAt) > 5*time.Minute
+			s.mu.RUnlock()
+			if terminal && expired {
+				delete(scans, id)
+			}
+		}
+		scansMu.Unlock()
+	}
+}
 
 func historyDir() string {
 	dir := filepath.Join(os.TempDir(), "vect-history")
@@ -173,8 +192,14 @@ func loadHistoryFromFile() []interface{} {
 }
 
 func saveHistoryToFile(entries []interface{}) {
-	b, _ := json.Marshal(entries)
-	os.WriteFile(historyFilePath(), b, 0644)
+	b, err := json.Marshal(entries)
+	if err != nil {
+		log.Printf("history marshal error: %v", err)
+		return
+	}
+	if err := os.WriteFile(historyFilePath(), b, 0644); err != nil {
+		log.Printf("history write error: %v", err)
+	}
 }
 
 func handleHistoryList(w http.ResponseWriter, r *http.Request) {
@@ -345,6 +370,7 @@ func main() {
 	}
 
 	initPrefixDB()
+	go sessionCleanupLoop()
 
 	http.Handle("/", noCache(http.FileServer(http.FS(web.FS))))
 
@@ -541,6 +567,7 @@ go func() {
 
 		session.mu.Lock()
 		if err != nil {
+			session.finishedAt = time.Now()
 			session.status = "failed"
 			session.err = err.Error()
 		} else {
@@ -654,7 +681,8 @@ go func() {
 							successCount++
 						}
 						inFlight--
-						// Send download progress
+						mu.Unlock()
+						session.mu.Lock()
 						session.progress.Stage = 5
 						session.progress.Completed = successCount
 						session.progress.Budget = dlTop
@@ -663,7 +691,7 @@ go func() {
 						localProgress := session.progress
 						dlSubs := make([]chan ProgressData, len(session.subs))
 						copy(dlSubs, session.subs)
-						mu.Unlock()
+						session.mu.Unlock()
 						sendProgress(localProgress, dlSubs)
 					}
 				}()
@@ -684,6 +712,7 @@ go func() {
 		}
 
 		session.mu.Lock()
+		session.finishedAt = time.Now()
 		session.status = "completed"
 		session.mu.Unlock()
 
@@ -845,6 +874,7 @@ func handleCancel(w http.ResponseWriter, r *http.Request) {
 	session.mu.Lock()
 	if session.status == "running" {
 		session.cancel()
+		session.finishedAt = time.Now()
 		session.status = "cancelled"
 	}
 	session.mu.Unlock()
@@ -883,6 +913,11 @@ func resolveASN(asn int, ipVersion int) ([]string, error) {
 		return nil, fmt.Errorf("RIPE API: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("RIPE API status %d: %s", resp.StatusCode, string(body))
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -990,7 +1025,13 @@ func initPrefixDB() {
 }
 
 func classifyByPrefix(ip net.IP) (routeType, routeLine string) {
-	for asn, nets := range prefixDB {
+	keys := make([]int, 0, len(prefixDB))
+	for asn := range prefixDB {
+		keys = append(keys, asn)
+	}
+	sort.Ints(keys)
+	for _, asn := range keys {
+		nets := prefixDB[asn]
 		for _, n := range nets {
 			if n.Contains(ip) {
 				if line, ok := premiumASNs[asn]; ok {
@@ -1454,7 +1495,7 @@ func runGoTraceroute(ctx context.Context, ip string) []TracerouteHop {
 
 		if n >= 8 {
 			ipHeaderLen := int(buf[0]&0x0F) * 4
-			if n < ipHeaderLen+8 {
+			if ipHeaderLen < 20 || n < ipHeaderLen+8 {
 				hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
 				continue
 			}
@@ -1979,7 +2020,11 @@ func handleResolveURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
-	req2, _ := http.NewRequest("GET", fetchURL, nil)
+	req2, err := http.NewRequest("GET", fetchURL, nil)
+	if err != nil {
+		http.Error(w, "invalid url: "+err.Error(), 400)
+		return
+	}
 	req2.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15")
 	resp, err := client.Do(req2)
 	if err != nil {

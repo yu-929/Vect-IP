@@ -167,7 +167,12 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	}
 	defer func() { _ = httpRes.Body.Close() }()
 
-	body, _ := io.ReadAll(io.LimitReader(httpRes.Body, 64*1024))
+	body, err := io.ReadAll(io.LimitReader(httpRes.Body, 64*1024))
+	if err != nil {
+		res.Error = fmt.Sprintf("read body: %v", err)
+		res.TotalMS = time.Since(start).Milliseconds()
+		return res
+	}
 	res.Status = httpRes.StatusCode
 	res.ConnectMS = connectDur.Milliseconds()
 	res.TLSMS = tlsDur.Milliseconds()

@@ -89,10 +89,13 @@ func FilterIPv6OnlyByAPI(ips []netip.Addr) []netip.Addr {
 	ch := make(chan result, len(ips))
 	var wg sync.WaitGroup
 	client := &http.Client{Timeout: 3 * time.Second}
+	sem := make(chan struct{}, 50)
 	for _, ip := range ips {
 		wg.Add(1)
 		go func(ip netip.Addr) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
 			url := fmt.Sprintf("%s?proxyip=%s:443", availabilityCheckURL, ip.String())
 			resp, err := client.Get(url)
 			if err != nil {

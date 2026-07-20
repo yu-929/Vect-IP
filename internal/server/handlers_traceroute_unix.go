@@ -82,7 +82,7 @@ func runGoTraceroute(ctx context.Context, ip string) []TracerouteHop {
 
 		if n >= 8 {
 			ipHeaderLen := int(buf[0]&0x0F) * 4
-			if n < ipHeaderLen+8 {
+			if ipHeaderLen < 20 || n < ipHeaderLen+8 {
 				hops = append(hops, TracerouteHop{Hop: ttl, IP: "*", MS: "", Lost: true})
 				continue
 			}

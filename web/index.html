@@ -23,9 +23,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 /* ===== Top Nav (iOS Large Title style) ===== */
 .top-nav{position:sticky;top:0;z-index:50;padding:8pt 14pt;padding-top:calc(env(safe-area-inset-top) + 20pt);padding-bottom:16pt;background:var(--nav-bg);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);border-bottom:0.5px solid var(--glass-border);text-align:center;transition:padding .4s cubic-bezier(0.34,1.56,0.64,1)}
 .top-nav.compact{padding-top:calc(env(safe-area-inset-top) + 8pt);padding-bottom:8pt}
-.nav-title{font-size:22px;font-weight:700;letter-spacing:1px;color:var(--text);transition:font-size .4s var(--ease-spring),letter-spacing .4s var(--ease-spring);font-family:'Space Grotesk',sans-serif}
-.top-nav.compact .nav-title{font-size:15px;letter-spacing:0.3px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',sans-serif}
-.nav-sub{font-size:13px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px;margin-top:8pt;transition:opacity .25s var(--ease-out),height .25s var(--ease-out),margin .25s var(--ease-out);overflow:hidden;max-height:36pt}
+.nav-title{font-size:23px;font-weight:700;letter-spacing:1px;color:var(--text);transition:font-size .4s var(--ease-spring),letter-spacing .4s var(--ease-spring);font-family:'Space Grotesk',sans-serif}
+.top-nav.compact .nav-title{font-size:16px;letter-spacing:0.3px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',sans-serif}
+.nav-sub{font-size:14px;font-weight:400;color:var(--secondary);letter-spacing:-0.1px;margin-top:8pt;transition:opacity .25s var(--ease-out),height .25s var(--ease-out),margin .25s var(--ease-out);overflow:hidden;max-height:36pt}
 .top-nav.compact .nav-sub{opacity:0;max-height:0;margin-top:0}
 
 /* ===== Glass Card ===== */
@@ -38,7 +38,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .glass-card.exiting{animation:dematerialize .3s var(--ease-spring) both}
 @keyframes materialize{from{opacity:0;transform:translateY(8px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes dematerialize{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-4px) scale(0.98)}}
-.card-title{font-size:15px;font-weight:600;letter-spacing:-0.2px;color:var(--text);margin-bottom:8pt;display:flex;align-items:center;gap:4pt}
+.card-title{font-size:16px;font-weight:600;letter-spacing:-0.2px;color:var(--text);margin-bottom:8pt;display:flex;align-items:center;gap:4pt}
 
 /* ===== Page Content ===== */
 .page-content{padding:14pt 14pt;padding-bottom:calc(env(safe-area-inset-bottom) + 70pt);max-width:360pt;margin:0 auto;position:relative}
@@ -56,24 +56,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .tab-item:active{transform:scale(0.93)}
 .tab-item svg{width:20pt;height:20pt;display:block;transition:transform .12s ease-out}
 .tab-item:active svg{transform:scale(0.93)}
-.tab-item .tab-label{font-size:9px;font-weight:500;letter-spacing:0.2px}
+.tab-item .tab-label{font-size:10px;font-weight:500;letter-spacing:0.2px}
 .tab-item.active .tab-label{color:var(--primary)}
 
 /* ===== Segmented Capsule Frosted ===== */
 .segmented{display:flex;background:var(--segment-bg);backdrop-filter:blur(10px) saturate(200%);-webkit-backdrop-filter:blur(10px) saturate(200%);border-radius:var(--radius-seg);padding:2pt;margin-bottom:10pt;gap:2pt}
-.seg-btn{flex:1;padding:6pt 6pt;border:none;border-radius:8pt;background:transparent;color:var(--secondary);font-size:12px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),background .35s var(--ease-spring),color .25s ease,box-shadow .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
+.seg-btn{flex:1;padding:6pt 6pt;border:none;border-radius:8pt;background:transparent;color:var(--secondary);font-size:13px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),background .35s var(--ease-spring),color .25s ease,box-shadow .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
 .seg-btn:active{transform:scale(0.95)}
 .seg-btn.active{background:var(--primary);color:#FFFFFF;font-weight:600;box-shadow:0 2px 8px rgba(0,119,237,0.28)}
-.seg-btn-plain{flex:1;padding:6pt 6pt;border:0.5px solid var(--glass-border);border-radius:8pt;background:transparent;font-size:12px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),color .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
+.seg-btn-plain{flex:1;padding:6pt 6pt;border:0.5px solid var(--glass-border);border-radius:8pt;background:transparent;font-size:13px;font-weight:500;cursor:pointer;transition:transform .35s var(--ease-spring),color .25s ease;font-family:inherit;line-height:1.3;letter-spacing:-0.1px;will-change:transform}
 .seg-btn-plain:active{transform:scale(0.95)}
 
 /* ===== Action Sheet ===== */
 .action-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.3);display:none;justify-content:center;align-items:flex-end;padding:0 14pt;padding-bottom:calc(env(safe-area-inset-bottom) + 14pt);animation:fadeIn .2s ease}
 .action-overlay.show{display:flex}
 .action-sheet{background:var(--glass-bg);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);border-radius:var(--radius-card);width:100%;max-width:360pt;overflow:hidden;box-shadow:var(--glass-shadow);animation:slideUp .35s var(--ease-spring)}
-.action-sheet .as-title{padding:14pt 16pt 4pt;font-size:13px;font-weight:600;color:var(--text);text-align:center}
-.action-sheet .as-desc{padding:0 16pt 10pt;font-size:11px;color:var(--label);text-align:center}
-.action-sheet .as-btn{display:block;width:100%;padding:14pt 16pt;border:none;background:transparent;font-size:15px;font-weight:500;color:var(--primary);cursor:pointer;font-family:inherit;transition:background .15s ease;border-top:0.5px solid var(--glass-border)}
+.action-sheet .as-title{padding:14pt 16pt 4pt;font-size:14px;font-weight:600;color:var(--text);text-align:center}
+.action-sheet .as-desc{padding:0 16pt 10pt;font-size:12px;color:var(--label);text-align:center}
+.action-sheet .as-btn{display:block;width:100%;padding:14pt 16pt;border:none;background:transparent;font-size:16px;font-weight:500;color:var(--primary);cursor:pointer;font-family:inherit;transition:background .15s ease;border-top:0.5px solid var(--glass-border)}
 .action-sheet .as-btn:active{background:rgba(0,119,237,0.06)}
 .action-sheet .as-btn.danger{color:var(--danger)}
 .action-sheet .as-cancel{margin-top:8pt;border-radius:var(--radius-card);text-align:center;font-weight:600}
@@ -83,18 +83,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 /* ===== Inputs ===== */
 .field{margin-bottom:8pt;width:100%}
 .field:last-child{margin-bottom:0}
-.field label{display:block;font-size:12px;font-weight:400;color:var(--label);margin-bottom:4pt;letter-spacing:-0.1px}
-.field input,.field select{width:100%;height:36pt;padding:8pt 12pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:13px;font-weight:500;outline:none;transition:border-color .2s ease,box-shadow .2s ease;font-family:inherit;-webkit-appearance:none;appearance:none;box-sizing:border-box;min-width:0}
+.field label{display:block;font-size:13px;font-weight:400;color:var(--label);margin-bottom:4pt;letter-spacing:-0.1px}
+.field input,.field select{width:100%;height:36pt;padding:8pt 12pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:14px;font-weight:500;outline:none;transition:border-color .2s ease,box-shadow .2s ease;font-family:inherit;-webkit-appearance:none;appearance:none;box-sizing:border-box;min-width:0}
 .field select{background-image:url("data:image/svg+xml,%3Csvg width='9' height='5' fill='%238E8E93' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3L8 1'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14pt center;padding-right:32pt;font-weight:500;color:var(--text)}
-textarea{width:100%;min-height:40pt;padding:8pt 12pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:12px;font-family:'SF Mono',ui-monospace,monospace;resize:vertical;outline:none;line-height:1.5;transition:all .2s}
+textarea{width:100%;min-height:40pt;padding:8pt 12pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:13px;font-family:'SF Mono',ui-monospace,monospace;resize:vertical;outline:none;line-height:1.5;transition:all .2s}
 textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0.15)}
 .input-group{display:flex;gap:4pt}
 .input-group input{flex:1}
 .input-group .btn-icon{height:36pt;width:36pt;border-radius:var(--radius-input);border:0.5px solid rgba(0,0,0,0.04);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s var(--ease-out),color .15s ease,background .15s ease;flex-shrink:0}
 .input-group .btn-icon:active{color:var(--primary);background:rgba(0,119,237,0.10);transform:scale(0.9)}
-.btn-text{height:26pt;padding:0 8pt;border-radius:13pt;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;transition:transform .12s var(--ease-out),color .15s ease,background .15s ease;flex-shrink:0}
+.btn-text{height:26pt;padding:0 8pt;border-radius:13pt;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--muted2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;transition:transform .12s var(--ease-out),color .15s ease,background .15s ease;flex-shrink:0}
 .btn-text:active{color:var(--primary);background:rgba(0,119,237,0.10);transform:scale(0.93)}
-#asn~.btn-text{height:36pt;border-radius:var(--radius-input);font-size:11px;padding:0 12pt}
+#asn~.btn-text{height:36pt;border-radius:var(--radius-input);font-size:12px;padding:0 12pt}
 
 /* ===== Row (dual column) ===== */
 .row{display:grid;grid-template-columns:1fr 1fr;gap:6pt 8pt;width:100%}
@@ -102,15 +102,15 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .row .field label{white-space:nowrap}
 /* ===== Colo Filter ===== */
 .colo-filter{display:grid;grid-template-columns:1fr 1fr;gap:6pt}
-.colo-filter select{height:36pt;padding:8pt 12pt;padding-right:32pt;background:var(--input-bg);background-image:url("data:image/svg+xml,%3Csvg width='9' height='5' fill='%238E8E93' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3L8 1'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14pt center;border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:13px;font-weight:500;outline:none;font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;box-sizing:border-box}
+.colo-filter select{height:36pt;padding:8pt 12pt;padding-right:32pt;background:var(--input-bg);background-image:url("data:image/svg+xml,%3Csvg width='9' height='5' fill='%238E8E93' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3L8 1'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14pt center;border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:14px;font-weight:500;outline:none;font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;box-sizing:border-box}
 .colo-filter select:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0.15)}
-.colo-filter input{height:36pt;padding:8pt 12pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:13px;font-weight:500;outline:none;font-family:inherit;box-sizing:border-box}
+.colo-filter input{height:36pt;padding:8pt 12pt;background:var(--input-bg);border:0.5px solid transparent;border-radius:var(--radius-input);color:var(--text);font-size:14px;font-weight:500;outline:none;font-family:inherit;box-sizing:border-box}
 .colo-filter input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0.15)}
-.colo-filter input::placeholder{color:var(--muted);font-weight:400;font-size:12px}
+.colo-filter input::placeholder{color:var(--muted);font-weight:400;font-size:13px}
 .colo-filter input:disabled{opacity:0.3}
 
 /* ===== Button ===== */
-.btn{display:flex;align-items:center;justify-content:center;gap:4pt;border:none;border-radius:var(--radius-btn);font-size:14px;font-weight:590;cursor:pointer;transition:transform .35s var(--ease-spring),opacity .25s ease,background .25s ease;font-family:inherit;height:50pt;width:calc(100% - 32pt);margin:0 16pt;letter-spacing:0.1px;will-change:transform}
+.btn{display:flex;align-items:center;justify-content:center;gap:4pt;border:none;border-radius:var(--radius-btn);font-size:15px;font-weight:590;cursor:pointer;transition:transform .35s var(--ease-spring),opacity .25s ease,background .25s ease;font-family:inherit;height:50pt;width:calc(100% - 32pt);margin:0 16pt;letter-spacing:0.1px;will-change:transform}
 .btn-primary{background:var(--primary);color:#FFFFFF;box-shadow:0 4px 14px rgba(0,119,237,0.28)}
 .btn-primary:active{transform:scale(0.97);opacity:0.85;transition:transform .1s var(--ease-out),opacity .1s ease}
 .btn-primary:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none;transform:none}
@@ -124,13 +124,13 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6pt;margin-bottom:0}
 .stat-item{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:50pt;padding:0 10pt;background:rgba(118,118,128,0.03);border-radius:10pt;box-sizing:border-box}
-.stat-val{font-size:15pt;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
+.stat-val{font-size:16pt;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
 .stat-val.brand{color:var(--primary)}
-.stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:13px}
-.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;font-size:13px;word-break:break-all;line-height:1.3;cursor:pointer}
-.stat-val.ip.v6{font-size:10px;line-height:1.25}
-.stat-lbl{font-size:9px;color:var(--muted2);margin-top:4pt;letter-spacing:-0.1px}
-.copy-btn{display:inline-flex;align-items:center;gap:2pt;padding:2pt 6pt;border-radius:5pt;border:none;background:rgba(0,119,237,0.10);color:var(--primary);font-size:8px;cursor:pointer;font-family:inherit;margin-left:3pt;vertical-align:middle;font-weight:500}
+.stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:14px}
+.stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;font-size:14px;word-break:break-all;line-height:1.3;cursor:pointer}
+.stat-val.ip.v6{font-size:11px;line-height:1.25}
+.stat-lbl{font-size:10px;color:var(--muted2);margin-top:4pt;letter-spacing:-0.1px}
+.copy-btn{display:inline-flex;align-items:center;gap:2pt;padding:2pt 6pt;border-radius:5pt;border:none;background:rgba(0,119,237,0.10);color:var(--primary);font-size:9px;cursor:pointer;font-family:inherit;margin-left:3pt;vertical-align:middle;font-weight:500}
 .copy-btn:hover{background:rgba(0,119,237,0.18)}
 
 /* ===== Stage Progress ===== */
@@ -138,16 +138,16 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .stage-item{height:40pt;display:flex;flex-direction:column;justify-content:center;padding:0;border-top:0.5px solid rgba(60,60,60,0.08);border-radius:0;background:transparent}
 .stage-item:first-child{border-top:none}
 .stage-item .stage-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3pt}
-.stage-item .stage-name{font-size:11px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:4pt}
-.stage-item .stage-count{font-size:10px;color:var(--muted2);font-variant-numeric:tabular-nums}
+.stage-item .stage-name{font-size:12px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:4pt}
+.stage-item .stage-count{font-size:11px;color:var(--muted2);font-variant-numeric:tabular-nums}
 .stage-item .stage-bar{height:5pt;background:var(--progress-track);border-radius:2.5pt;overflow:hidden;margin-bottom:2pt}
 .stage-item .stage-fill{height:100%;border-radius:2.5pt;background:linear-gradient(90deg,var(--progress-fill-start),var(--progress-fill-end));transition:width .5s var(--ease-smooth);width:0%}
-.stage-item .stage-footer{display:flex;justify-content:space-between;font-size:9px;color:var(--muted2)}
+.stage-item .stage-footer{display:flex;justify-content:space-between;font-size:10px;color:var(--muted2)}
 .stage-item.download-stage{border-bottom:none}
 .stage-item.download-stage .stage-bar{margin-bottom:4pt}
 
 /* ===== Error ===== */
-.error-box{display:flex;align-items:center;gap:4pt;padding:8pt 12pt;background:rgba(230,56,50,0.06);backdrop-filter:blur(10px) saturate(200%);-webkit-backdrop-filter:blur(10px) saturate(200%);border:0.5px solid rgba(230,56,50,0.15);border-radius:10pt;color:var(--danger);font-size:11px;margin-bottom:10pt}
+.error-box{display:flex;align-items:center;gap:4pt;padding:8pt 12pt;background:rgba(230,56,50,0.06);backdrop-filter:blur(10px) saturate(200%);-webkit-backdrop-filter:blur(10px) saturate(200%);border:0.5px solid rgba(230,56,50,0.15);border-radius:10pt;color:var(--danger);font-size:12px;margin-bottom:10pt}
 .error-box.hidden{display:none}
 .error-box svg{width:14pt;height:14pt;flex-shrink:0}
 
@@ -155,8 +155,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .local-grid{display:flex;flex-direction:column;justify-content:flex-start;gap:4pt;flex:1}
 .local-row{display:flex;align-items:center;justify-content:space-between;height:40pt;padding:0 0;border-bottom:0.5px solid rgba(60,60,67,0.08);gap:6pt}
 .local-row:last-child{border-bottom:none}
-.local-row .local-label{font-size:12px;color:var(--label);letter-spacing:-0.1px;flex-shrink:0;min-width:48pt;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.local-row .local-val{font-size:13px;font-weight:500;color:var(--text);letter-spacing:-0.2px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.local-row .local-label{font-size:13px;color:var(--label);letter-spacing:-0.1px;flex-shrink:0;min-width:48pt;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local-row .local-val{font-size:14px;font-weight:500;color:var(--text);letter-spacing:-0.2px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .local-row .local-val.public{color:var(--primary);font-weight:600}
 .local-row .local-copy{width:24pt;height:24pt;border-radius:12pt;border:none;background:var(--input-bg);color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .local-row .local-copy:active{background:rgba(0,119,237,0.18);transform:scale(0.9)}
@@ -170,21 +170,21 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 /* ===== History ===== */
 .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8pt;padding:0}
-.history-header .count{font-size:11px;color:var(--muted2)}
-.history-header .clear-btn{font-size:11px;color:#FFFFFF;cursor:pointer;background:var(--danger);border:none;font-family:inherit;font-weight:500;padding:5pt 16pt;border-radius:18pt;transition:transform .12s var(--ease-out),opacity .15s ease}
+.history-header .count{font-size:12px;color:var(--muted2)}
+.history-header .clear-btn{font-size:12px;color:#FFFFFF;cursor:pointer;background:var(--danger);border:none;font-family:inherit;font-weight:500;padding:5pt 16pt;border-radius:18pt;transition:transform .12s var(--ease-out),opacity .15s ease}
 .history-header .clear-btn:active{transform:scale(0.94);opacity:0.85}
 .history-list{display:flex;flex-direction:column;gap:12pt}
 .history-item{border-radius:14pt!important;padding:16pt}
 .history-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4pt}
-.history-item .h-time{font-size:10px;color:var(--muted2);letter-spacing:-0.1px}
-.history-item .ip{font-size:18px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;margin-bottom:6pt}
+.history-item .h-time{font-size:11px;color:var(--muted2);letter-spacing:-0.1px}
+.history-item .ip{font-size:19px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;margin-bottom:6pt}
 .history-item .ip:active{opacity:0.7}
 .history-metrics{display:flex;flex-direction:column;gap:3pt;margin-bottom:3pt}
 .history-metrics .hm-row{display:grid;grid-template-columns:1fr 1fr;gap:4pt 12pt;position:relative}
 .history-metrics .hm-row::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:0.5px;background:var(--glass-border);transform:translateX(-50%)}
 .history-metrics .hm-row-single{display:flex;gap:4pt;position:relative}
 .history-metrics .hm-row-single .hm{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.history-metrics .hm{font-size:11px;color:var(--label);letter-spacing:-0.1px;line-height:1.4;display:flex;gap:2px}
+.history-metrics .hm{font-size:12px;color:var(--label);letter-spacing:-0.1px;line-height:1.4;display:flex;gap:2px}
 .history-metrics .hm strong{font-weight:590;color:var(--text)}
 .history-metrics .hm .ok{color:var(--success)}
 .history-metrics .hm .fail{color:var(--muted2)}
@@ -192,35 +192,35 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 /* ===== Traceroute ===== */
 .trace-wrap{background:var(--input-bg);border-radius:8pt;padding:4pt 8pt;max-height:160pt;overflow-y:auto;margin-top:4pt}
-.trace-row{display:flex;gap:3pt;font-size:9px;font-family:'SF Mono',ui-monospace,monospace;padding:1.5pt 0;align-items:center}
+.trace-row{display:flex;gap:3pt;font-size:10px;font-family:'SF Mono',ui-monospace,monospace;padding:1.5pt 0;align-items:center}
 .trace-hop{color:var(--muted2);width:18pt;flex-shrink:0;text-align:right}
 .trace-ip{color:var(--secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trace-ms{color:var(--primary);width:40pt;text-align:right;flex-shrink:0}
 .trace-lost{color:var(--danger)}
-.trace-asn{color:var(--muted2);font-size:9px;width:38pt;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trace-isp{color:var(--muted2);font-size:9px;max-width:50pt;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trace-flag{font-size:11px;width:14pt;flex-shrink:0;text-align:center}
-.trace-badge{font-size:8px;font-weight:600;padding:1pt 4pt;border-radius:4pt;flex-shrink:0;line-height:1.3}
+.trace-asn{color:var(--muted2);font-size:10px;width:38pt;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trace-isp{color:var(--muted2);font-size:10px;max-width:50pt;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trace-flag{font-size:12px;width:14pt;flex-shrink:0;text-align:center}
+.trace-badge{font-size:9px;font-weight:600;padding:1pt 4pt;border-radius:4pt;flex-shrink:0;line-height:1.3}
 .trace-badge.premium,.premium-text{background:rgba(0,119,237,0.15);color:var(--primary)}
 .trace-badge.optimized,.normal-text{background:rgba(52,199,89,0.15);color:var(--success)}
 .premium-text,.normal-text{display:inline;padding:1pt 4pt;border-radius:4pt;font-weight:600}
 
 /* ===== History Expand ===== */
 .h-expand-bar{margin-top:6pt;padding-top:6pt;border-top:0.5px solid var(--glass-border);display:flex;gap:2pt;flex-wrap:wrap}
-.h-expand-bar .seg-btn{flex:1;padding:6pt 3pt;font-size:11px;min-width:0;text-align:center}
+.h-expand-bar .seg-btn{flex:1;padding:6pt 3pt;font-size:12px;min-width:0;text-align:center}
 .h-detail{padding:2pt 0 0}
 .h-detail-row{padding:5pt 2pt;border-bottom:0.5px solid var(--glass-border);display:flex;flex-wrap:wrap;gap:2pt 0}
 .h-detail-row:last-child{border-bottom:none}
-.h-detail-rank{color:var(--muted2);font-weight:500;font-size:9px;width:16pt;flex-shrink:0;padding-top:1pt}
-.h-detail-ip{font-family:'SF Mono',ui-monospace,monospace;color:var(--text);cursor:pointer;font-weight:500;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-0.2px}
+.h-detail-rank{color:var(--muted2);font-weight:500;font-size:10px;width:16pt;flex-shrink:0;padding-top:1pt}
+.h-detail-ip{font-family:'SF Mono',ui-monospace,monospace;color:var(--text);cursor:pointer;font-weight:500;font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-0.2px}
 .h-detail-ip:active{opacity:0.6}
-.h-detail-meta{display:flex;align-items:center;gap:6pt;margin-left:16pt;font-size:10px;width:calc(100% - 16pt)}
+.h-detail-meta{display:flex;align-items:center;gap:6pt;margin-left:16pt;font-size:11px;width:calc(100% - 16pt)}
 .h-detail-score{color:var(--secondary);font-variant-numeric:tabular-nums}
 .h-detail-colo{color:var(--muted2)}
 .h-detail-dl{color:var(--success);font-variant-numeric:tabular-nums}
 .h-detail-jitter{color:var(--primary);font-variant-numeric:tabular-nums}
 .h-detail-tr{color:var(--primary);cursor:pointer;font-weight:500}
-.h-dns-btn{color:var(--primary);cursor:pointer;font-weight:500;font-size:11px;border:none;background:none;font-family:inherit;padding:0 6pt;border-radius:6pt;white-space:nowrap;height:28pt;display:flex;align-items:center}
+.h-dns-btn{color:var(--primary);cursor:pointer;font-weight:500;font-size:12px;border:none;background:none;font-family:inherit;padding:0 6pt;border-radius:6pt;white-space:nowrap;height:28pt;display:flex;align-items:center}
 .h-dns-btn:active{background:var(--input-bg)}
 .h-detail-tr:active{opacity:0.6}
 .h-detail-tr-wrap{width:100%}
@@ -233,11 +233,11 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .settings-group{border-top:0.5px solid var(--glass-border);padding-top:10pt;margin-bottom:10pt;width:100%}
 .settings-group:first-child{border-top:none;padding-top:0}
 .settings-group:last-child{margin-bottom:0}
-.settings-group .sg-title{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6pt;padding:0 2pt}
+.settings-group .sg-title{font-size:12px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6pt;padding:0 2pt}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:6pt 2pt;min-height:38pt}
-.settings-row .sl-label{font-size:13px;font-weight:400;color:var(--text)}
-.settings-row .sl-desc{font-size:11px;color:var(--muted2);margin-top:0}
-.settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:13px;cursor:pointer}
+.settings-row .sl-label{font-size:14px;font-weight:400;color:var(--text)}
+.settings-row .sl-desc{font-size:12px;color:var(--muted2);margin-top:0}
+.settings-row .repo-link{color:var(--primary);text-decoration:none;font-size:14px;cursor:pointer}
 .settings-row .repo-link:hover{text-decoration:underline}
 .toggle-wrap{position:relative;width:40pt;height:24pt;flex-shrink:0;margin-left:10pt}
 .toggle-track{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:12pt;background:var(--muted);cursor:pointer;transition:background .35s var(--ease-smooth)}
@@ -245,15 +245,15 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .toggle-knob{position:absolute;top:2pt;left:2pt;width:20pt;height:20pt;border-radius:10pt;background:#FFF;box-shadow:0 1px 4px rgba(0,0,0,0.15);transition:transform .45s var(--ease-spring);cursor:pointer}
 .toggle-track.on .toggle-knob{transform:translateX(16pt)}
 .toggle-input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:2}
-.settings-btn-theme{display:flex;align-items:center;justify-content:center;gap:6pt;width:100%;padding:8pt;border:0.5px solid var(--glass-border);border-radius:10pt;background:var(--glass-bg);backdrop-filter:blur(10px);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .15s var(--ease-out),background .15s ease}
+.settings-btn-theme{display:flex;align-items:center;justify-content:center;gap:6pt;width:100%;padding:8pt;border:0.5px solid var(--glass-border);border-radius:10pt;background:var(--glass-bg);backdrop-filter:blur(10px);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .15s var(--ease-out),background .15s ease}
 .settings-btn-theme:active{transform:scale(0.97);background:var(--input-bg)}
-.theme-opt{flex:1;padding:6pt;border:0.5px solid var(--glass-border);border-radius:8pt;background:var(--input-bg);color:var(--secondary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .15s var(--ease-out),background .2s ease,border-color .2s ease}
+.theme-opt{flex:1;padding:6pt;border:0.5px solid var(--glass-border);border-radius:8pt;background:var(--input-bg);color:var(--secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .15s var(--ease-out),background .2s ease,border-color .2s ease}
 .theme-opt:active{transform:scale(0.96)}
 .theme-opt.active{background:var(--primary);color:#FFF;border-color:var(--primary)}
 
 /* ===== SP Preset ===== */
 .sp-row{display:flex;gap:4pt;flex-wrap:wrap;margin-bottom:4pt}
-.sp-chip{display:flex;align-items:center;gap:3pt;padding:5pt 8pt;border-radius:6pt;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .12s var(--ease-out),color .15s ease,background .15s ease,border-color .15s ease}
+.sp-chip{display:flex;align-items:center;gap:3pt;padding:5pt 8pt;border-radius:6pt;border:0.5px solid var(--glass-border);background:var(--input-bg);color:var(--text);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .12s var(--ease-out),color .15s ease,background .15s ease,border-color .15s ease}
 .sp-chip:active{background:rgba(0,119,237,0.10);border-color:var(--primary);color:var(--primary);transform:scale(0.95)}
 
 /* ===== Skeleton Screen ===== */
@@ -270,11 +270,11 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 /* ===== Empty State Illustration ===== */
 .history-empty{text-align:center;padding:32pt 14pt;color:var(--muted2)}
 .history-empty svg{width:64pt;height:64pt;display:block;margin:0 auto 8pt;color:var(--muted);opacity:0.5}
-.history-empty .empty-title{font-size:13px;font-weight:500;color:var(--secondary);margin-bottom:3pt}
-.history-empty .empty-desc{font-size:11px;color:var(--muted2);line-height:1.5}
+.history-empty .empty-title{font-size:14px;font-weight:500;color:var(--secondary);margin-bottom:3pt}
+.history-empty .empty-desc{font-size:12px;color:var(--muted2);line-height:1.5}
 
 /* ===== Toast ===== */
-.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 80pt);left:50%;transform:translateX(-50%) translateY(12px);background:var(--glass-bg);backdrop-filter:blur(20px) saturate(200%);-webkit-backdrop-filter:blur(20px) saturate(200%);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 14pt;font-size:12px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.08);z-index:200;opacity:0;pointer-events:none}.toast.hidden{display:none}
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 80pt);left:50%;transform:translateX(-50%) translateY(12px);background:var(--glass-bg);backdrop-filter:blur(20px) saturate(200%);-webkit-backdrop-filter:blur(20px) saturate(200%);border:0.5px solid var(--glass-border);border-radius:10pt;padding:6pt 14pt;font-size:13px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.08);z-index:200;opacity:0;pointer-events:none}.toast.hidden{display:none}
 
 /* ===== Section divider inside glass card ===== */
 .section{border-top:0.5px solid var(--glass-border);padding-top:10pt;margin-bottom:14pt}
@@ -354,19 +354,19 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button class="seg-btn" data-budget="3000" data-concurrency="200" data-topn="20" data-download-top="5">官方模式</button>
 </div>
 <div id="presetRow" style="display:none;margin-top:8pt;align-items:center;justify-content:space-between;min-height:32pt">
-<span style="font-size:12px;color:var(--secondary);font-weight:500;flex-shrink:0">预设网段</span>
+<span style="font-size:13px;color:var(--secondary);font-weight:500;flex-shrink:0">预设网段</span>
 <div style="position:relative;flex:1;margin-left:8pt;max-width:60%">
-<div id="presetTrigger" onclick="toggleCidrMenu()" style="width:100%;padding:6pt 26pt 6pt 14pt;border:0.5px solid var(--glass-border);border-radius:10pt;color:var(--text);font-size:12px;font-weight:500;font-family:inherit;background:transparent;cursor:pointer;box-sizing:border-box;letter-spacing:-0.1px;transition:border-color .2s ease,color .2s ease;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center"><span id="presetLabel">请选择</span><span style="position:absolute;right:8pt;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:9px">▼</span></div>
+<div id="presetTrigger" onclick="toggleCidrMenu()" style="width:100%;padding:6pt 26pt 6pt 14pt;border:0.5px solid var(--glass-border);border-radius:10pt;color:var(--text);font-size:13px;font-weight:500;font-family:inherit;background:transparent;cursor:pointer;box-sizing:border-box;letter-spacing:-0.1px;transition:border-color .2s ease,color .2s ease;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center"><span id="presetLabel">请选择</span><span style="position:absolute;right:8pt;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:10px">▼</span></div>
 <div id="presetMenu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--glass-bg);border:0.5px solid var(--glass-border);border-radius:10pt;margin-top:3pt;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12)">
-<div class="pm-opt" onclick="selectCidrPreset('official-v4','官方列表 IPv4')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv4</div>
-<div class="pm-opt" onclick="selectCidrPreset('official-v6','官方列表 IPv6')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv6</div>
-<div class="pm-opt" onclick="selectCidrPreset('xiaoqian-v4','小钱优选列表 V4')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">小钱优选列表 V4</div>
-<div class="pm-opt" onclick="selectCidrPreset('mingyu-v4','MINGYU优选列表V4')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">MINGYU优选列表V4</div>
-<div class="pm-opt" onclick="selectCidrPreset('mingyu-v6','MINGYU优选列表V6')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">MINGYU优选列表V6</div>
-<div class="pm-opt" onclick="selectCidrPreset('zhenxiang-v4','真香定律高爆段')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">真香定律高爆段</div>
-<div class="pm-opt" onclick="selectCidrPreset('zhenxiang-heji-v4','真香定律合集段')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">真香定律合集段</div>
-<div class="pm-opt" onclick="selectCidrPreset('zhenxiang-gugan-v4','真香定律骨干段')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">真香定律骨干段</div>
-<div class="pm-opt" onclick="selectCidrPreset('edt-warp','EDT/WARP通用列表')" style="padding:8pt 12pt;font-size:12px;color:var(--text);cursor:pointer;text-align:center">EDT/WARP通用列表</div>
+<div class="pm-opt" onclick="selectCidrPreset('official-v4','官方列表 IPv4')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv4</div>
+<div class="pm-opt" onclick="selectCidrPreset('official-v6','官方列表 IPv6')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv6</div>
+<div class="pm-opt" onclick="selectCidrPreset('xiaoqian-v4','小钱优选列表 V4')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">小钱优选列表 V4</div>
+<div class="pm-opt" onclick="selectCidrPreset('mingyu-v4','MINGYU优选列表V4')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">MINGYU优选列表V4</div>
+<div class="pm-opt" onclick="selectCidrPreset('mingyu-v6','MINGYU优选列表V6')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">MINGYU优选列表V6</div>
+<div class="pm-opt" onclick="selectCidrPreset('zhenxiang-v4','真香定律高爆段')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">真香定律高爆段</div>
+<div class="pm-opt" onclick="selectCidrPreset('zhenxiang-heji-v4','真香定律合集段')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">真香定律合集段</div>
+<div class="pm-opt" onclick="selectCidrPreset('zhenxiang-gugan-v4','真香定律骨干段')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">真香定律骨干段</div>
+<div class="pm-opt" onclick="selectCidrPreset('edt-warp','EDT/WARP通用列表')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center">EDT/WARP通用列表</div>
 </div>
 </div>
 </div>
@@ -380,7 +380,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <button type="button" class="btn-text" onclick="importFromUrl()">提取</button>
 <button type="button" class="btn-text" onclick="resolveDomains()">解析</button>
 <button type="button" class="btn-text" onclick="S('cidrs').value='';updateCidrCount();">清空</button>
-<span style="font-size:10px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
+<span style="font-size:11px;color:var(--muted2);margin-left:auto" id="cidrCount">0 条</span>
 </div>
 <input type="file" id="cidrFile" accept=".txt,.csv" style="display:none" onchange="importCidrFile(event)">
 <textarea id="cidrs" placeholder="1.1.1.0/24&#10;2606:4700::/32" autocomplete="off" oninput="updateCidrCount()"></textarea>
@@ -448,10 +448,10 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <!-- Status Panel (inline in scan tab) -->
 <div class="glass-card material-thin" id="statusPanel" style="display:none">
 <div style="display:flex;justify-content:space-between;align-items:center">
-<span style="font-size:12px;font-weight:500;color:var(--secondary)">扫描进度</span>
+<span style="font-size:13px;font-weight:500;color:var(--secondary)">扫描进度</span>
 <div style="display:flex;align-items:center;gap:6pt">
-<span style="font-size:10px;color:var(--muted2);font-family:'SF Mono',ui-monospace,monospace" id="scanId">--</span>
-<button id="collapseBtn" onclick="if(progressLocked)return;var pc=S('progressContent');var h=pc.style.display==='none';pc.style.display=h?'':'none';this.textContent=h?'收起':'展开'" style="font-size:10px;color:var(--secondary);border:none;background:var(--input-bg);border-radius:5pt;padding:2pt 6pt;cursor:pointer;font-family:inherit">收起</button>
+<span style="font-size:11px;color:var(--muted2);font-family:'SF Mono',ui-monospace,monospace" id="scanId">--</span>
+<button id="collapseBtn" onclick="if(progressLocked)return;var pc=S('progressContent');var h=pc.style.display==='none';pc.style.display=h?'':'none';this.textContent=h?'收起':'展开'" style="font-size:11px;color:var(--secondary);border:none;background:var(--input-bg);border-radius:5pt;padding:2pt 6pt;cursor:pointer;font-family:inherit">收起</button>
 </div>
 </div>
 
@@ -663,12 +663,12 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 <div id="dnsConfigFields" style="display:none">
-<div class="field" style="margin-top:6pt"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
-<div class="field" style="margin-top:6pt"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
-<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
-<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
-<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
-<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="dnsRecordType" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:13px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
+<div class="field" style="margin-top:6pt"><label>服务商</label><select id="dnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
+<div class="field" style="margin-top:6pt"><label>API Token</label><input id="dnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
+<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="dnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
+<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="dnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
+<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="dnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
+<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="dnsRecordType" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
 <div class="settings-row" style="margin-top:4pt">
 <div style="flex:1">
 <div class="sl-label">IPv6落地过滤</div>
@@ -714,7 +714,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <div class="settings-group">
-<div class="sg-title">ASN编号 | 自动解析</div>
+<div class="sg-title">ASN信息 | 自动解析</div>
 <div class="settings-row">
 <div style="flex:1">
 <div class="sl-label">启用 ASN 查询</div>
@@ -1229,7 +1229,7 @@ curId=d.id;
 S('scanId').textContent='#'+d.id.slice(-8);
 S('pBestScore').textContent='-';
 
-es=new EventSource('/api/scan/'+d.id+'?subscribe');
+if(es)es.close();es=new EventSource('/api/scan/'+d.id+'?subscribe');
 es.onmessage=e=>{
 if(!e.data)return;
 try{
@@ -1531,7 +1531,7 @@ const total=h.results.length;
 html+='<div class="glass-card history-item stagger-enter" data-idx="'+hi+'">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyAllResults('+hi+')">复制</button><button class="btn-text" onclick="deleteHistory('+hi+')">删除</button></div></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
-if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN编号: <strong>AS'+r0.asn+'</strong></span></div>':'')+(r0.asname?'<div class="hm-row-single"><span class="hm">ASN机构: <strong>'+r0.asname+'</strong></span></div>':'')+(tracerouteEnabled?function(){var rl='';var rt=r0.route||'';if(rt.indexOf('Premium')!==-1)rl='精品线路';else rl='普通线路';return '<div class="hm-row-single"><span class="hm">路由线路: <strong class="'+(rt.indexOf('Premium')!==-1?'premium-text':'normal-text')+'">'+rl+'</strong></span></div>';}():'')+'</div>';
+if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN信息: <strong>AS'+r0.asn+(r0.asname?' | '+r0.asname:'')+'</strong></span></div>':'')+(tracerouteEnabled?function(){var rl='';var rt=r0.route||'';if(rt.indexOf('Premium')!==-1)rl='精品线路';else rl='普通线路';return '<div class="hm-row-single"><span class="hm">路由线路: <strong class="'+(rt.indexOf('Premium')!==-1?'premium-text':'normal-text')+'">'+rl+'</strong></span></div>';}():'')+'</div>';
 		if(tracerouteEnabled)html+='<div id="tr_hist_'+hi+'" class="tr-auto"></div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
@@ -1687,20 +1687,20 @@ const tracerouteCache={};
 async function runTracerouteHist(ip,hi){
 const trEl=S('tr_hist_'+hi);
 if(tracerouteCache[ip]){renderTracerouteHist(ip,tracerouteCache[ip],hi);return;}
-if(trEl)trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">追踪中...</span>';
+if(trEl)trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">追踪中...</span>';
 try{
 const r=await fetch('/api/traceroute/'+ip);
 const hops=await r.json();
 tracerouteCache[ip]=hops;
 renderTracerouteHist(ip,hops,hi);
-}catch(e){if(trEl)trEl.innerHTML='<span style="color:var(--danger);font-size:11px">失败</span>';}
+}catch(e){if(trEl)trEl.innerHTML='<span style="color:var(--danger);font-size:12px">失败</span>';}
 }
 
 function renderTracerouteHist(ip,hops,hi){
 const trEl=S('tr_hist_'+hi);
 if(!trEl)return;
-if(!hops||!hops.length){trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">无路由</span>';return;}
-if(hops.length===1&&hops[0].ip==='N/A'){trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">iOS 不支持</span>';return;}
+if(!hops||!hops.length){trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">无路由</span>';return;}
+if(hops.length===1&&hops[0].ip==='N/A'){trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">iOS 不支持</span>';return;}
 function flagEmoji(c){if(!c||c.length!==2)return'';return String.fromCodePoint(c.codePointAt(0)-0x41+0x1F1E6,c.codePointAt(1)-0x41+0x1F1E6)}
 function badge(hh){if(hh.routeType==='Premium')return'<span class="trace-badge premium">'+hh.routeLine+'</span>';if(hh.routeType==='Optimized')return'<span class="trace-badge optimized">'+hh.routeLine+'</span>';return''}
 let html='<div class="trace-wrap">';
@@ -1709,7 +1709,7 @@ if(h.lost)html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span>
 else{
 const flag=flagEmoji(h.countryCode||h.country);
 html+='<div class="trace-row"><span class="trace-hop">'+h.hop+'</span><span class="trace-flag">'+flag+'</span><span class="trace-ip">'+h.ip+'</span><span class="trace-asn">'+(h.asn||'')+'</span><span class="trace-ms">'+(h.ms||'')+'</span>'+badge(h)+'</div>';
-if(h.isp)html+='<div class="trace-row" style="padding-left:36px;font-size:9px;color:var(--muted2)">'+h.isp+(h.city?' · '+h.city:'')+'</div>';
+if(h.isp)html+='<div class="trace-row" style="padding-left:36px;font-size:10px;color:var(--muted2)">'+h.isp+(h.city?' · '+h.city:'')+'</div>';
 }
 });
 html+='</div>';
@@ -1719,19 +1719,19 @@ trEl.innerHTML=html;
 async function checkRouteType(ip,hi){
 const trEl=S('tr_hist_'+hi);
 if(!trEl)return;
-trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">查询中...</span>';
+trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">查询中...</span>';
 try{
 const r=await fetch('/api/route-type/'+ip);
 const data=await r.json();
 if(data&&data.routeType){
 const isPremium=data.routeType==='Premium';
 const label=isPremium?'精品线路':'普通线路';
-trEl.innerHTML='<span style="font-size:11px">路由线路: <strong class="'+(isPremium?'premium-text':'normal-text')+'">'+label+'</strong>'+(data.routeLine?' <span class="trace-badge '+(isPremium?'premium':'optimized')+'">'+data.routeLine+'</span>':'')+'</span>';
+trEl.innerHTML='<span style="font-size:12px">路由线路: <strong class="'+(isPremium?'premium-text':'normal-text')+'">'+label+'</strong>'+(data.routeLine?' <span class="trace-badge '+(isPremium?'premium':'optimized')+'">'+data.routeLine+'</span>':'')+'</span>';
 }else{
-trEl.innerHTML='<span style="color:var(--muted2);font-size:11px">无法识别</span>';
+trEl.innerHTML='<span style="color:var(--muted2);font-size:12px">无法识别</span>';
 }
 }catch(e){
-trEl.innerHTML='<span style="color:var(--danger);font-size:11px">查询失败</span>';
+trEl.innerHTML='<span style="color:var(--danger);font-size:12px">查询失败</span>';
 }
 }
 
@@ -1762,7 +1762,8 @@ S('cidrs').value=existing+(existing?'\n':'')+lines.join('\n');
 updateCidrCount();
 showToast('已导入 '+lines.length+' 条');
 };
-reader.readAsText(file);
+	reader.onerror=()=>{showToast('文件读取失败');};
+	reader.readAsText(file);
 e.target.value='';
 }
 function pasteCidr(){

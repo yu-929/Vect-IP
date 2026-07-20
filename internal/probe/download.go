@@ -132,6 +132,7 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 
 	out.Status = resp.StatusCode
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		io.Copy(io.Discard, resp.Body)
 		out.Error = fmt.Sprintf("http_status_%d", resp.StatusCode)
 		out.TotalMS = time.Since(start).Milliseconds()
 		return out

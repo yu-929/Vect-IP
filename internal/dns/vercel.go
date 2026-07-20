@@ -10,6 +10,7 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
+	"time"
 )
 
 const vercelAPIBase = "https://api.vercel.com"
@@ -28,7 +29,7 @@ func NewVercelProvider(token, domain, teamID string) *VercelProvider {
 		token:  token,
 		domain: domain,
 		teamID: teamID,
-		client: &http.Client{},
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -148,7 +149,35 @@ func (p *VercelProvider) listRecords(ctx context.Context) ([]vercelDNSRecord, er
 		return nil, fmt.Errorf("parse response: %w", err)
 	}
 
-	return result.Records, nil
+	allRecords := make([]vercelDNSRecord, 0, len(result.Records))
+	allRecords = append(allRecords, result.Records...)
+
+	next := result.Pagination.Next
+	for next != "" {
+		reqURL := p.buildURL(fmt.Sprintf("/v4/domains/%s/records?until=%s", url.PathEscape(p.domain), url.QueryEscape(next)))
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+p.token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := p.client.Do(req)
+		if err != nil {
+			return allRecords, nil
+		}
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return allRecords, nil
+		}
+		if err := json.Unmarshal(body, &result); err != nil {
+			return allRecords, nil
+		}
+		allRecords = append(allRecords, result.Records...)
+		next = result.Pagination.Next
+	}
+
+	return allRecords, nil
 }
 
 func (p *VercelProvider) deleteRecord(ctx context.Context, recordID string) error {

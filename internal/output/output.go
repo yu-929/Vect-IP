@@ -26,7 +26,9 @@ func WriteJSONL(w io.Writer, rows []engine.TopResult) error {
 // WriteCSV writes results as CSV format.
 func WriteCSV(w io.Writer, rows []engine.TopResult) error {
 	cw := csv.NewWriter(w)
-	defer cw.Flush()
+	defer func() {
+		cw.Flush()
+	}()
 
 	header := []string{
 		"rank", "ip", "prefix",
@@ -72,15 +74,15 @@ func WriteCSV(w io.Writer, rows []engine.TopResult) error {
 			return err
 		}
 	}
-	cw.Flush()
-	return cw.Error()
+	return nil
 }
 
 // WriteText writes results as human-readable text format.
 func WriteText(w io.Writer, rows []engine.TopResult) error {
-	// Ensure stable output
-	sort.SliceStable(rows, func(i, j int) bool { return rows[i].ScoreMS < rows[j].ScoreMS })
-	for i, r := range rows {
+	sorted := make([]engine.TopResult, len(rows))
+	copy(sorted, rows)
+	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].ScoreMS < sorted[j].ScoreMS })
+	for i, r := range sorted {
 		colo := ""
 		if r.Trace != nil {
 			colo = r.Trace["colo"]

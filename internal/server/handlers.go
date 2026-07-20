@@ -90,13 +90,14 @@ type ProgressData struct {
 }
 
 type ScanSession struct {
-	mu       sync.RWMutex
-	status   string
-	progress ProgressData
-	result   []engine.TopResult
-	err      string
-	cancel   context.CancelFunc
-	subs     []chan ProgressData
+	mu         sync.RWMutex
+	status     string
+	progress   ProgressData
+	result     []engine.TopResult
+	err        string
+	cancel     context.CancelFunc
+	subs       []chan ProgressData
+	finishedAt time.Time
 }
 
 var (
@@ -108,6 +109,28 @@ var (
 func newScanID() string {
 	id := atomic.AddInt64(&nextID, 1)
 	return fmt.Sprintf("%x", time.Now().UnixNano()) + fmt.Sprintf("%04x", id)
+}
+
+func init() {
+	go sessionCleanupLoop()
+}
+
+func sessionCleanupLoop() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		scansMu.Lock()
+		for id, s := range scans {
+			s.mu.RLock()
+			terminal := s.status == "completed" || s.status == "failed" || s.status == "cancelled"
+			expired := !s.finishedAt.IsZero() && time.Since(s.finishedAt) > 5*time.Minute
+			s.mu.RUnlock()
+			if terminal && expired {
+				delete(scans, id)
+			}
+		}
+		scansMu.Unlock()
+	}
 }
 
 func sendProgress(progress ProgressData, subs []chan ProgressData) {
@@ -141,8 +164,14 @@ func loadHistoryFromFile() []interface{} {
 }
 
 func saveHistoryToFile(entries []interface{}) {
-	b, _ := json.Marshal(entries)
-	os.WriteFile(historyFilePath(), b, 0644)
+	b, err := json.Marshal(entries)
+	if err != nil {
+		log.Printf("history marshal error: %v", err)
+		return
+	}
+	if err := os.WriteFile(historyFilePath(), b, 0644); err != nil {
+		log.Printf("history write error: %v", err)
+	}
 }
 
 func handleHistoryList(w http.ResponseWriter, r *http.Request) {
@@ -365,6 +394,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 
 		session.mu.Lock()
 		if err != nil {
+			session.finishedAt = time.Now()
 			session.status = "failed"
 			session.err = err.Error()
 		} else {
@@ -475,7 +505,8 @@ dlBytes := req.DownloadBytes
 							successCount++
 						}
 						inFlight--
-						// Send download progress
+						mu.Unlock()
+						session.mu.Lock()
 						session.progress.Stage = 5
 						session.progress.Completed = successCount
 						session.progress.Budget = dlTop
@@ -484,7 +515,7 @@ dlBytes := req.DownloadBytes
 						localProgress := session.progress
 						dlSubs := make([]chan ProgressData, len(session.subs))
 						copy(dlSubs, session.subs)
-						mu.Unlock()
+						session.mu.Unlock()
 						sendProgress(localProgress, dlSubs)
 					}
 				}()
@@ -509,6 +540,7 @@ dlBytes := req.DownloadBytes
 		sort.SliceStable(session.result, func(i, j int) bool {
 			return compositeScore(&session.result[i]) < compositeScore(&session.result[j])
 		})
+		session.finishedAt = time.Now()
 		session.status = "completed"
 		session.mu.Unlock()
 
@@ -660,6 +692,7 @@ func handleCancel(w http.ResponseWriter, r *http.Request) {
 	session.mu.Lock()
 	if session.status == "running" {
 		session.cancel()
+		session.finishedAt = time.Now()
 		session.status = "cancelled"
 	}
 	session.mu.Unlock()
@@ -698,6 +731,11 @@ func resolveASN(asn int, ipVersion int) ([]string, error) {
 		return nil, fmt.Errorf("RIPE API: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("RIPE API status %d: %s", resp.StatusCode, string(body))
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -801,7 +839,13 @@ func initPrefixDB() {
 }
 
 func classifyByPrefix(ip net.IP) (routeType, routeLine string) {
-	for asn, nets := range prefixDB {
+	keys := make([]int, 0, len(prefixDB))
+	for asn := range prefixDB {
+		keys = append(keys, asn)
+	}
+	sort.Ints(keys)
+	for _, asn := range keys {
+		nets := prefixDB[asn]
 		for _, n := range nets {
 			if n.Contains(ip) {
 				if line, ok := premiumASNs[asn]; ok {
@@ -932,10 +976,12 @@ func batchClassifyRoutes(ctx context.Context, ips []string) map[string]*RouteInf
 		parsed := net.ParseIP(ip)
 		if parsed != nil {
 			if rt, rl := classifyByPrefix(parsed); rt != "" {
+				mu.Lock()
 				results[ip] = &RouteInfo{
 					RouteType: rt,
 					RouteLine: rl,
 				}
+				mu.Unlock()
 				continue
 			}
 		}
