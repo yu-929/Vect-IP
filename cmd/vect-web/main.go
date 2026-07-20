@@ -545,6 +545,7 @@ go func() {
 			session.err = err.Error()
 		} else {
 			session.result = resp.Top
+			log.Printf("handleScan: resp.Top count=%d", len(resp.Top))
 		}
 		// Filter out results with latency >= 6000ms
 		filtered := make([]engine.TopResult, 0, len(session.result))

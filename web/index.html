@@ -791,23 +791,25 @@ var kb=window.visualViewport.height<window.innerHeight*0.6;
 bar.style.display=kb?'none':'';
 });
 }
+if('ontouchstart' in window||navigator.maxTouchPoints>0){
 document.addEventListener('focusin',function(e){
-var t=e.target;
-if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
-var bar=document.querySelector('.tab-bar');
-if(bar)bar.style.display='none';
-}
+	var t=e.target;
+	if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
+		var bar=document.querySelector('.tab-bar');
+		if(bar)bar.style.display='none';
+	}
 });
 document.addEventListener('focusout',function(e){
-var t=e.target;
-if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
-setTimeout(function(){
-if(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA'||document.activeElement.tagName==='SELECT'))return;
-var bar=document.querySelector('.tab-bar');
-if(bar)bar.style.display='';
-},200);
-}
+	var t=e.target;
+	if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
+		setTimeout(function(){
+			if(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA'||document.activeElement.tagName==='SELECT'))return;
+			var bar=document.querySelector('.tab-bar');
+			if(bar)bar.style.display='';
+		},200);
+	}
 });
+}
 const stageConfig=[
 {id:'s1',total:1,label:'网段解析'},
 {id:'s2',total:1,label:'IP抽样'},
@@ -1420,12 +1422,15 @@ x.send(JSON.stringify(h));
 }
 
 async function renderResults(r){
+	console.log('renderResults called: r=',r);
 	results=r;
 	if(!r||!r.length)return;
 	const valid=r.filter(x=>x.score_ms<6000);
 	if(!valid.length)return;
+	console.log('renderResults: total='+r.length+' valid='+valid.length+' ips='+valid.map(x=>x.ip).join(',')+' score_ms='+valid.map(x=>x.score_ms).join(','));
 	const seen=new Set();
 	const deduped=valid.filter(x=>{if(seen.has(x.ip))return false;seen.add(x.ip);return true;});
+	console.log('renderResults: deduped='+deduped.length+' ips='+deduped.map(x=>x.ip).join(','));
 	deduped.sort((a,b)=>{
 		if(a.download_ok&&!b.download_ok)return -1;
 		if(!a.download_ok&&b.download_ok)return 1;

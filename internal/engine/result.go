@@ -2,6 +2,7 @@ package engine
 
 import (
 	"container/heap"
+	"log"
 	"net/netip"
 	"sync"
 )
@@ -115,19 +116,34 @@ func (c *TopNCollector) Consider(r TopResult) {
 
 	// Check for duplicate IP
 	if idx, exists := c.ipSeen[r.IP]; exists {
+		log.Printf("Consider: DUPLICATE ip=%s exists=%t idx=%d heap.len=%d", r.IP.String(), exists, idx, c.heap.Len())
 		// Only update if new score is better
 		if r.ScoreMS < c.heap.items[idx].ScoreMS {
 			c.heap.items[idx] = r
 			heap.Fix(c.heap, idx)
-			c.ipSeen[r.IP] = idx
+			// After heap.Fix, find the new correct index
+			for i, item := range c.heap.items {
+				if item.IP == r.IP {
+					c.ipSeen[r.IP] = i
+					break
+				}
+			}
 		}
 		return
 	}
 
+	log.Printf("Consider: NEW ip=%s score=%.0f heap.len=%d", r.IP.String(), r.ScoreMS, c.heap.Len())
+
 	// If heap is not full, just add
 	if c.heap.Len() < c.n {
 		heap.Push(c.heap, r)
-		c.ipSeen[r.IP] = len(c.heap.items) - 1
+		// After heap.Push, find the correct index (heap.Up may have moved it)
+		for i, item := range c.heap.items {
+			if item.IP == r.IP {
+				c.ipSeen[r.IP] = i
+				break
+			}
+		}
 		return
 	}
 
@@ -139,7 +155,13 @@ func (c *TopNCollector) Consider(r TopResult) {
 
 		// Add the new one
 		heap.Push(c.heap, r)
-		c.ipSeen[r.IP] = len(c.heap.items) - 1
+		// After heap.Push, find the correct index
+		for i, item := range c.heap.items {
+			if item.IP == r.IP {
+				c.ipSeen[r.IP] = i
+				break
+			}
+		}
 	}
 }
 
@@ -166,6 +188,8 @@ func (c *TopNCollector) Best() TopResult {
 func (c *TopNCollector) Snapshot() []TopResult {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	log.Printf("Snapshot: heap.len=%d ipSeen.size=%d", c.heap.Len(), len(c.ipSeen))
 
 	result := make([]TopResult, len(c.heap.items))
 	copy(result, c.heap.items)
