@@ -47,10 +47,7 @@ jobs:
         run: ./generate-icons.sh
 
       - name: Build Windows Desktop
-        run: |
-          go install github.com/akavel/rsrc@latest
-          cd windows && rsrc -ico app.ico -o rsrc.syso && cd ..
-          GOOS=windows GOARCH=amd64 go build -o build/Vect.exe -ldflags="-s -w" ./windows/
+        run: GOOS=windows GOARCH=amd64 go build -o build/Vect.exe -ldflags="-s -w" ./windows/
 
       - uses: actions/upload-artifact@v4
         with:
