@@ -204,7 +204,7 @@ jobs:
           cat /tmp/release-body.md
 
       - name: 列出产物
-        run: ls -la *.exe *.apk *.ipa vect-* 2>/dev/null || true
+        run: ls -laR . || true
 
       - name: 创建 Release
         run: |
@@ -221,7 +221,6 @@ jobs:
             echo "Release $TAG 已存在 (ID: $EXISTING)，删除后重建"
             curl -s -X DELETE -H "Authorization: token ${{ github.token }}" \
               "https://api.github.com/repos/${{ github.repository }}/releases/$EXISTING"
-            # 删除 tag
             curl -s -X DELETE -H "Authorization: token ${{ github.token }}" \
               "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$TAG" || true
           fi
@@ -231,17 +230,26 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"tag_name\":\"$TAG\",\"name\":\"Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')\",\"body\":$BODY,\"target_commitish\":\"${{ github.sha }}\",\"draft\":false,\"prerelease\":false}" \
             "https://api.github.com/repos/${{ github.repository }}/releases")
+          echo "创建 Release 响应: $RESP" | head -5
           RELEASE_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
           echo "Release ID: $RELEASE_ID"
+
+          if [ -z "$RELEASE_ID" ]; then
+            echo "创建 Release 失败"
+            exit 1
+          fi
 
           # 上传产物
           for f in vect-* Vect.exe Vect.apk VectApp.ipa; do
             if [ -f "$f" ]; then
-              echo "Uploading $f..."
-              curl -s -X POST -H "Authorization: token ${{ github.token }}" \
+              echo "Uploading $f ($(stat -c%s "$f") bytes)..."
+              UPLOAD_RESP=$(curl -s -X POST -H "Authorization: token ${{ github.token }}" \
                 -H "Content-Type: application/octet-stream" \
                 "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$f" \
-                --data-binary "@$f" > /dev/null
+                --data-binary "@$f")
+              echo "Upload response: $UPLOAD_RESP" | head -3
+            else
+              echo "File not found: $f"
             fi
           done
           echo "Release $TAG 完成"
