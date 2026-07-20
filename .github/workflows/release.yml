@@ -208,11 +208,40 @@ jobs:
 
       - name: 创建 Release
         run: |
-          gh release delete v$(cat VERSION) --yes --repo ${{ github.repository }} 2>/dev/null || true
-          gh release create v$(cat VERSION) \
-            --title "Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')" \
-            --notes-file /tmp/release-body.md \
-            --target ${{ github.sha }} \
-            vect-* Vect.exe Vect.apk VectApp.ipa
-        env:
-          GH_TOKEN: ${{ github.token }}
+          set -e
+          TAG="v$(cat VERSION)"
+          BODY=$(cat /tmp/release-body.md | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
+
+          # 检查 Release 是否存在
+          EXISTING=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING" ]; then
+            echo "Release $TAG 已存在 (ID: $EXISTING)，删除后重建"
+            curl -s -X DELETE -H "Authorization: token ${{ github.token }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$EXISTING"
+            # 删除 tag
+            curl -s -X DELETE -H "Authorization: token ${{ github.token }}" \
+              "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$TAG" || true
+          fi
+
+          # 创建 Release
+          RESP=$(curl -s -X POST -H "Authorization: token ${{ github.token }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"$TAG\",\"name\":\"Vect v$(cat VERSION) - $(TZ='Asia/Shanghai' date '+%Y-%m-%d')\",\"body\":$BODY,\"target_commitish\":\"${{ github.sha }}\",\"draft\":false,\"prerelease\":false}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases")
+          RELEASE_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
+          echo "Release ID: $RELEASE_ID"
+
+          # 上传产物
+          for f in vect-* Vect.exe Vect.apk VectApp.ipa; do
+            if [ -f "$f" ]; then
+              echo "Uploading $f..."
+              curl -s -X POST -H "Authorization: token ${{ github.token }}" \
+                -H "Content-Type: application/octet-stream" \
+                "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$f" \
+                --data-binary "@$f" > /dev/null
+            fi
+          done
+          echo "Release $TAG 完成"
