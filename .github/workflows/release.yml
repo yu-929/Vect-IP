@@ -171,14 +171,14 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      - uses: actions/download-artifact@v3
-        with: { name: cli-desktop }
+      - uses: actions/download-artifact@v4
+        with: { name: cli-desktop, path: build }
 
-      - uses: actions/download-artifact@v3
-        with: { name: apk }
+      - uses: actions/download-artifact@v4
+        with: { name: apk, path: build }
 
-      - uses: actions/download-artifact@v3
-        with: { name: ipa }
+      - uses: actions/download-artifact@v4
+        with: { name: ipa, path: build }
 
       - name: 读取版本号
         id: ver
@@ -204,7 +204,7 @@ jobs:
           cat /tmp/release-body.md
 
       - name: 列出产物
-        run: find . -type f -name "vect-*" -o -name "Vect*" -o -name "*.apk" -o -name "*.ipa" 2>/dev/null | sort || true
+        run: find build -type f 2>/dev/null | sort || true
 
       - name: 创建 Release
         run: |
@@ -240,7 +240,7 @@ jobs:
           fi
 
           # 上传产物
-          find . -type f -name "vect-*" -o -name "Vect*" -o -name "*.apk" -o -name "*.ipa" 2>/dev/null | while read f; do
+          find build -type f 2>/dev/null | while read f; do
             fname=$(basename "$f")
             fsize=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null)
             echo "Uploading $f ($fsize bytes)..."
