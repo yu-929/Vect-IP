@@ -17,7 +17,7 @@ func main() {
 	defer func() {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("PANIC: %v\n", r)
-			log.Printf(msg)
+			log.Print(msg)
 			os.WriteFile("C:\\Users\\Public\\vect_debug.log", []byte(msg), 0644)
 		}
 	}()
@@ -36,7 +36,7 @@ func main() {
 		defer func() {
 			if r := recover(); r != nil {
 				msg := fmt.Sprintf("server goroutine PANIC: %v\n", r)
-				log.Printf(msg)
+				log.Print(msg)
 				os.WriteFile("C:\\Users\\Public\\vect_debug.log", []byte(msg), 0644)
 			}
 		}()
