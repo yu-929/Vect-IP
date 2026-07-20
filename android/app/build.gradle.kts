@@ -11,8 +11,8 @@ android {
         applicationId = "com.vect.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 13400
-        versionName = "1.34"
+        versionCode = 13500
+        versionName = "1.35"
     }
 
     signingConfigs {
