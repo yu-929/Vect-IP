@@ -172,13 +172,13 @@ jobs:
         with: { fetch-depth: 0 }
 
       - uses: actions/download-artifact@v4
-        with: { name: cli-desktop, path: build/cli-desktop }
+        with: { name: cli-desktop }
 
       - uses: actions/download-artifact@v4
-        with: { name: apk, path: build/apk }
+        with: { name: apk }
 
       - uses: actions/download-artifact@v4
-        with: { name: ipa, path: build/ipa }
+        with: { name: ipa }
 
       - name: 读取版本号
         id: ver
@@ -204,7 +204,7 @@ jobs:
           cat /tmp/release-body.md
 
       - name: 列出产物
-        run: find build/ -type f | sort
+        run: ls -la *.exe *.apk *.ipa vect-* 2>/dev/null || true
 
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
@@ -212,6 +212,10 @@ jobs:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: ${{ steps.title.outputs.title }}
           body_path: /tmp/release-body.md
-          files: build/**
+          files: |
+            vect-*
+            Vect.exe
+            Vect.apk
+            VectApp.ipa
           draft: false
           prerelease: false
