@@ -2,7 +2,7 @@ name: Build IPA
 on:
   push:
     branches: [main]
-    paths: ['ios/**', 'internal/**', 'cmd/**', 'web/**', 'logo/**', '.github/workflows/**', 'go.mod', 'go.sum']
+    paths: ['ios/**', 'internal/**', 'cmd/**', 'web/**', 'logo/**', 'windows/**', '.github/workflows/**', 'go.mod', 'go.sum']
   release:
     types: [created]
   workflow_dispatch:

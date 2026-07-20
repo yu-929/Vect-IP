@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    paths: ['internal/**', 'cmd/**', 'web/**', 'logo/**', 'android/**', 'ios/**', '.github/workflows/**', 'go.mod', 'go.sum', 'VERSION']
+    paths: ['internal/**', 'cmd/**', 'web/**', 'logo/**', 'android/**', 'ios/**', 'windows/**', '.github/workflows/**', 'go.mod', 'go.sum', 'VERSION']
   workflow_dispatch:
 
 permissions:
