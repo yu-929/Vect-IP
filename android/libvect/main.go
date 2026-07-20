@@ -17,7 +17,7 @@ func main() {
 	log.Println("GOOS=android GOARCH=arm64")
 	log.Println("Creating server...")
 
-	srv := server.SetupServer(8080, web.FS, "http://127.0.0.1:8091")
+	srv := server.SetupServer(8080, web.FS)
 
 	log.Printf("Server configured, listening on %s", srv.Addr)
 	log.Println("Calling ListenAndServe...")

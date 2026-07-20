@@ -24,7 +24,7 @@ func main() {
 	fmt.Println("Starting server on http://127.0.0.1:8080")
 	fmt.Println()
 
-	srv := server.SetupServer(8080, web.FS, "")
+	srv := server.SetupServer(8080, web.FS)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
