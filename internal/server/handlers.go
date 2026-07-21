@@ -470,6 +470,17 @@ dlBytes := req.DownloadBytes
 				workCh       = make(chan int, dlTop)
 			)
 
+			// Notify frontend immediately that download stage has started
+			session.mu.Lock()
+			session.progress.Stage = 5
+			session.progress.Completed = 0
+			session.progress.Budget = dlTop
+			initP := session.progress
+			dlSubs := make([]chan ProgressData, len(session.subs))
+			copy(dlSubs, session.subs)
+			session.mu.Unlock()
+			sendProgress(initP, dlSubs)
+
 			isSequential := req.DownloadMode == "sequential"
 
 			// Start workers
