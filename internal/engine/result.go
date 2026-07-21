@@ -198,9 +198,3 @@ func (c *TopNCollector) Len() int {
 	defer c.mu.Unlock()
 	return c.heap.Len()
 }
-
-// ConvertToSearchTopResults converts engine.TopResult to search.TopResult format
-// for backward compatibility with existing output module.
-func ConvertToSearchTopResults(results []TopResult) []TopResult {
-	return results
-}

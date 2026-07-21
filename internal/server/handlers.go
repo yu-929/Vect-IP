@@ -474,7 +474,6 @@ dlBytes := req.DownloadBytes
 			for w := 0; w < dlConc; w++ {
 				wg.Add(1)
 go func() {
-		defer cancel()
 					defer wg.Done()
 					for idx := range workCh {
 						mu.Lock()
