@@ -791,9 +791,18 @@ document.addEventListener('focusout',function(e){
 }
 
 // Double-tap bottom tab bar to scroll to top
-document.querySelector('.tab-bar').addEventListener('dblclick',function(){
-	window.scrollTo({top:0,behavior:'smooth'});
-});
+(function(){
+	var lastTap = 0;
+	document.querySelector('.tab-bar').addEventListener('click', function(e){
+		var now = Date.now();
+		if(now - lastTap < 400){
+			window.scrollTo({top:0,behavior:'smooth'});
+			lastTap = 0;
+		} else {
+			lastTap = now;
+		}
+	});
+})();
 
 const stageConfig=[
 {id:'s1',total:1,label:'网段解析'},
