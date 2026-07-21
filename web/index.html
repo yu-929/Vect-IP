@@ -50,11 +50,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .tab-content.active{display:block}
 
 /* ===== Bottom TabBar ===== */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--tabbar-bg);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);border-top:0.5px solid var(--tabbar-border);padding:4pt 14pt;padding-bottom:calc(env(safe-area-inset-bottom) + 4pt);display:flex;justify-content:space-around;align-items:flex-start}
-.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:1pt;border:none;background:transparent;color:var(--secondary);cursor:pointer;padding:3pt 0;font-family:inherit;transition:transform .12s ease-out,color .15s ease;-webkit-tap-highlight-color:transparent}
+.tab-bar{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 10pt);left:50%;transform:translateX(-50%);z-index:100;background:var(--tabbar-bg);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);border:0.5px solid var(--tabbar-border);padding:4pt 6pt;display:flex;justify-content:space-around;align-items:center;border-radius:28pt;box-shadow:0 4px 24px rgba(0,0,0,0.08);gap:2pt;min-width:200pt}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:1pt;border:none;background:transparent;color:var(--secondary);cursor:pointer;padding:5pt 10pt;font-family:inherit;transition:transform .12s ease-out,color .15s ease,background .2s ease;-webkit-tap-highlight-color:transparent;border-radius:22pt;white-space:nowrap}
 .tab-item.active,.tab-item:active{color:var(--primary)}
+.tab-item.active{background:var(--input-bg)}
 .tab-item:active{transform:scale(0.93)}
-.tab-item svg{width:20pt;height:20pt;display:block;transition:transform .12s ease-out}
+.tab-item svg{width:18pt;height:18pt;display:block;transition:transform .12s ease-out}
 .tab-item:active svg{transform:scale(0.93)}
 .tab-item .tab-label{font-size:10px;font-weight:500;letter-spacing:0.2px}
 .tab-item.active .tab-label{color:var(--primary)}
