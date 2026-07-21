@@ -98,12 +98,12 @@ func DefaultConfig() Config {
 		Beam:            32,
 		SplitStepV4:     2,
 		SplitStepV6:     4,
-		MinSamplesSplit: 5, // Lower threshold for faster drill-down
+		MinSamplesSplit: 5,
 		MaxBitsV4:       24,
 		MaxBitsV6:       56,
 		Seed:            0,
 		Verbose:         false,
-		SplitInterval:   20, // Check more frequently
+		SplitInterval:   20,
 		DiversityWeight: 0.3,
 	}
 }

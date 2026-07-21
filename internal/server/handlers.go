@@ -29,36 +29,36 @@ import (
 )
 
 type ScanRequest struct {
-	CIDRs           []string `json:"cidrs"`
-	ASN             int      `json:"asn"`
-	Budget          int      `json:"budget"`
-	Concurrency     int      `json:"concurrency"`
-	Heads           int      `json:"heads"`
-	Beam            int      `json:"beam"`
-	Timeout         string   `json:"timeout"`
-	Host            string   `json:"host"`
-	Path            string   `json:"path"`
-	Rounds          int      `json:"rounds"`
-	SkipFirst       int      `json:"skipFirst"`
-	DownloadTop     int      `json:"downloadTop"`
-	DownloadMode    string   `json:"downloadMode"`
-	ColoAllow       string   `json:"coloAllow"`
-	ColoExclude     string   `json:"coloExclude"`
-	SplitStepV4     int      `json:"splitStepV4"`
-	SplitStepV6     int      `json:"splitStepV6"`
-	DiversityWeight float64  `json:"diversityWeight"`
-	SplitInterval       int      `json:"splitInterval"`
-	MinSamplesSplit     int      `json:"minSamplesSplit"`
-	MaxBitsV4           int      `json:"maxBitsV4"`
-	MaxBitsV6           int      `json:"maxBitsV6"`
-	Seed                int64    `json:"seed"`
-	IPVersion       int      `json:"ipVersion"`
-	TopN                int      `json:"topN"`
-DownloadBytes   int64    `json:"downloadBytes"`
-	DownloadTimeout int      `json:"downloadTimeout"`
-	DownloadConcurrency int  `json:"downloadConcurrency"`
-	CustomDownloadURL   string `json:"customDownloadUrl"`
-	CustomDownloadEnabled bool `json:"customDownloadEnabled"`
+	CIDRs                []string `json:"cidrs"`
+	ASN                  int      `json:"asn"`
+	Budget               int      `json:"budget"`
+	Concurrency          int      `json:"concurrency"`
+	Heads                int      `json:"heads"`
+	Beam                 int      `json:"beam"`
+	Timeout              string   `json:"timeout"`
+	Host                 string   `json:"host"`
+	Path                 string   `json:"path"`
+	Rounds               int      `json:"rounds"`
+	SkipFirst            int      `json:"skipFirst"`
+	DownloadTop          int      `json:"downloadTop"`
+	DownloadMode         string   `json:"downloadMode"`
+	ColoAllow            string   `json:"coloAllow"`
+	ColoExclude          string   `json:"coloExclude"`
+	SplitStepV4          int      `json:"splitStepV4"`
+	SplitStepV6          int      `json:"splitStepV6"`
+	DiversityWeight      float64  `json:"diversityWeight"`
+	SplitInterval        int      `json:"splitInterval"`
+	MinSamplesSplit      int      `json:"minSamplesSplit"`
+	MaxBitsV4            int      `json:"maxBitsV4"`
+	MaxBitsV6            int      `json:"maxBitsV6"`
+	Seed                 int64    `json:"seed"`
+	IPVersion            int      `json:"ipVersion"`
+	TopN                 int      `json:"topN"`
+	DownloadBytes        int64    `json:"downloadBytes"`
+	DownloadTimeout      int      `json:"downloadTimeout"`
+	DownloadConcurrency  int      `json:"downloadConcurrency"`
+	CustomDownloadURL    string   `json:"customDownloadUrl"`
+	CustomDownloadEnabled bool    `json:"customDownloadEnabled"`
 }
 
 type ScanStatus struct {
@@ -203,6 +203,7 @@ func SetupServer(port int, webFS fs.FS) *http.Server {
 	mux.HandleFunc("/api/history/list", handleHistoryList)
 	mux.HandleFunc("/api/github-upload", handleGitHubUpload)
 	mux.HandleFunc("/api/resolve-domain", handleResolveDomain)
+	mux.HandleFunc("/api/route-info", handleRouteInfo)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
@@ -472,7 +473,8 @@ dlBytes := req.DownloadBytes
 			// Start workers
 			for w := 0; w < dlConc; w++ {
 				wg.Add(1)
-				go func() {
+go func() {
+		defer cancel()
 					defer wg.Done()
 					for idx := range workCh {
 						mu.Lock()
@@ -577,14 +579,15 @@ func handleScanByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.mu.RLock()
+	prog := session.progress
 	status := ScanStatus{
 		ID:       id,
 		Status:   session.status,
-		Progress: &session.progress,
+		Progress: &prog,
 		Error:    session.err,
 	}
 	if session.status == "completed" {
-		status.Result = session.result
+		status.Result = append([]engine.TopResult(nil), session.result...)
 	}
 	session.mu.RUnlock()
 
@@ -688,6 +691,38 @@ func handleResolveASN(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"asn":   asn,
 		"cidrs": cidrs,
+	})
+}
+
+func handleRouteInfo(w http.ResponseWriter, r *http.Request) {
+	ip := r.URL.Query().Get("ip")
+	if ip == "" {
+		http.Error(w, "missing ip parameter", 400)
+		return
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=as,asname")
+	if err != nil {
+		http.Error(w, "lookup failed", 500)
+		return
+	}
+	defer resp.Body.Close()
+	var data struct {
+		AS     string `json:"as"`
+		ASName string `json:"asname"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		http.Error(w, "parse failed", 500)
+		return
+	}
+	asn := 0
+	if n, err := fmt.Sscanf(data.AS, "AS%d", &asn); err != nil || n != 1 {
+		asn = 0
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"asn":     asn,
+		"asname":  data.ASName,
 	})
 }
 

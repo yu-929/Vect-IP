@@ -299,6 +299,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
   button:active,:active{transform:none!important}
   .stagger-enter.enter{transition:none!important}
   .tab-content.active{transition:none!important}
+}
 @media (prefers-reduced-transparency: reduce){
   .glass-card,.top-nav,.tab-bar,.toast,.error-box,.segmented{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--glass-bg)!important}
   [data-theme="dark"] .glass-card,[data-theme="dark"] .top-nav,[data-theme="dark"] .tab-bar{background:rgba(30,34,44,0.95)!important}
@@ -339,10 +340,8 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 
-<div style="border-top:0.5px solid var(--glass-border);margin:14pt 0"></div>
-
 <!-- Scan Config -->
-<div class="glass-card material-thick">
+<div class="glass-card material-thick scan-config">
 <div class="card-title">扫描配置</div>
 <div style="border-top:0.5px solid var(--glass-border);margin:10pt 0 10pt 0"></div>
 <div class="segmented">
@@ -352,7 +351,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div id="presetRow" style="display:none;margin-top:8pt;align-items:center;justify-content:space-between;min-height:32pt">
 <span style="font-size:13px;color:var(--secondary);font-weight:500;flex-shrink:0">预设网段</span>
 <div style="position:relative;flex:1;margin-left:8pt;max-width:60%">
-<div id="presetTrigger" onclick="toggleCidrMenu()" style="width:100%;padding:6pt 26pt 6pt 14pt;border:0.5px solid var(--glass-border);border-radius:10pt;color:var(--text);font-size:13px;font-weight:500;font-family:inherit;background:transparent;cursor:pointer;box-sizing:border-box;letter-spacing:-0.1px;transition:border-color .2s ease,color .2s ease;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center"><span id="presetLabel">请选择</span><span style="position:absolute;right:8pt;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:10px">▼</span></div>
+<div id="presetTrigger" onclick="toggleCidrMenu()" style="width:100%;padding:6pt 26pt 6pt 14pt;border:0.5px solid var(--glass-border);border-radius:10pt;color:var(--text);font-size:13px;font-weight:500;font-family:inherit;background:transparent;cursor:pointer;box-sizing:border-box;letter-spacing:-0.1px;transition:border-color .2s ease,color .2s ease;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center"><span id="presetLabel">请选择</span><span style="position:absolute;right:8pt;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:10px">&#9660;</span></div>
 <div id="presetMenu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--glass-bg);border:0.5px solid var(--glass-border);border-radius:10pt;margin-top:3pt;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12)">
 <div class="pm-opt" onclick="selectCidrPreset('official-v4','官方列表 IPv4')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv4</div>
 <div class="pm-opt" onclick="selectCidrPreset('official-v6','官方列表 IPv6')" style="padding:8pt 12pt;font-size:13px;color:var(--text);cursor:pointer;text-align:center;border-bottom:0.5px solid var(--glass-border)">官方列表 IPv6</div>
@@ -366,7 +365,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 </div>
-
 <div class="section">
 <div class="field">
 <label>CIDR 网段 | 单行单条</label>
@@ -990,10 +988,10 @@ switchTab('scan');
 showToast('已应用预设');
 }
 
-// Segmented buttons
-document.querySelectorAll('.seg-btn').forEach(b=>{
+// Scan config preset buttons only
+document.querySelectorAll('.scan-config .seg-btn').forEach(b=>{
 	b.addEventListener('click',()=>{
-		document.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
+		document.querySelectorAll('.scan-config .seg-btn').forEach(x=>x.classList.remove('active'));
 		b.classList.add('active');
 		if(b.dataset.budget) S('budget').value=b.dataset.budget;
 		if(b.dataset.concurrency) S('concurrency').value=b.dataset.concurrency;
@@ -1112,7 +1110,7 @@ const body={cidrs:normalizeCidrs(S('cidrs').value.split('\n')),asn:parseInt(asn)
 budget:parseInt(S('budget').value)||2000,concurrency:parseInt(S('concurrency').value)||200,
 downloadTop:parseInt(S('downloadTop').value)||0,downloadMode:S('downloadMode').value,
 topN:parseInt(S('topN').value)||20,
-	coloAllow:coloMode==='allow'?S('coloInput').value:coloMode==='allow'?S('coloInput').value:'',
+	coloAllow:coloMode==='allow'?S('coloInput').value:'',
 	coloExclude:coloMode==='exclude'?S('coloInput').value:'',
 ipVersion:parseInt(S('ipVersion').value)||4,
 downloadBytes:parseInt(S('downloadBytes').value)*1000*1000||0,
@@ -1240,7 +1238,7 @@ S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textCon
 }
 if(stage===5){
 		S('stage5Item').style.display='';
-		S('s5Fill').style.width='100%';
+		S('s5Fill').style.width=(budget>0?Math.min(done/budget*100,100):0)+'%';
 		S('s5Count').textContent=done+'/'+budget;
 		if(!polling&&!scanDone)S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
 	}
@@ -1473,7 +1471,7 @@ const total=h.results.length;
 html+='<div class="glass-card history-item stagger-enter" data-idx="'+hi+'">';
 html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyAllResults('+hi+')">复制</button><button class="btn-text" onclick="deleteHistory('+hi+')">删除</button></div></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
-if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter!==undefined?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN信息: <strong>AS'+r0.asn+(r0.asname?' | '+r0.asname:'')+'</strong></span></div>':'')+'</div>';
+if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter>0?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?r0.dlPeakMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN信息: <strong>AS'+r0.asn+(r0.asname?' | '+r0.asname:'')+'</strong></span></div>':'')+'</div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
 '<button class="seg-btn" onclick="toggleHistoryExpand('+hi+')" id="expandBtn_'+hi+'"><span>展开全部 | '+total+'</span></button>'+
 '<button class="seg-btn" onclick="dnsUploadFromHistory('+hi+')">DNS上传</button>'+
