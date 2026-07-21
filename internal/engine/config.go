@@ -71,6 +71,15 @@ type Config struct {
 	// ColoBlock is a blacklist of CDN colo codes; results with colo in this list do not enter TopN. Empty = no filter.
 	ColoBlock []string
 
+	// JitterFusionSearch enables jitter-aware scoring during the search phase.
+	// When true, ScoreMS = TotalMS + JitterMS * 0.3 (penalizing unstable routes).
+	// When false (default), ScoreMS = TotalMS only, matching legacy behavior.
+	JitterFusionSearch bool
+
+	// SkipFailedRounds skips failed probe rounds instead of aborting the entire multi-round probe.
+	// When true, a single packet loss won't kill a good IP.
+	SkipFailedRounds bool
+
 	// OnProgress is called periodically during the search with progress info.
 	// Can be nil. Not called concurrently.
 	OnProgress func(info ProgressInfo)

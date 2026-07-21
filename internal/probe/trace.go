@@ -17,13 +17,14 @@ import (
 )
 
 type Config struct {
-	Timeout    time.Duration
-	SNI        string
-	HostHeader string
-	Path       string
-	Port       int    // TLS port (default 443)
-	Rounds     int   // 总测试次数，默认6
-	SkipFirst  int   // 跳过前N次，默认1（跳过第1次握手）
+	Timeout          time.Duration
+	SNI              string
+	HostHeader       string
+	Path             string
+	Port             int    // TLS port (default 443)
+	Rounds           int   // 总测试次数，默认6
+	SkipFirst        int   // 跳过前N次，默认1（跳过第1次握手）
+	SkipFailedRounds bool  // 跳过失败轮次（不中断探测）
 }
 
 type Result struct {
@@ -213,29 +214,29 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 	for i := 0; i < rounds; i++ {
 		r := p.probeOnce(ctx, ip)
 		results = append(results, r)
-		if !r.OK {
+		if !r.OK && !p.cfg.SkipFailedRounds {
 			return r
 		}
 	}
 
-	// Skip the first N rounds (which include handshake overhead) and calculate average
-	if len(results) <= skipFirst {
-		return results[len(results)-1]
-	}
-
-	validResults := results[skipFirst:]
-	// Filter out failed rounds
-	var filtered []Result
-	for _, r := range validResults {
+	// Filter out failed rounds, then skip first N
+	var allOK []Result
+	for _, r := range results {
 		if r.OK {
-			filtered = append(filtered, r)
+			allOK = append(allOK, r)
 		}
 	}
-	if len(filtered) == 0 {
+	if len(allOK) <= skipFirst {
+		for _, r := range results {
+			if r.OK {
+				return r
+			}
+		}
 		return results[len(results)-1]
 	}
-	avg := calculateAverage(filtered, ip)
-	jitterMS, minMS, maxMS := calculateJitter(filtered)
+	validResults := allOK[skipFirst:]
+	avg := calculateAverage(validResults, ip)
+	jitterMS, minMS, maxMS := calculateJitter(validResults)
 	avg.JitterMS = jitterMS
 	avg.MinMS = minMS
 	avg.MaxMS = maxMS

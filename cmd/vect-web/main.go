@@ -59,6 +59,8 @@ type ScanRequest struct {
 	DownloadBytes        int64    `json:"downloadBytes"`
 	DownloadTimeout      int      `json:"downloadTimeout"`
 	DownloadConcurrency  int      `json:"downloadConcurrency"`
+	JitterFusionSearch   bool     `json:"jitterFusionSearch"`
+	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 }
 
 type ScanStatus struct {
@@ -404,7 +406,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request: "+err.Error(), 400)
 		return
 	}
-	log.Printf("scan request: downloadTop=%d budget=%d cidrs=%d", req.DownloadTop, req.Budget, len(req.CIDRs))
+	log.Printf("scan request: downloadTop=%d budget=%d cidrs=%d jitterFusionSearch=%v", req.DownloadTop, req.Budget, len(req.CIDRs), req.JitterFusionSearch)
 
 	// Resolve ASN if provided
 	var cidrs []string
@@ -474,6 +476,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		MaxBitsV6:       req.MaxBitsV6,
 		Seed:            req.Seed,
 		DiversityWeight: req.DiversityWeight,
+		JitterFusionSearch: req.JitterFusionSearch,
 		OnProgress: func(info engine.ProgressInfo) {
 			session.mu.Lock()
 			session.progress = ProgressData{
@@ -494,12 +497,13 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	probeCfg := probe.Config{
-		Timeout:    timeout,
-		SNI:        req.Host,
-		HostHeader: req.Host,
-		Path:       req.Path,
-		Rounds:     req.Rounds,
-		SkipFirst:  req.SkipFirst,
+		Timeout:          timeout,
+		SNI:              req.Host,
+		HostHeader:       req.Host,
+		Path:             req.Path,
+		Rounds:           req.Rounds,
+		SkipFirst:        req.SkipFirst,
+		SkipFailedRounds: req.SkipFailedRounds,
 	}
 	if req.Host == "" {
 		probeCfg.SNI = "example.com"
@@ -717,7 +721,7 @@ go func() {
 		// Re-sort by comprehensive score: latency + bandwidth + download speed
 		session.mu.Lock()
 		sort.SliceStable(session.result, func(i, j int) bool {
-			return compositeScore(&session.result[i]) < compositeScore(&session.result[j])
+			return compositeScore(&session.result[i], req.JitterFusionSearch) < compositeScore(&session.result[j], req.JitterFusionSearch)
 		})
 		session.finishedAt = time.Now()
 		if session.status != "failed" {
@@ -739,16 +743,16 @@ go func() {
 	json.NewEncoder(w).Encode(map[string]string{"id": id})
 }
 
-func compositeScore(r *engine.TopResult) float64 {
+func compositeScore(r *engine.TopResult, jitterFusionSearch bool) float64 {
 	score := r.ScoreMS
 	if r.DownloadOK && r.DownloadMbps > 0 {
 		dlBonus := r.DownloadMbps * 0.5
-		if dlBonus > 100 {
-			dlBonus = 100
+		if dlBonus > 500 {
+			dlBonus = 500
 		}
 		score -= dlBonus
 	}
-	if r.JitterMS > 0 {
+	if jitterFusionSearch && r.JitterMS > 0 {
 		score += r.JitterMS * 0.5
 	}
 	return score

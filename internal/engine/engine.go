@@ -295,6 +295,8 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 	score := float64(d.result.TotalMS)
 	if !d.result.OK {
 		score = timeoutMS * 2
+	} else if e.cfg.JitterFusionSearch && d.result.JitterMS > 0 {
+		score += d.result.JitterMS * 0.3
 	}
 
 	// Add to top N
