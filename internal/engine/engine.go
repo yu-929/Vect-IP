@@ -75,7 +75,7 @@ func (e *Engine) Run(ctx context.Context, req Request) (Response, error) {
 	timeoutMS := req.TimeoutMS()
 	e.tree = bandit.NewArmTree(prefixes, e.cfg.ToTreeConfig())
 	e.headManager = bandit.NewHeadManager(e.cfg.ToHeadManagerConfig(timeoutMS))
-	e.topN = NewTopNCollector(e.cfg.TopN)
+	e.topN = NewTopNCollector(e.cfg.TopN, e.cfg.ColoDiversity)
 
 	// Initialize channels
 	e.tasks = make(chan probeTask, e.cfg.Concurrency*2)

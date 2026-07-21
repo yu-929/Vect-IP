@@ -88,20 +88,22 @@ func (h *topNHeap) Pop() interface{} {
 
 // TopNCollector collects and maintains the top N results efficiently using a heap.
 type TopNCollector struct {
-	n      int
-	heap   *topNHeap
-	ipSeen map[netip.Addr]int // IP -> index in heap for dedup
-	mu     sync.Mutex
+	n             int
+	heap          *topNHeap
+	ipSeen        map[netip.Addr]int // IP -> index in heap for dedup
+	coloDiversity bool
+	mu            sync.Mutex
 }
 
 // NewTopNCollector creates a new TopN collector with heap-based storage.
-func NewTopNCollector(n int) *TopNCollector {
+func NewTopNCollector(n int, coloDiversity bool) *TopNCollector {
 	h := &topNHeap{items: make([]TopResult, 0, n+1)}
 	heap.Init(h)
 	return &TopNCollector{
-		n:      n,
-		heap:   h,
-		ipSeen: make(map[netip.Addr]int, n),
+		n:             n,
+		heap:          h,
+		ipSeen:        make(map[netip.Addr]int, n),
+		coloDiversity: coloDiversity,
 	}
 }
 
@@ -131,16 +133,50 @@ func (c *TopNCollector) Consider(r TopResult) {
 		return
 	}
 
-	// Heap is full, check if new result is better than worst
+	// Heap is full
+	if c.coloDiversity {
+		colo := extractColo(r.Trace)
+		if colo != "" {
+			// Find the worst entry from the same colo
+			worstIdx := -1
+			var worstScore float64
+			for i, item := range c.heap.items {
+				if extractColo(item.Trace) == colo {
+					if worstIdx == -1 || item.ScoreMS > worstScore {
+						worstIdx = i
+						worstScore = item.ScoreMS
+					}
+				}
+			}
+			if worstIdx >= 0 {
+				// Same-colo entry exists; only replace if new result is better
+				if r.ScoreMS < worstScore {
+					delete(c.ipSeen, c.heap.items[worstIdx].IP)
+					c.heap.items[worstIdx] = r
+					heap.Fix(c.heap, worstIdx)
+					c.rebuildIPSeen()
+				}
+				return
+			}
+			// No existing entry from this colo → fall through to global replacement
+		}
+	}
+
+	// Check if new result is better than global worst
 	if r.ScoreMS < c.heap.items[0].ScoreMS {
-		// Remove the worst
 		worst := heap.Pop(c.heap).(TopResult)
 		delete(c.ipSeen, worst.IP)
-
-		// Add the new one
 		heap.Push(c.heap, r)
 		c.rebuildIPSeen()
 	}
+}
+
+// extractColo returns the colo from a Trace map, or empty string if unavailable.
+func extractColo(trace map[string]string) string {
+	if trace == nil {
+		return ""
+	}
+	return trace["colo"]
 }
 
 func (c *TopNCollector) rebuildIPSeen() {

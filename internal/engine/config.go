@@ -80,6 +80,10 @@ type Config struct {
 	// When true, a single packet loss won't kill a good IP.
 	SkipFailedRounds bool
 
+	// ColoDiversity enables colo-level diversity in TopN selection.
+	// When true, each colo can only replace its own worst entry, forcing distribution across colos.
+	ColoDiversity bool
+
 	// OnProgress is called periodically during the search with progress info.
 	// Can be nil. Not called concurrently.
 	OnProgress func(info ProgressInfo)

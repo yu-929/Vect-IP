@@ -714,7 +714,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <div class="settings-group">
-<div class="sg-title">关于</div>
+<div class="sg-title">质量优化</div>
 <div class="settings-row">
 <div style="flex:1">
 <div class="sl-label">阿姆斯特朗完全体IPV4模式</div>
@@ -751,6 +751,22 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 </div>
+<div class="settings-row">
+<div style="flex:1">
+<div class="sl-label">Colo 机房多样性</div>
+<div class="sl-desc">TopN 结果强制分布到不同机房，避免单机房故障导致全部失效</div>
+</div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="coloDiversityTrack" onclick="toggleColoDiversity()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="coloDiversityToggle" aria-label="Colo 机房多样性">
+</div>
+</div>
+</div>
+</div>
+
+<div class="settings-group">
+<div class="sg-title">关于</div>
 <div class="settings-row">
 <div style="flex:1">
 <div class="sl-label">作者</div>
@@ -954,6 +970,12 @@ function toggleSkipFailed(){
 	const on=S('skipFailedTrack').classList.toggle('on');
 	S('skipFailedToggle').checked=on;
 	localStorage.setItem('vect-skip-failed',on?'1':'0');
+}
+
+function toggleColoDiversity(){
+	const on=S('coloDiversityTrack').classList.toggle('on');
+	S('coloDiversityToggle').checked=on;
+	localStorage.setItem('vect-colo-diversity',on?'1':'0');
 }
 
 function saveDnsConfig(){
@@ -1194,6 +1216,7 @@ body.seed=parseInt(S('seed').value)||0;
 }
 body.jitterFusionSearch=S('jitterFusionToggle').checked;
 body.skipFailedRounds=S('skipFailedToggle').checked;
+body.coloDiversity=S('coloDiversityToggle').checked;
 if(localStorage.getItem('vect-armstrong')==='1'){
 if(parseInt(S('ipVersion').value)===6||S('ipVersion').value==='6'){showError('完全体模式仅支持 IPv4，请关闭后重试');return;}
 body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=10;
@@ -1865,8 +1888,13 @@ S('jitterFusionToggle').checked=true;
 }
 // Init skip failed rounds toggle from storage
 if(localStorage.getItem('vect-skip-failed')==='1'){
-S('skipFailedTrack').classList.add('on');
-S('skipFailedToggle').checked=true;
+	S('skipFailedTrack').classList.add('on');
+	S('skipFailedToggle').checked=true;
+}
+// Init colo diversity toggle from storage
+if(localStorage.getItem('vect-colo-diversity')==='1'){
+	S('coloDiversityTrack').classList.add('on');
+	S('coloDiversityToggle').checked=true;
 }
 
 // Restore DNS config from storage

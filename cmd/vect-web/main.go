@@ -61,6 +61,7 @@ type ScanRequest struct {
 	DownloadConcurrency  int      `json:"downloadConcurrency"`
 	JitterFusionSearch   bool     `json:"jitterFusionSearch"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
+	ColoDiversity        bool     `json:"coloDiversity"`
 }
 
 type ScanStatus struct {
@@ -477,6 +478,8 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		Seed:            req.Seed,
 		DiversityWeight: req.DiversityWeight,
 		JitterFusionSearch: req.JitterFusionSearch,
+		SkipFailedRounds:   req.SkipFailedRounds,
+		ColoDiversity:      req.ColoDiversity,
 		OnProgress: func(info engine.ProgressInfo) {
 			session.mu.Lock()
 			session.progress = ProgressData{
