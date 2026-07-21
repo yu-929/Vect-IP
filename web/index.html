@@ -788,6 +788,13 @@ document.addEventListener('focusout',function(e){
 	}
 });
 }
+}
+
+// Double-tap bottom tab bar to scroll to top
+document.querySelector('.tab-bar').addEventListener('dblclick',function(){
+	window.scrollTo({top:0,behavior:'smooth'});
+});
+
 const stageConfig=[
 {id:'s1',total:1,label:'网段解析'},
 {id:'s2',total:1,label:'IP抽样'},
