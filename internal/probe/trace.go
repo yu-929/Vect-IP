@@ -211,14 +211,35 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 	}
 
 	var results []Result
+	totalFails := 0
 	for i := 0; i < rounds; i++ {
-		r := p.probeOnce(ctx, ip)
+		var r Result
+		roundCtx := ctx
+		if p.cfg.SkipFailedRounds && p.cfg.Timeout > 0 {
+			var roundCancel context.CancelFunc
+			roundCtx, roundCancel = context.WithTimeout(ctx, p.cfg.Timeout)
+			r = p.probeOnce(roundCtx, ip)
+			roundCancel()
+		} else {
+			r = p.probeOnce(roundCtx, ip)
+		}
 		results = append(results, r)
-		if !r.OK && !p.cfg.SkipFailedRounds {
-			return r
+		if !r.OK {
+			if !p.cfg.SkipFailedRounds {
+				return r
+			}
+			totalFails++
+			// Abort early if more than half of completed rounds have failed (at least 2 failures)
+			if totalFails >= 2 && totalFails*2 > i+1 {
+				return p.aggregateResults(results, ip, skipFirst)
+			}
 		}
 	}
 
+	return p.aggregateResults(results, ip, skipFirst)
+}
+
+func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int) Result {
 	// Filter out failed rounds, then skip first N
 	var allOK []Result
 	for _, r := range results {
