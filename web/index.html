@@ -1243,7 +1243,7 @@ if(stage===5){
 		S('s5Fill').style.width=(budget>0?Math.min(done/budget*100,100):0)+'%';
 		S('s5Count').textContent=done+'/'+budget;
 		if(!polling&&!scanDone){
-			if(done===0&&p.retainedCount>0)S('s5Status').textContent='保留TOP数量 | '+p.retainedCount+'条IP';
+			if(done===0&&!p.downloadIp)S('s5Status').textContent='准备下载...';
 			else S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
 		}
 	}

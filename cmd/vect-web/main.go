@@ -709,7 +709,9 @@ go func() {
 			return compositeScore(&session.result[i]) < compositeScore(&session.result[j])
 		})
 		session.finishedAt = time.Now()
+		if session.status != "failed" {
 		session.status = "completed"
+	}
 		session.mu.Unlock()
 
 		// Close SSE channels after all processing is done
