@@ -1235,12 +1235,16 @@ S('pElapsed').textContent=fmtDur(elapsed);
 }
 if(stage>=4){
 S('s4Fill').style.width='100%';S('s4Count').textContent='1/1';S('s4Est').textContent='<1s';S('s4Rem').textContent='已完成';
+if(p.retainedCount>0)S('s4Rem').textContent='保留 '+p.retainedCount+' 条';
 }
 if(stage===5){
 		S('stage5Item').style.display='';
 		S('s5Fill').style.width=(budget>0?Math.min(done/budget*100,100):0)+'%';
 		S('s5Count').textContent=done+'/'+budget;
-		if(!polling&&!scanDone)S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
+		if(!polling&&!scanDone){
+			if(done===0&&p.retainedCount>0)S('s5Status').textContent='保留TOP数量 | '+p.retainedCount+'条IP';
+			else S('s5Status').textContent='正在测速: '+(p.downloadIp||'')+' '+(p.downloadMbps>0?p.downloadMbps.toFixed(1)+' Mbps':'');
+		}
 	}
 }
 

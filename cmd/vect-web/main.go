@@ -70,16 +70,17 @@ type ScanStatus struct {
 }
 
 type ProgressData struct {
-	Completed   int     `json:"completed"`
-	Budget      int     `json:"budget"`
-	BestScore   float64 `json:"bestScore"`
-	BestIP      string  `json:"bestIP"`
-	BestPrefix  string  `json:"bestPrefix"`
-	ElapsedMS   int64   `json:"elapsedMS"`
-	Nodes       int     `json:"nodes"`
-	Stage       int     `json:"stage"`
-	DownloadIP  string  `json:"downloadIp,omitempty"`
-	DownloadMbps float64 `json:"downloadMbps,omitempty"`
+	Completed     int     `json:"completed"`
+	Budget        int     `json:"budget"`
+	BestScore     float64 `json:"bestScore"`
+	BestIP        string  `json:"bestIP"`
+	BestPrefix    string  `json:"bestPrefix"`
+	ElapsedMS     int64   `json:"elapsedMS"`
+	Nodes         int     `json:"nodes"`
+	Stage         int     `json:"stage"`
+	DownloadIP    string  `json:"downloadIp,omitempty"`
+	DownloadMbps  float64 `json:"downloadMbps,omitempty"`
+	RetainedCount int     `json:"retainedCount,omitempty"`
 }
 
 type ScanSession struct {
@@ -575,6 +576,7 @@ go func() {
 		// Stage 4: filtering/sorting
 		session.progress.Stage = 4
 		session.progress.Completed = 1
+		session.progress.RetainedCount = len(filtered)
 		subs = make([]chan ProgressData, len(session.subs))
 		copy(subs, session.subs)
 		session.mu.Unlock()
