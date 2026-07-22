@@ -418,6 +418,48 @@ session.progress.Stage = 4
 		session.mu.Unlock()
 		sendProgress(session.progress, subs)
 
+		// Medium download stage: 1MB to filter out clearly slow candidates
+		if req.SpeedFusion && len(session.result) > topN*2 {
+			mediumCfg := probe.DownloadConfig{
+				Timeout: 10 * time.Second,
+				Bytes:   1_000_000,
+			}
+			mediumDlp := probe.NewDownloadProber(mediumCfg)
+			for i := range session.result {
+				dlCtx, dlCancel := context.WithTimeout(ctx, 10*time.Second)
+				dr := mediumDlp.Download(dlCtx, session.result[i].IP)
+				dlCancel()
+				session.result[i].DownloadOK = dr.OK
+				session.result[i].DownloadBytes = dr.Bytes
+				session.result[i].DownloadMS = dr.TotalMS
+				session.result[i].DownloadMbps = dr.Mbps
+				session.result[i].DownloadPeakMbps = dr.PeakMbps
+			}
+			for i := range session.result {
+				r := &session.result[i]
+				score := float64(r.TotalMS)
+				if r.DownloadOK && r.DownloadMbps > 0 {
+					dlBonus := r.DownloadMbps * 0.5
+					if dlBonus > score {
+						dlBonus = score
+					}
+					score -= dlBonus
+				}
+				if req.JitterFusionSearch && r.JitterMS > 0 {
+					score += r.JitterMS * 0.5
+				}
+				r.ScoreMS = score
+			}
+			sort.SliceStable(session.result, func(i, j int) bool {
+				return session.result[i].ScoreMS < session.result[j].ScoreMS
+			})
+			keep := topN * 2
+			if keep > len(session.result) {
+				keep = len(session.result)
+			}
+			session.result = session.result[:keep]
+		}
+
 		// Run download tests if requested (keep SSE open during download)
 		if req.DownloadTop > 0 && len(session.result) > 0 && session.result[0].ScoreMS < 6000 {
 			session.mu.Lock()
@@ -549,6 +591,30 @@ go func() {
 			}
 			close(workCh)
 			wg.Wait()
+
+			// Stability verification: repeat download on top 5, take minimum speed
+			if req.SpeedFusion {
+				verifyCount := 5
+				if verifyCount > len(session.result) {
+					verifyCount = len(session.result)
+				}
+				for i := 0; i < verifyCount; i++ {
+					r := &session.result[i]
+					if !r.DownloadOK {
+						continue
+					}
+					minMbps := r.DownloadMbps
+					for attempt := 0; attempt < 2; attempt++ {
+						dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
+						dr := dlp.Download(dlCtx, r.IP)
+						dlCancel()
+						if dr.OK && dr.Mbps < minMbps {
+							minMbps = dr.Mbps
+						}
+					}
+					r.DownloadMbps = minMbps
+				}
+			}
 		}
 
 		// Re-sort by comprehensive score: latency + bandwidth + download speed

@@ -348,16 +348,6 @@ func (e *Engine) worker(ctx context.Context, wg *sync.WaitGroup, probeCfg probe.
 	}
 	multiTimeout := probeCfg.Timeout * time.Duration(rounds)
 
-	// Create lightweight download prober for SpeedFusion
-	var dlProber *probe.DownloadProber
-	if e.cfg.SpeedFusion {
-		dlCfg := probe.DownloadConfig{
-			Timeout: 3 * time.Second,
-			Bytes:   100_000,
-		}
-		dlProber = probe.NewDownloadProber(dlCfg)
-	}
-
 	for task := range e.tasks {
 		pctx, cancel := context.WithTimeout(ctx, multiTimeout)
 		result := prober.ProbeHTTPTraceMulti(pctx, task.ip)
@@ -365,10 +355,21 @@ func (e *Engine) worker(ctx context.Context, wg *sync.WaitGroup, probeCfg probe.
 
 		pd := probeDone{task: task, result: result}
 
-		// Lightweight download probe during search phase
-		if e.cfg.SpeedFusion && result.OK && dlProber != nil {
+		// Lightweight download probe with adaptive size based on latency
+		if e.cfg.SpeedFusion && result.OK {
+			probeSize := int64(100_000)
+			if result.TotalMS < 80 {
+				probeSize = 500_000
+			} else if result.TotalMS < 150 {
+				probeSize = 200_000
+			}
+			dlCfg := probe.DownloadConfig{
+				Timeout: 3 * time.Second,
+				Bytes:   probeSize,
+			}
+			adptProber := probe.NewDownloadProber(dlCfg)
 			dlCtx, dlCancel := context.WithTimeout(ctx, 3*time.Second)
-			pd.downloadResult = dlProber.Download(dlCtx, task.ip)
+			pd.downloadResult = adptProber.Download(dlCtx, task.ip)
 			dlCancel()
 		}
 
