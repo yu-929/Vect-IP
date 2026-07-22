@@ -226,21 +226,6 @@ func noCache(next http.Handler) http.Handler {
 	})
 }
 
-func compositeScore(r *engine.TopResult, jitterFusionSearch bool) float64 {
-	score := r.ScoreMS
-	if r.DownloadOK && r.DownloadMbps > 0 {
-		dlBonus := r.DownloadMbps * 0.5
-		if dlBonus > 500 {
-			dlBonus = 500
-		}
-		score -= dlBonus
-	}
-	if jitterFusionSearch && r.JitterMS > 0 {
-		score += r.JitterMS * 0.5
-	}
-	return score
-}
-
 func handleScan(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
