@@ -423,7 +423,7 @@ session.progress.Stage = 4
 				Timeout: 10 * time.Second,
 				Bytes:   1_000_000,
 			}
-			mediumDlp := probe.NewMultiStreamDownloadProber(mediumCfg, 3)
+			mediumDlp := probe.NewDownloadProber(mediumCfg)
 			mdlConc := req.DownloadConcurrency
 			if mdlConc <= 1 {
 				mdlConc = 10
