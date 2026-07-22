@@ -26,15 +26,18 @@ type DownloadConfig struct {
 }
 
 type DownloadResult struct {
-	IP       netip.Addr `json:"ip"`
-	OK       bool       `json:"ok"`
-	Status   int        `json:"status"`
-	Error    string     `json:"error,omitempty"`
-	Bytes    int64      `json:"bytes"`
-	TotalMS  int64      `json:"total_ms"`
-	Mbps     float64    `json:"mbps"`
-	PeakMbps float64    `json:"peak_mbps"`
-	When     time.Time  `json:"when"`
+	IP          netip.Addr `json:"ip"`
+	OK          bool       `json:"ok"`
+	Status      int        `json:"status"`
+	Error       string     `json:"error,omitempty"`
+	Bytes       int64      `json:"bytes"`
+	TotalMS     int64      `json:"total_ms"`
+	Mbps        float64    `json:"mbps"`
+	PeakMbps    float64    `json:"peak_mbps"`
+	BaselineRTT float64    `json:"baseline_rtt"`
+	InflightRTT float64    `json:"inflight_rtt"`
+	Streams     int        `json:"streams"`
+	When        time.Time  `json:"when"`
 }
 
 type DownloadProber struct {
@@ -87,11 +90,28 @@ func NewDownloadProber(cfg DownloadConfig) *DownloadProber {
 	}
 }
 
+func (p *DownloadProber) measureRTT(ctx context.Context, host string) float64 {
+	url := "https://" + host + "/cdn-cgi/trace"
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	if err != nil {
+		return 0
+	}
+	req.Host = p.cfg.HostName
+	start := time.Now()
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return 0
+	}
+	_ = resp.Body.Close()
+	return float64(time.Since(start).Microseconds()) / 1000.0
+}
+
 func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadResult {
 	start := time.Now()
 	out := DownloadResult{
-		IP:   ip,
-		When: start,
+		IP:      ip,
+		When:    start,
+		Streams: 1,
 	}
 
 	host := ip.String()
@@ -99,12 +119,13 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 		host = "[" + host + "]"
 	}
 
+	// Baseline RTT before download
+	out.BaselineRTT = p.measureRTT(ctx, host)
+
 	var url string
 	if p.cfg.CustomURL {
-		// User-supplied URL: use Path as-is (may already contain query params).
 		url = "https://" + host + p.cfg.Path
 	} else {
-		// Default Cloudflare speed-test endpoint: append ?bytes=N.
 		url = "https://" + host + p.cfg.Path + "?bytes=" + strconv.FormatInt(p.cfg.Bytes, 10)
 	}
 
@@ -137,6 +158,13 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 		out.TotalMS = time.Since(start).Milliseconds()
 		return out
 	}
+
+	// Inflight RTT measurement: fire after 500ms in a goroutine
+	inflightCh := make(chan float64, 1)
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		inflightCh <- p.measureRTT(ctx, host)
+	}()
 
 	var n int64
 	buf := make([]byte, 64*1024)
@@ -194,8 +222,13 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 	}
 	out.PeakMbps = peakMbps
 
+	// Collect inflight RTT if goroutine completed
+	select {
+	case out.InflightRTT = <-inflightCh:
+	default:
+	}
+
 	if err != nil && !errors.Is(err, io.EOF) {
-		// Normalize common timeout/cancel signals so output is stable.
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			out.Error = "timeout"
 		} else if errors.Is(err, context.Canceled) || errors.Is(ctx.Err(), context.Canceled) {

@@ -39,6 +39,7 @@ type Result struct {
 	JitterMS  float64           `json:"jitter_ms"`
 	MinMS     int64             `json:"min_ms"`
 	MaxMS     int64             `json:"max_ms"`
+	LossRate  float64           `json:"loss_rate"`
 	Trace     map[string]string `json:"trace,omitempty"`
 	When      time.Time         `json:"when"`
 }
@@ -231,15 +232,15 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 			totalFails++
 			// Abort early if more than half of completed rounds have failed (at least 2 failures)
 			if totalFails >= 2 && totalFails*2 > i+1 {
-				return p.aggregateResults(results, ip, skipFirst)
+				return p.aggregateResults(results, ip, skipFirst, rounds)
 			}
 		}
 	}
 
-	return p.aggregateResults(results, ip, skipFirst)
+	return p.aggregateResults(results, ip, skipFirst, rounds)
 }
 
-func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int) Result {
+func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int, totalAttempts int) Result {
 	// Filter out failed rounds, then skip first N
 	var allOK []Result
 	for _, r := range results {
@@ -261,6 +262,12 @@ func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int
 	avg.JitterMS = jitterMS
 	avg.MinMS = minMS
 	avg.MaxMS = maxMS
+	// Compute loss rate: failed attempts / total attempts
+	failed := totalAttempts - len(allOK)
+	if failed < 0 {
+		failed = 0
+	}
+	avg.LossRate = float64(failed) / float64(totalAttempts)
 	return avg
 }
 
