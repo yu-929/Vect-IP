@@ -603,16 +603,29 @@ go func() {
 				Bytes:   1_000_000,
 			}
 			mediumDlp := probe.NewDownloadProber(mediumCfg)
-			for i := range session.result {
-				dlCtx, dlCancel := context.WithTimeout(ctx, 10*time.Second)
-				dr := mediumDlp.Download(dlCtx, session.result[i].IP)
-				dlCancel()
-				session.result[i].DownloadOK = dr.OK
-				session.result[i].DownloadBytes = dr.Bytes
-				session.result[i].DownloadMS = dr.TotalMS
-				session.result[i].DownloadMbps = dr.Mbps
-				session.result[i].DownloadPeakMbps = dr.PeakMbps
+			mdlConc := req.DownloadConcurrency
+			if mdlConc <= 1 {
+				mdlConc = 5
 			}
+			sem := make(chan struct{}, mdlConc)
+			var mWg sync.WaitGroup
+			for i := range session.result {
+				mWg.Add(1)
+				sem <- struct{}{}
+				go func(idx int) {
+					defer mWg.Done()
+					defer func() { <-sem }()
+					dlCtx, dlCancel := context.WithTimeout(ctx, 10*time.Second)
+					dr := mediumDlp.Download(dlCtx, session.result[idx].IP)
+					dlCancel()
+					session.result[idx].DownloadOK = dr.OK
+					session.result[idx].DownloadBytes = dr.Bytes
+					session.result[idx].DownloadMS = dr.TotalMS
+					session.result[idx].DownloadMbps = dr.Mbps
+					session.result[idx].DownloadPeakMbps = dr.PeakMbps
+				}(i)
+			}
+			mWg.Wait()
 			for i := range session.result {
 				r := &session.result[i]
 				score := float64(r.TotalMS)
