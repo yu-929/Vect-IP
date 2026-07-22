@@ -424,7 +424,7 @@ session.progress.Stage = 4
 				Timeout: 10 * time.Second,
 				Bytes:   1_000_000,
 			}
-			mediumDlp := probe.NewDownloadProber(mediumCfg)
+			mediumDlp := probe.NewMultiStreamDownloadProber(mediumCfg, 3)
 			mdlConc := req.DownloadConcurrency
 			if mdlConc <= 1 {
 				mdlConc = 5
@@ -445,18 +445,24 @@ session.progress.Stage = 4
 					session.result[idx].DownloadMS = dr.TotalMS
 					session.result[idx].DownloadMbps = dr.Mbps
 					session.result[idx].DownloadPeakMbps = dr.PeakMbps
+					session.result[idx].BufferbloatMS = dr.InflightRTT - dr.BaselineRTT
+					session.result[idx].Streams = dr.Streams
 				}(i)
 			}
 			mWg.Wait()
 			for i := range session.result {
 				r := &session.result[i]
 				score := float64(r.TotalMS)
+				score += r.LossRate * 100
 				if r.DownloadOK && r.DownloadMbps > 0 {
 					dlBonus := r.DownloadMbps * 0.5
 					if dlBonus > score {
 						dlBonus = score
 					}
 					score -= dlBonus
+				}
+				if req.SpeedFusion && r.BufferbloatMS > 20 {
+					score += (r.BufferbloatMS - 20) * 0.5
 				}
 				if req.JitterFusionSearch && r.JitterMS > 0 {
 					score += r.JitterMS * 0.5
@@ -511,7 +517,10 @@ dlBytes := req.DownloadBytes
 				}
 			}
 
-			dlp := probe.NewDownloadProber(dlCfg)
+			dlp := probe.Downloader(probe.NewDownloadProber(dlCfg))
+			if req.SpeedFusion {
+				dlp = probe.NewMultiStreamDownloadProber(dlCfg, 3)
+			}
 			dlConc := req.DownloadConcurrency
 			if dlConc <= 1 {
 				dlConc = 1
@@ -572,6 +581,8 @@ go func() {
 						r.DownloadMbps = dr.Mbps
 						r.DownloadPeakMbps = dr.PeakMbps
 						r.DownloadError = dr.Error
+						r.BufferbloatMS = dr.InflightRTT - dr.BaselineRTT
+						r.Streams = dr.Streams
 						if dr.OK {
 							successCount++
 						}
@@ -611,6 +622,7 @@ go func() {
 				if verifyCount > len(session.result) {
 					verifyCount = len(session.result)
 				}
+				verifyDlp := probe.NewMultiStreamDownloadProber(dlCfg, 3)
 				for i := 0; i < verifyCount; i++ {
 					r := &session.result[i]
 					if !r.DownloadOK {
@@ -619,7 +631,7 @@ go func() {
 					minMbps := r.DownloadMbps
 					for attempt := 0; attempt < 2; attempt++ {
 						dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
-						dr := dlp.Download(dlCtx, r.IP)
+						dr := verifyDlp.Download(dlCtx, r.IP)
 						dlCancel()
 						if dr.OK && dr.Mbps < minMbps {
 							minMbps = dr.Mbps
@@ -636,12 +648,16 @@ go func() {
 			for i := range session.result {
 				r := &session.result[i]
 				score := float64(r.TotalMS)
+				score += r.LossRate * 100
 				if r.DownloadOK && r.DownloadMbps > 0 {
 					dlBonus := r.DownloadMbps * 0.5
 					if dlBonus > score {
 						dlBonus = score
 					}
 					score -= dlBonus
+				}
+				if r.BufferbloatMS > 20 {
+					score += (r.BufferbloatMS - 20) * 0.5
 				}
 				if req.JitterFusionSearch && r.JitterMS > 0 {
 					score += r.JitterMS * 0.5

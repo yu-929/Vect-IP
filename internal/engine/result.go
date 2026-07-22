@@ -44,15 +44,18 @@ type TopResult struct {
 	JitterMS  float64           `json:"jitter_ms"`
 	MinMS     int64             `json:"min_ms"`
 	MaxMS     int64             `json:"max_ms"`
+	LossRate  float64           `json:"loss_rate"`
 	ScoreMS   float64           `json:"score_ms"`
 	Trace     map[string]string `json:"trace,omitempty"`
 
-	DownloadOK      bool    `json:"download_ok"`
-	DownloadBytes   int64   `json:"download_bytes"`
-	DownloadMS      int64   `json:"download_ms"`
-	DownloadMbps    float64 `json:"download_mbps"`
+	DownloadOK       bool    `json:"download_ok"`
+	DownloadBytes    int64   `json:"download_bytes"`
+	DownloadMS       int64   `json:"download_ms"`
+	DownloadMbps     float64 `json:"download_mbps"`
 	DownloadPeakMbps float64 `json:"download_peak_mbps"`
-	DownloadError   string  `json:"download_error,omitempty"`
+	DownloadError    string  `json:"download_error,omitempty"`
+	BufferbloatMS    float64 `json:"bufferbloat_ms"`
+	Streams          int     `json:"streams"`
 
 	PrefixSamples int `json:"prefix_samples"`
 	PrefixOK      int `json:"prefix_ok"`
