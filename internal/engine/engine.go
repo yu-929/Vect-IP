@@ -302,8 +302,8 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 		}
 		if e.cfg.SpeedFusion && d.downloadResult.OK && d.downloadResult.Mbps > 0 {
 			dlBonus := d.downloadResult.Mbps * 0.5
-			if dlBonus > 500 {
-				dlBonus = 500
+			if dlBonus > score {
+				dlBonus = score
 			}
 			score -= dlBonus
 		}

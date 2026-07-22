@@ -559,8 +559,8 @@ go func() {
 				score := float64(r.TotalMS)
 				if r.DownloadOK && r.DownloadMbps > 0 {
 					dlBonus := r.DownloadMbps * 0.5
-					if dlBonus > 500 {
-						dlBonus = 500
+					if dlBonus > score {
+						dlBonus = score
 					}
 					score -= dlBonus
 				}
