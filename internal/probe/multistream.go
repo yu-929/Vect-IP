@@ -84,6 +84,7 @@ func (p *MultiStreamDownloadProber) Download(ctx context.Context, ip netip.Addr)
 	wg.Wait()
 
 	if !anyOK {
+		out.OK = false
 		out.TotalMS = time.Since(start).Milliseconds()
 		return out
 	}

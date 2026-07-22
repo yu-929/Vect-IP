@@ -232,12 +232,12 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 			totalFails++
 			// Abort early if more than half of completed rounds have failed (at least 2 failures)
 			if totalFails >= 2 && totalFails*2 > i+1 {
-				return p.aggregateResults(results, ip, skipFirst, rounds)
+				return p.aggregateResults(results, ip, skipFirst, len(results))
 			}
 		}
 	}
 
-	return p.aggregateResults(results, ip, skipFirst, rounds)
+	return p.aggregateResults(results, ip, skipFirst, len(results))
 }
 
 func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int, totalAttempts int) Result {

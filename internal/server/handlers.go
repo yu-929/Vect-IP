@@ -427,7 +427,7 @@ session.progress.Stage = 4
 			mediumDlp := probe.NewMultiStreamDownloadProber(mediumCfg, 3)
 			mdlConc := req.DownloadConcurrency
 			if mdlConc <= 1 {
-				mdlConc = 5
+				mdlConc = 10
 			}
 			sem := make(chan struct{}, mdlConc)
 			var mWg sync.WaitGroup
@@ -622,23 +622,29 @@ go func() {
 				if verifyCount > len(session.result) {
 					verifyCount = len(session.result)
 				}
-				verifyDlp := probe.NewMultiStreamDownloadProber(dlCfg, 3)
+				var vWg sync.WaitGroup
 				for i := 0; i < verifyCount; i++ {
-					r := &session.result[i]
-					if !r.DownloadOK {
-						continue
-					}
-					minMbps := r.DownloadMbps
-					for attempt := 0; attempt < 2; attempt++ {
-						dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
-						dr := verifyDlp.Download(dlCtx, r.IP)
-						dlCancel()
-						if dr.OK && dr.Mbps < minMbps {
-							minMbps = dr.Mbps
+					vWg.Add(1)
+					go func(idx int) {
+						defer vWg.Done()
+						r := &session.result[idx]
+						if !r.DownloadOK {
+							return
 						}
-					}
-					r.DownloadMbps = minMbps
+						verifyDlp := probe.NewMultiStreamDownloadProber(dlCfg, 3)
+						minMbps := r.DownloadMbps
+						for attempt := 0; attempt < 2; attempt++ {
+							dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
+							dr := verifyDlp.Download(dlCtx, r.IP)
+							dlCancel()
+							if dr.OK && dr.Mbps < minMbps {
+								minMbps = dr.Mbps
+							}
+						}
+						r.DownloadMbps = minMbps
+					}(i)
 				}
+				vWg.Wait()
 			}
 		}
 
