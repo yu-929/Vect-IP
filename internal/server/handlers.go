@@ -421,9 +421,9 @@ session.progress.Stage = 4
 		if req.SpeedFusion && len(session.result) > topN*2 {
 			mediumCfg := probe.DownloadConfig{
 				Timeout: 10 * time.Second,
-				Bytes:   1_000_000,
+				Bytes:   2_000_000,
 			}
-			mediumDlp := probe.NewDownloadProber(mediumCfg)
+			mediumDlp := probe.NewMultiStreamDownloadProber(mediumCfg, 3)
 			mdlConc := req.DownloadConcurrency
 			if mdlConc <= 1 {
 				mdlConc = 10
