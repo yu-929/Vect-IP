@@ -34,12 +34,6 @@ func (p *MultiStreamDownloadProber) Download(ctx context.Context, ip netip.Addr)
 	}
 
 	streamCfg := p.cfg
-	if !streamCfg.CustomURL {
-		streamCfg.Bytes = streamCfg.Bytes / int64(p.streams)
-		if streamCfg.Bytes < 1 {
-			streamCfg.Bytes = 1
-		}
-	}
 
 	var (
 		mu          sync.Mutex
