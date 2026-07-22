@@ -84,6 +84,10 @@ type Config struct {
 	// When true, each colo can only replace its own worst entry, forcing distribution across colos.
 	ColoDiversity bool
 
+	// SpeedFusion enables download speed-aware composite scoring.
+	// When true, ScoreMS = TotalMS + JitterMS*0.3 - DownloadMbps*0.5 (after download).
+	SpeedFusion bool
+
 	// OnProgress is called periodically during the search with progress info.
 	// Can be nil. Not called concurrently.
 	OnProgress func(info ProgressInfo)

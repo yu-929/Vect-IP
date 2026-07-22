@@ -178,6 +178,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .history-item{border-radius:14pt!important;padding:16pt}
 .history-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4pt}
 .history-item .h-time{font-size:11px;color:var(--muted2);letter-spacing:-0.1px}
+.history-item .h-tag{display:inline-block;font-size:9px;background:var(--primary);color:#fff;padding:0 5px;border-radius:3px;margin-left:4px;vertical-align:middle;line-height:16px}
 .history-item .ip{font-size:19px;font-weight:650;color:var(--primary);cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;letter-spacing:-0.3px;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;margin-bottom:6pt}
 .history-item .ip:active{opacity:0.7}
 .history-metrics{display:flex;flex-direction:column;gap:3pt;margin-bottom:3pt}
@@ -763,6 +764,18 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 </div>
+<div class="settings-row">
+<div style="flex:1">
+<div class="sl-label">Speed 融合综合评分</div>
+<div class="sl-desc">下载速度融入最终评分，偏好延迟低且速度快的 IP</div>
+</div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="speedFusionTrack" onclick="toggleSpeedFusion()">
+<div class="toggle-knob"></div>
+<input type="checkbox" class="toggle-input" id="speedFusionToggle" aria-label="Speed 融合综合评分">
+</div>
+</div>
+</div>
 </div>
 
 <div class="settings-group">
@@ -976,6 +989,12 @@ function toggleColoDiversity(){
 	const on=S('coloDiversityTrack').classList.toggle('on');
 	S('coloDiversityToggle').checked=on;
 	localStorage.setItem('vect-colo-diversity',on?'1':'0');
+}
+
+function toggleSpeedFusion(){
+	const on=S('speedFusionTrack').classList.toggle('on');
+	S('speedFusionToggle').checked=on;
+	localStorage.setItem('vect-speed-fusion',on?'1':'0');
 }
 
 function saveDnsConfig(){
@@ -1217,6 +1236,7 @@ body.seed=parseInt(S('seed').value)||0;
 body.jitterFusionSearch=S('jitterFusionToggle').checked;
 body.skipFailedRounds=S('skipFailedToggle').checked;
 body.coloDiversity=S('coloDiversityToggle').checked;
+body.speedFusion=S('speedFusionToggle').checked;
 if(localStorage.getItem('vect-armstrong')==='1'){
 if(parseInt(S('ipVersion').value)===6||S('ipVersion').value==='6'){showError('完全体模式仅支持 IPv4，请关闭后重试');return;}
 body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=10;
@@ -1489,6 +1509,7 @@ async function renderResults(r){
 			asn:x.asn||0
 		}))
 	};
+	entry.speedFusion=S('speedFusionToggle').checked;
 	history.unshift(entry);
 	if(history.length>50)history.length=50;
 	saveHistory(history);
@@ -1557,7 +1578,7 @@ history.forEach((h,hi)=>{
 const r0=h.results[0];
 const total=h.results.length;
 html+='<div class="glass-card history-item stagger-enter" data-idx="'+hi+'">';
-html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyAllResults('+hi+')">复制</button><button class="btn-text" onclick="deleteHistory('+hi+')">删除</button></div></div>';
+html+='<div class="history-item-top"><span class="h-time">'+h.time+(h.speedFusion?' <span class="h-tag">SpeedFusion</span>':'')+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyAllResults('+hi+')">复制</button><button class="btn-text" onclick="deleteHistory('+hi+')">删除</button></div></div>';
 html+='<div class="ip" onclick="copyText(\''+(r0?r0.ip:'')+'\')" ontouchstart="ipTouchStart(\''+(r0?r0.ip:'')+'\',event)" ontouchend="ipTouchEnd()" ontouchmove="ipTouchEnd()">'+(r0?r0.ip:'')+'</div>';
 if(r0)html+='<div class="history-metrics"><span class="hm">所属网段: <strong style="cursor:pointer" onclick="event.stopPropagation();copyText(\''+(r0.prefix||'')+'\')">'+(r0.prefix||'-')+'</strong></span><div class="hm-row"><span class="hm">实测带宽: <strong class="'+(r0.dlOk?r0.dlMbps>=30?'ok':r0.dlMbps>=5?'mid':'red':'fail')+'">'+(r0.dlOk?r0.dlMbps.toFixed(1)+' Mbps':'-')+'</strong></span><span class="hm">网络抖动: <strong>'+(r0.jitter>=0?r0.jitter.toFixed(1)+'ms':'-')+'</strong></span><span class="hm">峰值速度: <strong class="'+(r0.dlOk&&r0.dlPeakMbps>0?'ok':'fail')+'">'+(r0.dlOk&&r0.dlPeakMbps>0?(r0.dlPeakMbps*1000).toFixed(0)+' Kb/s':'-')+'</strong></span><span class="hm">往返延迟: <strong>'+r0.score.toFixed(1)+'ms</strong></span><span class="hm">数据中心: <strong>'+(r0.colo||'-')+coloFlag(r0.colo)+'</strong></span><span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span></div>'+(r0.asn?'<div class="hm-row-single"><span class="hm">ASN信息: <strong>AS'+r0.asn+(r0.asname?' | '+r0.asname:'')+'</strong></span></div>':'')+'</div>';
 if(total>1)html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
@@ -1895,6 +1916,11 @@ if(localStorage.getItem('vect-skip-failed')==='1'){
 if(localStorage.getItem('vect-colo-diversity')==='1'){
 	S('coloDiversityTrack').classList.add('on');
 	S('coloDiversityToggle').checked=true;
+}
+// Init speed fusion toggle from storage
+if(localStorage.getItem('vect-speed-fusion')==='1'){
+	S('speedFusionTrack').classList.add('on');
+	S('speedFusionToggle').checked=true;
 }
 
 // Restore DNS config from storage

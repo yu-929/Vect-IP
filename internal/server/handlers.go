@@ -62,6 +62,7 @@ type ScanRequest struct {
 	CustomDownloadEnabled bool    `json:"customDownloadEnabled"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 	ColoDiversity        bool     `json:"coloDiversity"`
+	SpeedFusion          bool     `json:"speedFusion"`
 }
 
 type ScanStatus struct {
@@ -306,9 +307,14 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		topN = req.TopN
 	}
 
+	engineTopN := topN
+	if req.SpeedFusion {
+		engineTopN = topN * 3
+	}
+
 	cfg := engine.Config{
 		Budget:          req.Budget,
-		TopN:            topN,
+		TopN:            engineTopN,
 		Concurrency:     req.Concurrency,
 		Heads:           req.Heads,
 		Beam:            req.Beam,
@@ -323,6 +329,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		JitterFusionSearch: req.JitterFusionSearch,
 		SkipFailedRounds:   req.SkipFailedRounds,
 		ColoDiversity:      req.ColoDiversity,
+		SpeedFusion:        req.SpeedFusion,
 		OnProgress: func(info engine.ProgressInfo) {
 			session.mu.Lock()
 			session.progress = ProgressData{
@@ -433,6 +440,9 @@ session.progress.Stage = 4
 			session.mu.Unlock()
 
 			dlTop := req.DownloadTop
+			if req.SpeedFusion {
+				dlTop = len(session.result)
+			}
 			if dlTop > len(session.result) {
 				dlTop = len(session.result)
 			}
@@ -558,9 +568,29 @@ go func() {
 
 		// Re-sort by comprehensive score: latency + bandwidth + download speed
 		session.mu.Lock()
+		if req.SpeedFusion {
+			for i := range session.result {
+				r := &session.result[i]
+				score := float64(r.TotalMS)
+				if r.DownloadOK && r.DownloadMbps > 0 {
+					dlBonus := r.DownloadMbps * 0.5
+					if dlBonus > 500 {
+						dlBonus = 500
+					}
+					score -= dlBonus
+				}
+				if req.JitterFusionSearch && r.JitterMS > 0 {
+					score += r.JitterMS * 0.5
+				}
+				r.ScoreMS = score
+			}
+		}
 		sort.SliceStable(session.result, func(i, j int) bool {
-			return compositeScore(&session.result[i], req.JitterFusionSearch) < compositeScore(&session.result[j], req.JitterFusionSearch)
+			return session.result[i].ScoreMS < session.result[j].ScoreMS
 		})
+		if req.SpeedFusion && len(session.result) > topN {
+			session.result = session.result[:topN]
+		}
 		session.finishedAt = time.Now()
 		if session.status != "failed" {
 			session.status = "completed"

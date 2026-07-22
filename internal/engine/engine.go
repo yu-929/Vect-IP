@@ -43,8 +43,9 @@ type probeTask struct {
 }
 
 type probeDone struct {
-	task   probeTask
-	result probe.Result
+	task           probeTask
+	result         probe.Result
+	downloadResult probe.DownloadResult
 }
 
 // New creates a new search engine.
@@ -295,8 +296,17 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 	score := float64(d.result.TotalMS)
 	if !d.result.OK {
 		score = timeoutMS * 2
-	} else if e.cfg.JitterFusionSearch && d.result.JitterMS > 0 {
-		score += d.result.JitterMS * 0.3
+	} else {
+		if e.cfg.JitterFusionSearch && d.result.JitterMS > 0 {
+			score += d.result.JitterMS * 0.3
+		}
+		if e.cfg.SpeedFusion && d.downloadResult.OK && d.downloadResult.Mbps > 0 {
+			dlBonus := d.downloadResult.Mbps * 0.5
+			if dlBonus > 500 {
+				dlBonus = 500
+			}
+			score -= dlBonus
+		}
 	}
 
 	// Add to top N
@@ -315,6 +325,10 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 		MaxMS:         d.result.MaxMS,
 		ScoreMS:       score,
 		Trace:         d.result.Trace,
+		DownloadOK:    d.downloadResult.OK,
+		DownloadBytes: d.downloadResult.Bytes,
+		DownloadMS:    d.downloadResult.TotalMS,
+		DownloadMbps:  d.downloadResult.Mbps,
 		PrefixSamples: stats.Samples,
 		PrefixOK:      stats.Successes,
 		PrefixFail:    stats.Failures,
@@ -334,13 +348,32 @@ func (e *Engine) worker(ctx context.Context, wg *sync.WaitGroup, probeCfg probe.
 	}
 	multiTimeout := probeCfg.Timeout * time.Duration(rounds)
 
+	// Create lightweight download prober for SpeedFusion
+	var dlProber *probe.DownloadProber
+	if e.cfg.SpeedFusion {
+		dlCfg := probe.DownloadConfig{
+			Timeout: 3 * time.Second,
+			Bytes:   100_000,
+		}
+		dlProber = probe.NewDownloadProber(dlCfg)
+	}
+
 	for task := range e.tasks {
 		pctx, cancel := context.WithTimeout(ctx, multiTimeout)
 		result := prober.ProbeHTTPTraceMulti(pctx, task.ip)
 		cancel()
 
+		pd := probeDone{task: task, result: result}
+
+		// Lightweight download probe during search phase
+		if e.cfg.SpeedFusion && result.OK && dlProber != nil {
+			dlCtx, dlCancel := context.WithTimeout(ctx, 3*time.Second)
+			pd.downloadResult = dlProber.Download(dlCtx, task.ip)
+			dlCancel()
+		}
+
 		select {
-		case e.done <- probeDone{task: task, result: result}:
+		case e.done <- pd:
 		case <-ctx.Done():
 			return
 		}
