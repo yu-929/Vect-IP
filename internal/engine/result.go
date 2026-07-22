@@ -44,7 +44,6 @@ type TopResult struct {
 	JitterMS  float64           `json:"jitter_ms"`
 	MinMS     int64             `json:"min_ms"`
 	MaxMS     int64             `json:"max_ms"`
-	LossRate  float64           `json:"loss_rate"`
 	ScoreMS   float64           `json:"score_ms"`
 	Trace     map[string]string `json:"trace,omitempty"`
 

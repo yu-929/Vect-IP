@@ -452,7 +452,6 @@ session.progress.Stage = 4
 			for i := range session.result {
 				r := &session.result[i]
 				score := float64(r.TotalMS)
-				score += r.LossRate * 100
 				if r.DownloadOK && r.DownloadMbps > 0 {
 					dlBonus := r.DownloadMbps * 0.5
 					if dlBonus > score {
@@ -653,7 +652,6 @@ go func() {
 			for i := range session.result {
 				r := &session.result[i]
 				score := float64(r.TotalMS)
-				score += r.LossRate * 100
 				if r.DownloadOK && r.DownloadMbps > 0 {
 					dlBonus := r.DownloadMbps * 0.5
 					if dlBonus > score {

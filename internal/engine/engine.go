@@ -297,9 +297,6 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 	if !d.result.OK {
 		score = timeoutMS * 2
 	} else {
-		// Loss rate penalty (always on)
-		score += d.result.LossRate * 100
-
 		if e.cfg.JitterFusionSearch && d.result.JitterMS > 0 {
 			score += d.result.JitterMS * 0.3
 		}
@@ -326,7 +323,6 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 		JitterMS:      d.result.JitterMS,
 		MinMS:         d.result.MinMS,
 		MaxMS:         d.result.MaxMS,
-		LossRate:      d.result.LossRate,
 		ScoreMS:       score,
 		Trace:         d.result.Trace,
 		DownloadOK:    d.downloadResult.OK,
