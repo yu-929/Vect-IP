@@ -269,18 +269,17 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := newScanID()
+	ctx, cancel := context.WithCancel(context.Background())
 	session := &ScanSession{
 		status: "running",
 		progress: ProgressData{
 			Budget: req.Budget,
 		},
+		cancel: cancel,
 	}
 	scansMu.Lock()
 	scans[id] = session
 	scansMu.Unlock()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	session.cancel = cancel
 
 	timeout, _ := time.ParseDuration(req.Timeout)
 	if timeout <= 0 {
@@ -768,6 +767,14 @@ func handleProgressSSE(w http.ResponseWriter, r *http.Request, id string) {
 	for {
 		select {
 		case <-ctx.Done():
+			session.mu.Lock()
+			for i, sub := range session.subs {
+				if sub == ch {
+					session.subs = append(session.subs[:i], session.subs[i+1:]...)
+					break
+				}
+			}
+			session.mu.Unlock()
 			return
 		case data, ok := <-ch:
 			if !ok {
@@ -798,7 +805,7 @@ func handleCancel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.mu.Lock()
-	if session.status == "running" {
+	if session.status == "running" || session.status == "downloading" {
 		session.cancel()
 		session.finishedAt = time.Now()
 		session.status = "cancelled"

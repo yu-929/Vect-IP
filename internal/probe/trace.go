@@ -352,6 +352,7 @@ func calculateJitter(results []Result) (jitterMS float64, minMS int64, maxMS int
 
 	var sum int64
 	var validCount int
+	var useAll bool
 	for _, v := range values {
 		if v >= lower && v <= upper {
 			sum += v
@@ -360,18 +361,21 @@ func calculateJitter(results []Result) (jitterMS float64, minMS int64, maxMS int
 	}
 
 	if validCount < 2 {
+		useAll = true
 		validCount = count
 		sum = 0
 		for _, v := range values {
 			sum += v
 		}
+		lower = -1 << 63
+		upper = 1<<63 - 1
 	}
 
 	mean := float64(sum) / float64(validCount)
 
 	var sqDiff float64
 	for _, v := range values {
-		if v >= lower && v <= upper {
+		if useAll || (v >= lower && v <= upper) {
 			d := float64(v) - mean
 			sqDiff += d * d
 		}
