@@ -2882,6 +2882,11 @@ for w := 0; w < workers; w++ {
 		})
 	}
 
+	if topN > len(okResults) {
+		topN = len(okResults)
+	}
+	okResults = okResults[:topN]
+
 	results := make([]map[string]interface{}, len(okResults))
 	for i, r := range okResults {
 		speedStr := ""
