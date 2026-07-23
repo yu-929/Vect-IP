@@ -29,6 +29,7 @@ type CfnbSession struct {
 	result     []map[string]interface{}
 	output     string
 	err        string
+	ctx        context.Context
 	cancel     context.CancelFunc
 	subs       []chan ProgressData
 	finishedAt time.Time
@@ -186,10 +187,11 @@ func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := fmt.Sprintf("cfnb_%d", atomic.AddInt64(&cfnbIDCounter, 1))
-	_, cancel := context.WithCancel(r.Context())
+	ctx, cancel := context.WithCancel(r.Context())
 
 	session := &CfnbSession{
 		status: "running",
+		ctx:    ctx,
 		subs:   make([]chan ProgressData, 0),
 		cancel: cancel,
 	}
@@ -771,10 +773,20 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		go func() {
 			defer wg.Done()
 			for idx := range workCh {
+				select {
+				case <-session.ctx.Done():
+					return
+				default:
+				}
 				entry := ips[idx]
 				var bestLatency float64
 				successCount := 0
 				for r := 0; r < tcpProbes; r++ {
+					select {
+					case <-session.ctx.Done():
+						return
+					default:
+					}
 					addr := net.JoinHostPort(entry.ip, strconv.Itoa(entry.port))
 					start := time.Now()
 					conn, err := net.DialTimeout("tcp", addr, timeout)
@@ -800,12 +812,8 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 				resultMu.Lock()
 				allResults = append(allResults, r)
 				completed := len(allResults)
-				stage := 2
-				if req.TestAvailability {
-					stage = 3
-				}
 				pct := completed * 100 / total
-				sendCfnbProgress(session, ProgressData{Stage: stage, Nodes: total, Completed: pct, Budget: 100})
+				sendCfnbProgress(session, ProgressData{Stage: 2, Nodes: total, Completed: pct, Budget: 100})
 				resultMu.Unlock()
 			}
 		}()
@@ -885,14 +893,19 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			go func() {
 				defer avWg.Done()
 				for idx := range avCh {
+					select {
+					case <-session.ctx.Done():
+						return
+					default:
+					}
 					r := &okResults[idx]
 					addr, err := netip.ParseAddr(r.ip)
 					if err != nil {
 						continue
 					}
-					ctx, cancel := context.WithTimeout(context.Background(), availCfg.Timeout)
-					res := ap.ProbeHTTPTrace(ctx, addr)
-					cancel()
+					probeCtx, probeCancel := context.WithTimeout(context.Background(), availCfg.Timeout)
+					res := ap.ProbeHTTPTrace(probeCtx, addr)
+					probeCancel()
 					avMu.Lock()
 					avDone++
 					sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: avDone, Budget: 100})
@@ -956,14 +969,19 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			go func() {
 				defer htWg.Done()
 				for idx := range htCh {
+					select {
+					case <-session.ctx.Done():
+						return
+					default:
+					}
 					r := &okResults[idx]
 					addr, err := netip.ParseAddr(r.ip)
 					if err != nil {
 						continue
 					}
-					ctx, cancel := context.WithTimeout(context.Background(), httpCfg.Timeout)
-					res := hp.ProbeHTTPTraceMulti(ctx, addr)
-					cancel()
+					probeCtx, probeCancel := context.WithTimeout(context.Background(), httpCfg.Timeout)
+					res := hp.ProbeHTTPTraceMulti(probeCtx, addr)
+					probeCancel()
 					if res.OK {
 						loc := res.Trace["loc"]
 						if loc != "" {
@@ -1059,14 +1077,19 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			go func() {
 				defer bwWg.Done()
 				for idx := range bwCh {
+					select {
+					case <-session.ctx.Done():
+						return
+					default:
+					}
 					r := &okResults[idx]
 					addr, err := netip.ParseAddr(r.ip)
 					if err != nil {
 						continue
 					}
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					dr := dlp.Download(ctx, addr)
-					cancel()
+					probeCtx, probeCancel := context.WithTimeout(context.Background(), 10*time.Second)
+					dr := dlp.Download(probeCtx, addr)
+					probeCancel()
 					if dr.OK {
 						r.speedMbps = dr.Mbps
 					}
