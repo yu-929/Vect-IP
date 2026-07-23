@@ -2373,6 +2373,44 @@ type cfnbIPResult struct {
 	score        float64
 }
 
+func selectPerCountry(results []cfnbIPResult, perCountryTopN int, globalTopN int) []cfnbIPResult {
+	if perCountryTopN <= 0 {
+		perCountryTopN = 1
+	}
+	groups := make(map[string][]cfnbIPResult)
+	for _, r := range results {
+		loc := ""
+		if r.colo != "" {
+			parts := strings.Split(r.colo, "-")
+			if len(parts) >= 2 {
+				loc = parts[len(parts)-1]
+			}
+		}
+		if loc == "" {
+			loc = "__unknown"
+		}
+		groups[loc] = append(groups[loc], r)
+	}
+	var selected []cfnbIPResult
+	for _, group := range groups {
+		sort.Slice(group, func(i, j int) bool {
+			return group[i].score > group[j].score
+		})
+		n := perCountryTopN
+		if n > len(group) {
+			n = len(group)
+		}
+		selected = append(selected, group[:n]...)
+	}
+	sort.Slice(selected, func(i, j int) bool {
+		return selected[i].score > selected[j].score
+	})
+	if len(selected) > globalTopN {
+		selected = selected[:globalTopN]
+	}
+	return selected
+}
+
 func filterByCountry(results []cfnbIPResult, req cfnbRunRequest) []cfnbIPResult {
 	if !req.WhitelistEnabled && !req.BlockedEnabled {
 		return results
@@ -2554,7 +2592,16 @@ for w := 0; w < workers; w++ {
 	sort.Slice(okResults, func(i, j int) bool {
 		return okResults[i].score > okResults[j].score
 	})
-	okResults = okResults[:topN]
+
+	if req.TestAvailability && !req.GlobalMode {
+		poolSize := topN * 5
+		if poolSize > len(okResults) {
+			poolSize = len(okResults)
+		}
+		okResults = okResults[:poolSize]
+	} else {
+		okResults = okResults[:topN]
+	}
 
 	if req.TestAvailability {
 		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: 100})
@@ -2619,6 +2666,9 @@ for w := 0; w < workers; w++ {
 		avWg.Wait()
 		if len(availResults) > 0 {
 			okResults = availResults
+		}
+		if !req.GlobalMode {
+			okResults = selectPerCountry(okResults, req.PerCountryTopN, topN)
 		}
 		okResults = filterByCountry(okResults, req)
 		if len(okResults) == 0 {
