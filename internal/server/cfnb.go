@@ -117,7 +117,7 @@ func registerCfnbRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/cfnb/inline-sources/", func(w http.ResponseWriter, r *http.Request) {
 		id := strings.TrimPrefix(r.URL.Path, "/api/cfnb/inline-sources/")
-		inlinePath := filepath.Join("/tmp/cfnb", "inline_"+id+".txt")
+		inlinePath := filepath.Join(os.TempDir(), "cfnb", "inline_"+id+".txt")
 		data, err := os.ReadFile(inlinePath)
 		if err != nil {
 			http.Error(w, "not found", 404)
@@ -216,7 +216,7 @@ func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 			})
 		}()
 
-		scriptDir := "/tmp/cfnb"
+		scriptDir := filepath.Join(os.TempDir(), "cfnb")
 		if err := os.MkdirAll(scriptDir, 0755); err != nil {
 			session.mu.Lock()
 			session.err = "mkdir: " + err.Error()
