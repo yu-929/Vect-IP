@@ -2593,15 +2593,7 @@ for w := 0; w < workers; w++ {
 		return okResults[i].score > okResults[j].score
 	})
 
-	if req.TestAvailability && !req.GlobalMode {
-		poolSize := topN * 5
-		if poolSize > len(okResults) {
-			poolSize = len(okResults)
-		}
-		okResults = okResults[:poolSize]
-	} else {
-		okResults = okResults[:topN]
-	}
+	// Keep all reachable IPs for availability/HTTP tests (don't filter by TCP latency)
 
 	if req.TestAvailability {
 		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: 100})
