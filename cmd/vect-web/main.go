@@ -1804,7 +1804,7 @@ func expandCIDR(cidr string) ([]string, error) {
 
 func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, "POST required", 405)
+		http.Error(w, "POST required", http.StatusMethodNotAllowed)
 		return
 	}
 	var req cfnbRunRequest
@@ -2254,12 +2254,6 @@ func handleCfnbProgressSSE(w http.ResponseWriter, r *http.Request, session *Cfnb
 			flusher.Flush()
 		}
 	}
-}
-
-func jsonEscape(s string) string {
-	var buf bytes.Buffer
-	json.HTMLEscape(&buf, []byte(s))
-	return buf.String()
 }
 
 func intMax(a, b int) int {
