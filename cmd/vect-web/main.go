@@ -1819,7 +1819,7 @@ func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := fmt.Sprintf("cfnb_%d", atomic.AddInt64(&cfnbIDCounter, 1))
-	ctx, cancel := context.WithCancel(r.Context())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	session := &CfnbSession{
 		status: "running",
