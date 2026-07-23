@@ -2365,7 +2365,6 @@ type cfnbIPResult struct {
 	ip           string
 	port         int
 	colo         string
-	latencyMS    float64
 	jitterMS     float64
 	tcpLatencyMS float64
 	httpLatency  float64
