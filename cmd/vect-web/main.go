@@ -1995,19 +1995,16 @@ func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		if pythonBin == "" {
-			session.mu.Lock()
-			session.err = "python3 not found: CFNB requires Python on this device"
-			session.status = "failed"
-			session.mu.Unlock()
-			return
-		}
 		scriptPath := filepath.Join(scriptDir, "main.py")
-		if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-			session.mu.Lock()
-			session.err = "CFNB script not found at " + scriptPath + ": please install CFNB package first"
-			session.status = "failed"
-			session.mu.Unlock()
+		usePython := pythonBin != ""
+		if usePython {
+			if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+				usePython = false
+			}
+		}
+
+		if !usePython {
+			runCfnbScanGo(session, req, id)
 			return
 		}
 
@@ -2313,4 +2310,339 @@ func scanLinesOrCR(data []byte, atEOF bool) (advance int, token []byte, err erro
 		return len(data), data, nil
 	}
 	return 0, nil, nil
+}
+
+// --- Go-based CFNB scan engine (no Python dependency) ---
+
+type cfnbIPResult struct {
+	ip           string
+	port         int
+	colo         string
+	latencyMS    float64
+	jitterMS     float64
+	tcpLatencyMS float64
+	httpLatency  float64
+	speedMbps    float64
+	ok           bool
+}
+
+func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
+	scriptDir := filepath.Join(os.TempDir(), "cfnb")
+	os.MkdirAll(scriptDir, 0755)
+
+	sendCfnbProgress(session, ProgressData{Stage: 1, Nodes: 0, Completed: 0, Budget: 100})
+
+	ips := collectCfnbIPs(req, id, session)
+	if ips == nil {
+		return
+	}
+
+	sendCfnbProgress(session, ProgressData{Stage: 1, Nodes: len(ips), Completed: 100, Budget: 100})
+
+	probeCfg := probe.Config{
+		Timeout:          time.Duration(req.TcpTimeout * float64(time.Second)),
+		SNI:              "example.com",
+		HostHeader:       "example.com",
+		Path:             "/cdn-cgi/trace",
+		Port:             443,
+		Rounds:           intMax(1, req.TcpProbes),
+		SkipFirst:        0,
+		SkipFailedRounds: true,
+	}
+	if probeCfg.Timeout <= 0 {
+		probeCfg.Timeout = 3 * time.Second
+	}
+
+	p := probe.NewProber(probeCfg)
+
+	total := len(ips)
+	allResults := make([]cfnbIPResult, 0, total)
+	resultMu := sync.Mutex{}
+	workCh := make(chan int, total)
+	workers := intMax(1, req.Workers)
+	if workers > total {
+		workers = total
+	}
+	var wg sync.WaitGroup
+
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for idx := range workCh {
+				entry := ips[idx]
+				addr, err := netip.ParseAddr(entry.ip)
+				if err != nil {
+					continue
+				}
+				ctx, cancel := context.WithTimeout(context.Background(), probeCfg.Timeout)
+				res := p.ProbeHTTPTrace(ctx, addr)
+				cancel()
+
+				r := cfnbIPResult{
+					ip:   entry.ip,
+					port: entry.port,
+				}
+				if res.OK {
+					r.ok = true
+					r.latencyMS = float64(res.TotalMS)
+					r.tcpLatencyMS = float64(res.ConnectMS)
+					r.httpLatency = float64(res.TTFBMS)
+					if res.Trace != nil {
+						r.colo = res.Trace["colo"]
+					}
+				}
+
+				resultMu.Lock()
+				allResults = append(allResults, r)
+				completed := len(allResults)
+				stage := 2
+				if req.TestAvailability {
+					stage = 3
+				}
+				pct := completed * 100 / total
+				sendCfnbProgress(session, ProgressData{Stage: stage, Nodes: total, Completed: pct, Budget: 100})
+				resultMu.Unlock()
+			}
+		}()
+	}
+
+	for i := 0; i < total; i++ {
+		workCh <- i
+	}
+	close(workCh)
+	wg.Wait()
+
+	okResults := make([]cfnbIPResult, 0, len(allResults))
+	for _, r := range allResults {
+		if r.ok {
+			okResults = append(okResults, r)
+		}
+	}
+
+	if len(okResults) == 0 {
+		session.mu.Lock()
+		session.err = "no reachable IPs found"
+		session.status = "failed"
+		session.mu.Unlock()
+		return
+	}
+
+	sort.Slice(okResults, func(i, j int) bool {
+		return okResults[i].latencyMS < okResults[j].latencyMS
+	})
+
+	topN := req.TopN
+	if topN <= 0 {
+		topN = 20
+	}
+	if topN > len(okResults) {
+		topN = len(okResults)
+	}
+	okResults = okResults[:topN]
+
+	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 100, Budget: 100})
+
+	if req.BwCandidates > 0 {
+		bwCount := req.BwCandidates
+		if bwCount > len(okResults) {
+			bwCount = len(okResults)
+		}
+
+		dlCfg := probe.DownloadConfig{
+			Timeout: 3 * time.Second,
+			Bytes:   int64(req.BwSize * 1024 * 1024),
+		}
+		if dlCfg.Bytes <= 0 {
+			dlCfg.Bytes = 50_000_000
+		}
+		dlp := probe.NewDownloadProber(dlCfg)
+
+		bwWorkers := intMax(1, req.BwWorkers)
+		if bwWorkers > bwCount {
+			bwWorkers = bwCount
+		}
+		bwCh := make(chan int, bwCount)
+		var bwWg sync.WaitGroup
+		var bwMu sync.Mutex
+		bwDone := 0
+
+		for w := 0; w < bwWorkers; w++ {
+			bwWg.Add(1)
+			go func() {
+				defer bwWg.Done()
+				for idx := range bwCh {
+					r := &okResults[idx]
+					addr, err := netip.ParseAddr(r.ip)
+					if err != nil {
+						continue
+					}
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					dr := dlp.Download(ctx, addr)
+					cancel()
+					if dr.OK {
+						r.speedMbps = dr.Mbps
+					}
+					bwMu.Lock()
+					bwDone++
+					sendCfnbProgress(session, ProgressData{Stage: 5, Nodes: bwCount, Completed: bwDone, Budget: bwCount})
+					bwMu.Unlock()
+				}
+			}()
+		}
+		for i := 0; i < bwCount; i++ {
+			bwCh <- i
+		}
+		close(bwCh)
+		bwWg.Wait()
+	}
+
+	results := make([]map[string]interface{}, len(okResults))
+	for i, r := range okResults {
+		speedStr := ""
+		httpLatStr := ""
+		httpJitterStr := ""
+		tcpLatStr := ""
+		if r.speedMbps > 0 {
+			speedStr = fmt.Sprintf("%.2f Mbps", r.speedMbps)
+		}
+		if r.httpLatency > 0 {
+			httpLatStr = fmt.Sprintf("%.0f ms", r.httpLatency)
+		}
+		if r.jitterMS > 0 {
+			httpJitterStr = fmt.Sprintf("%.0f ms", r.jitterMS)
+		}
+		if r.tcpLatencyMS > 0 {
+			tcpLatStr = fmt.Sprintf("%.0f ms", r.tcpLatencyMS)
+		}
+		results[i] = map[string]interface{}{
+			"ip":           r.ip,
+			"port":         fmt.Sprintf("%d", r.port),
+			"label":        r.colo,
+			"speed":        speedStr,
+			"http_latency": httpLatStr,
+			"http_jitter":  httpJitterStr,
+			"tcp_latency":  tcpLatStr,
+		}
+	}
+
+	session.mu.Lock()
+	session.result = results
+	session.status = "completed"
+	session.progress = ProgressData{Stage: 5, Completed: 100, Budget: 100}
+	subs := make([]chan ProgressData, len(session.subs))
+	copy(subs, session.subs)
+	session.mu.Unlock()
+	sendProgress(session.progress, subs)
+}
+
+type cfnbIPEntry struct {
+	ip   string
+	port int
+}
+
+func collectCfnbIPs(req cfnbRunRequest, id string, session *CfnbSession) []cfnbIPEntry {
+	seen := map[string]bool{}
+	var entries []cfnbIPEntry
+
+	addIP := func(ip string, port int) {
+		key := fmt.Sprintf("%s:%d", ip, port)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		entries = append(entries, cfnbIPEntry{ip: ip, port: port})
+	}
+
+	for _, source := range req.Sources {
+		ips := fetchURLIPs(source, session)
+		if ips == nil {
+			return nil
+		}
+		for _, entry := range ips {
+			addIP(entry.ip, entry.port)
+		}
+	}
+
+	for _, cidr := range req.CIDRs {
+		expanded, err := expandCIDR(cidr)
+		if err != nil {
+			session.mu.Lock()
+			session.err = "expand CIDR " + cidr + ": " + err.Error()
+			session.status = "failed"
+			session.mu.Unlock()
+			return nil
+		}
+		for _, ip := range expanded {
+			addIP(ip, 443)
+		}
+	}
+
+	for _, ip := range req.IPs {
+		ip = strings.TrimSpace(ip)
+		if ip == "" {
+			continue
+		}
+		if strings.Contains(ip, ":") {
+			parts := strings.SplitN(ip, ":", 2)
+			port := 443
+			if p, err := strconv.Atoi(parts[1]); err == nil {
+				port = p
+			}
+			addIP(parts[0], port)
+		} else {
+			addIP(ip, 443)
+		}
+	}
+
+	return entries
+}
+
+func fetchURLIPs(url string, session *CfnbSession) []cfnbIPEntry {
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		session.mu.Lock()
+		session.err = "fetch source " + url + ": " + err.Error()
+		session.status = "failed"
+		session.mu.Unlock()
+		return nil
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
+	if err != nil {
+		session.mu.Lock()
+		session.err = "read source " + url + ": " + err.Error()
+		session.status = "failed"
+		session.mu.Unlock()
+		return nil
+	}
+
+	lines := strings.Split(string(body), "\n")
+	var entries []cfnbIPEntry
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+			continue
+		}
+		ipport := strings.SplitN(line, "#", 2)[0]
+		ipport = strings.TrimSpace(ipport)
+		if ipport == "" {
+			continue
+		}
+		ip := ipport
+		port := 443
+		if strings.Contains(ipport, ":") {
+			parts := strings.SplitN(ipport, ":", 2)
+			ip = parts[0]
+			if p, err := strconv.Atoi(parts[1]); err == nil {
+				port = p
+			}
+		}
+		if net.ParseIP(ip) != nil {
+			entries = append(entries, cfnbIPEntry{ip: ip, port: port})
+		}
+	}
+	return entries
 }
