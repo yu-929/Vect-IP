@@ -992,7 +992,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="field"><label>TCP 延迟权重</label><input id="cfnbSettingTcpLatWeight" type="number" value="0.0" min="0" step="0.5"></div>
 </div>
 <div class="row" style="margin-top:6pt">
-<div class="field"><label>HTTP延迟抖动测试次数</label><input id="cfnbSettingJitterProbes" type="number" value="3" min="1"></div>
+<div class="field"><label>HTTP延迟抖动测试次数</label><input id="cfnbSettingJitterProbes" type="number" value="5" min="1"></div>
 <div class="field"><label>带宽测速并发</label><input id="cfnbSettingBwWorkers" type="number" value="10" min="1" max="20"></div>
 </div>
 </div>
@@ -1083,7 +1083,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <script>
-let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false, cfnbStartTime=0;
+let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false, cfnbStartTime=0, cfnbCurId=null;
 const S=document.getElementById.bind(document);
 if(window.visualViewport){
 window.visualViewport.addEventListener('resize',function(){
@@ -2057,7 +2057,7 @@ function toggleCfnb(){
     var id=d.id;
     if(!id){setCfnbBtn('开始扫描',false);showCfnbError('未获取到任务 ID');return;}
     S('cfnbScanId').textContent=id;
-    curId=id;
+    cfnbCurId=id;
     var es=new EventSource('/api/cfnb/run/'+id+'?subscribe');
     window._cfnbEs=es;
     es.onmessage=function(e){
@@ -2098,9 +2098,9 @@ function toggleCfnb(){
   });
 }
 function cancelCfnbScan(){
-  if(!curId)return;
+  if(!cfnbCurId)return;
   showToast('正在取消扫描...');
-  fetch('/api/cfnb/cancel/'+curId).then(function(r){return r.json();}).then(function(d){
+  fetch('/api/cfnb/cancel/'+cfnbCurId).then(function(r){return r.json();}).then(function(d){
     if(d.status==='cancelled'){showToast('扫描已取消');setCfnbBtn('开始扫描',false);}
   }).catch(function(){setCfnbBtn('开始扫描',false);});
 }

@@ -159,7 +159,7 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 			}
 			now := time.Now()
 			afterPeak := now.Sub(peakStart)
-			if afterPeak >= 200*time.Millisecond {
+			if afterPeak >= 50*time.Millisecond {
 				recordPeak()
 				peakStart = now
 				peakBytes = 0

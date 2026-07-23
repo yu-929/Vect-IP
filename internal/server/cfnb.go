@@ -681,6 +681,48 @@ func intMax(a, b int) int {
 
 // --- Go-based CFNB scan engine (no Python dependency) ---
 
+func filterByCountry(results []cfnbIPResult, req cfnbRunRequest) []cfnbIPResult {
+	if !req.WhitelistEnabled && !req.BlockedEnabled {
+		return results
+	}
+	filtered := make([]cfnbIPResult, 0, len(results))
+	for _, r := range results {
+		loc := ""
+		if r.colo != "" {
+			parts := strings.Split(r.colo, "-")
+			if len(parts) >= 2 {
+				loc = parts[len(parts)-1]
+			}
+		}
+		if loc == "" {
+			filtered = append(filtered, r)
+			continue
+		}
+		matched := true
+		if req.WhitelistEnabled && len(req.WhitelistCountries) > 0 {
+			matched = false
+			for _, c := range req.WhitelistCountries {
+				if strings.EqualFold(c, loc) {
+					matched = true
+					break
+				}
+			}
+		}
+		if matched && req.BlockedEnabled && len(req.BlockedCountries) > 0 {
+			for _, c := range req.BlockedCountries {
+				if strings.EqualFold(c, loc) {
+					matched = false
+					break
+				}
+			}
+		}
+		if matched {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered
+}
+
 func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	scriptDir := filepath.Join(os.TempDir(), "cfnb")
 	os.MkdirAll(scriptDir, 0755)
@@ -698,21 +740,21 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	if timeout <= 0 {
 		timeout = 3 * time.Second
 	}
-
 	tcpProbes := intMax(1, req.TcpProbes)
 
-	probeCfg := probe.Config{
-		Timeout:          timeout,
-		SNI:              "example.com",
-		HostHeader:       "example.com",
-		Path:             "/cdn-cgi/trace",
-		Port:             443,
-		Rounds:           tcpProbes,
-		SkipFirst:        1,
-		SkipFailedRounds: true,
+	if req.PortFilterEnabled && len(req.Ports) > 0 {
+		filtered := make([]cfnbIPEntry, 0, len(ips))
+		portSet := make(map[int]bool)
+		for _, p := range req.Ports {
+			portSet[p] = true
+		}
+		for _, e := range ips {
+			if portSet[e.port] {
+				filtered = append(filtered, e)
+			}
+		}
+		ips = filtered
 	}
-
-	p := probe.NewProber(probeCfg)
 
 	total := len(ips)
 	allResults := make([]cfnbIPResult, 0, total)
@@ -730,29 +772,31 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			defer wg.Done()
 			for idx := range workCh {
 				entry := ips[idx]
-				addr, err := netip.ParseAddr(entry.ip)
-				if err != nil {
-					continue
+				var bestLatency float64
+				successCount := 0
+				for r := 0; r < tcpProbes; r++ {
+					addr := net.JoinHostPort(entry.ip, strconv.Itoa(entry.port))
+					start := time.Now()
+					conn, err := net.DialTimeout("tcp", addr, timeout)
+					if err != nil {
+						continue
+					}
+					latency := time.Since(start).Seconds() * 1000
+					conn.Close()
+					successCount++
+					if bestLatency == 0 || latency < bestLatency {
+						bestLatency = latency
+					}
 				}
-				ctx, cancel := context.WithTimeout(context.Background(), timeout)
-				res := p.ProbeHTTPTraceMulti(ctx, addr)
-				cancel()
-
 				r := cfnbIPResult{
 					ip:   entry.ip,
 					port: entry.port,
 				}
-				if res.OK {
+				successRate := float64(successCount) / float64(tcpProbes)
+				if successRate >= req.MinSuccessRate && successCount > 0 {
 					r.ok = true
-					r.latencyMS = float64(res.TotalMS)
-					r.tcpLatencyMS = float64(res.ConnectMS)
-					r.httpLatency = float64(res.TTFBMS)
-					r.jitterMS = float64(res.JitterMS)
-					if res.Trace != nil {
-						r.colo = res.Trace["colo"]
-					}
+					r.tcpLatencyMS = bestLatency
 				}
-
 				resultMu.Lock()
 				allResults = append(allResults, r)
 				completed := len(allResults)
@@ -796,7 +840,6 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		topN = len(okResults)
 	}
 
-	// Weighted scoring after TCP probe (Stage 2)
 	maxTcpLat := 1.0
 	for _, r := range okResults {
 		if r.tcpLatencyMS > maxTcpLat {
@@ -810,23 +853,91 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		}
 		okResults[i].score = tcpScore
 	}
-
 	sort.Slice(okResults, func(i, j int) bool {
 		return okResults[i].score > okResults[j].score
 	})
 	okResults = okResults[:topN]
 
+	if req.TestAvailability {
+		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: 100})
+		availCfg := probe.Config{
+			Timeout:    3 * time.Second,
+			SNI:        "api.090227.xyz",
+			HostHeader: "api.090227.xyz",
+			Path:       "/check",
+			Port:       443,
+			Rounds:     1,
+			SkipFirst:  0,
+		}
+		ap := probe.NewProber(availCfg)
+		var avWg sync.WaitGroup
+		var avMu sync.Mutex
+		avDone := 0
+		avCh := make(chan int, len(okResults))
+		avWorkers := intMax(1, req.Workers)
+		if avWorkers > len(okResults) {
+			avWorkers = len(okResults)
+		}
+		availResults := make([]cfnbIPResult, 0, len(okResults))
+		var availMu sync.Mutex
+		for w := 0; w < avWorkers; w++ {
+			avWg.Add(1)
+			go func() {
+				defer avWg.Done()
+				for idx := range avCh {
+					r := &okResults[idx]
+					addr, err := netip.ParseAddr(r.ip)
+					if err != nil {
+						continue
+					}
+					ctx, cancel := context.WithTimeout(context.Background(), availCfg.Timeout)
+					res := ap.ProbeHTTPTrace(ctx, addr)
+					cancel()
+					avMu.Lock()
+					avDone++
+					sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: avDone, Budget: 100})
+					avMu.Unlock()
+					if res.OK {
+						loc := res.Trace["loc"]
+						if loc != "" {
+							r.colo = alpha2ToAlpha3(loc) + "-" + loc
+						}
+						availMu.Lock()
+						availResults = append(availResults, *r)
+						availMu.Unlock()
+					}
+				}
+			}()
+		}
+		for i := 0; i < len(okResults); i++ {
+			avCh <- i
+		}
+		close(avCh)
+		avWg.Wait()
+		if len(availResults) > 0 {
+			okResults = availResults
+		}
+		okResults = filterByCountry(okResults, req)
+		if len(okResults) == 0 {
+			session.mu.Lock()
+			session.err = "no reachable IPs after country filter"
+			session.status = "failed"
+			session.mu.Unlock()
+			return
+		}
+		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 100, Budget: 100})
+	}
+
 	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 0, Budget: 100})
 
 	if req.TestHttp && req.JitterSamples > 1 {
 		httpCfg := probe.Config{
-			Timeout:          timeout,
+			Timeout:          3 * time.Second,
 			SNI:              "example.com",
 			HostHeader:       "example.com",
 			Path:             "/cdn-cgi/trace",
 			Port:             443,
 			Rounds:           req.JitterSamples,
-			SkipFirst:        1,
 			SkipFailedRounds: true,
 		}
 		hp := probe.NewProber(httpCfg)
@@ -854,6 +965,10 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					res := hp.ProbeHTTPTraceMulti(ctx, addr)
 					cancel()
 					if res.OK {
+						loc := res.Trace["loc"]
+						if loc != "" {
+							r.colo = alpha2ToAlpha3(loc) + "-" + loc
+						}
 						r.httpLatency = float64(res.TotalMS)
 						r.jitterMS = float64(res.JitterMS)
 					}
@@ -870,7 +985,6 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		close(htCh)
 		htWg.Wait()
 
-		// Re-score with HTTP latency and jitter
 		maxHttpLat := 1.0
 		maxJitter := 1.0
 		for _, r := range okResults {
@@ -896,13 +1010,23 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			}
 			okResults[i].score = tcpScore + httpScore + jitterScore
 		}
-
 		sort.Slice(okResults, func(i, j int) bool {
 			return okResults[i].score > okResults[j].score
 		})
 	}
 
 	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 100, Budget: 100})
+
+	if !req.TestAvailability {
+		okResults = filterByCountry(okResults, req)
+		if len(okResults) == 0 {
+			session.mu.Lock()
+			session.err = "no reachable IPs after country filter"
+			session.status = "failed"
+			session.mu.Unlock()
+			return
+		}
+	}
 
 	if req.BwCandidates > 0 {
 		bwCount := req.BwCandidates
@@ -911,7 +1035,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		}
 
 		dlCfg := probe.DownloadConfig{
-			Timeout:  10 * time.Second,
+			Timeout:  5 * time.Second,
 			Bytes:    int64(req.BwSize * 1024 * 1024),
 			SNI:      "speed.cloudflare.com",
 			HostName: "speed.cloudflare.com",
@@ -959,7 +1083,6 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		close(bwCh)
 		bwWg.Wait()
 
-		// Re-score with speed
 		maxSpeed := 1.0
 		for _, r := range okResults {
 			if r.speedMbps > maxSpeed {
@@ -995,7 +1118,6 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			}
 			okResults[i].score = tcpScore + httpScore + jitterScore + speedScore
 		}
-
 		sort.Slice(okResults, func(i, j int) bool {
 			return okResults[i].score > okResults[j].score
 		})
@@ -1013,17 +1135,17 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			speedStr = "0.00 Mbps"
 		}
 		if r.httpLatency > 0 {
-			httpLatStr = fmt.Sprintf("%.0f ms", r.httpLatency)
+			httpLatStr = fmt.Sprintf("%.1f ms", r.httpLatency)
 		} else {
 			httpLatStr = "0 ms"
 		}
 		if r.jitterMS > 0 {
-			httpJitterStr = fmt.Sprintf("%.0f ms", r.jitterMS)
+			httpJitterStr = fmt.Sprintf("%.1f ms", r.jitterMS)
 		} else {
 			httpJitterStr = "0 ms"
 		}
 		if r.tcpLatencyMS > 0 {
-			tcpLatStr = fmt.Sprintf("%.0f ms", r.tcpLatencyMS)
+			tcpLatStr = fmt.Sprintf("%.1f ms", r.tcpLatencyMS)
 		} else {
 			tcpLatStr = "0 ms"
 		}
@@ -1046,6 +1168,51 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	copy(subs, session.subs)
 	session.mu.Unlock()
 	sendProgress(session.progress, subs)
+}
+
+func alpha2ToAlpha3(code string) string {
+	m := map[string]string{
+		"AF": "AFG", "AL": "ALB", "DZ": "DZA", "AS": "ASM", "AD": "AND", "AO": "AGO", "AI": "AIA",
+		"AQ": "ATA", "AG": "ATG", "AR": "ARG", "AM": "ARM", "AW": "ABW", "AU": "AUS", "AT": "AUT",
+		"AZ": "AZE", "BS": "BHS", "BH": "BHR", "BD": "BGD", "BB": "BRB", "BY": "BLR", "BE": "BEL",
+		"BZ": "BLZ", "BJ": "BEN", "BM": "BMU", "BT": "BTN", "BO": "BOL", "BQ": "BES", "BA": "BIH",
+		"BW": "BWA", "BV": "BVT", "BR": "BRA", "IO": "IOT", "BN": "BRN", "BG": "BGR", "BF": "BFA",
+		"BI": "BDI", "CV": "CPV", "KH": "KHM", "CM": "CMR", "CA": "CAN", "KY": "CYM", "CF": "CAF",
+		"TD": "TCD", "CL": "CHL", "CN": "CHN", "CX": "CXR", "CC": "CCK", "CO": "COL", "KM": "COM",
+		"CD": "COD", "CG": "COG", "CK": "COK", "CR": "CRI", "HR": "HRV", "CU": "CUB", "CW": "CUW",
+		"CY": "CYP", "CZ": "CZE", "CI": "CIV", "DK": "DNK", "DJ": "DJI", "DM": "DMA", "DO": "DOM",
+		"EC": "ECU", "EG": "EGY", "SV": "SLV", "GQ": "GNQ", "ER": "ERI", "EE": "EST", "SZ": "SWZ",
+		"ET": "ETH", "FK": "FLK", "FO": "FRO", "FJ": "FJI", "FI": "FIN", "FR": "FRA", "GF": "GUF",
+		"PF": "PYF", "TF": "ATF", "GA": "GAB", "GM": "GMB", "GE": "GEO", "DE": "DEU", "GH": "GHA",
+		"GI": "GIB", "GR": "GRC", "GL": "GRL", "GD": "GRD", "GP": "GLP", "GU": "GUM", "GT": "GTM",
+		"GG": "GGY", "GN": "GIN", "GW": "GNB", "GY": "GUY", "HT": "HTI", "HM": "HMD", "VA": "VAT",
+		"HN": "HND", "HK": "HKG", "HU": "HUN", "IS": "ISL", "IN": "IND", "ID": "IDN", "IR": "IRN",
+		"IQ": "IRQ", "IE": "IRL", "IM": "IMN", "IL": "ISR", "IT": "ITA", "JM": "JAM", "JP": "JPN",
+		"JE": "JEY", "JO": "JOR", "KZ": "KAZ", "KE": "KEN", "KI": "KIR", "KP": "PRK", "KR": "KOR",
+		"KW": "KWT", "KG": "KGZ", "LA": "LAO", "LV": "LVA", "LB": "LBN", "LS": "LSO", "LR": "LBR",
+		"LY": "LBY", "LI": "LIE", "LT": "LTU", "LU": "LUX", "MO": "MAC", "MG": "MDG", "MW": "MWI",
+		"MY": "MYS", "MV": "MDV", "ML": "MLI", "MT": "MLT", "MH": "MHL", "MQ": "MTQ", "MR": "MRT",
+		"MU": "MUS", "YT": "MYT", "MX": "MEX", "FM": "FSM", "MD": "MDA", "MC": "MCO", "MN": "MNG",
+		"ME": "MNE", "MS": "MSR", "MA": "MAR", "MZ": "MOZ", "MM": "MMR", "NA": "NAM", "NR": "NRU",
+		"NP": "NPL", "NL": "NLD", "NC": "NCL", "NZ": "NZL", "NI": "NIC", "NE": "NER", "NG": "NGA",
+		"NU": "NIU", "NF": "NFK", "MK": "MKD", "MP": "MNP", "NO": "NOR", "OM": "OMN", "PK": "PAK",
+		"PW": "PLW", "PS": "PSE", "PA": "PAN", "PG": "PNG", "PY": "PRY", "PE": "PER", "PH": "PHL",
+		"PN": "PCN", "PL": "POL", "PT": "PRT", "PR": "PRI", "QA": "QAT", "RE": "REU", "RO": "ROU",
+		"RU": "RUS", "RW": "RWA", "BL": "BLM", "SH": "SHN", "KN": "KNA", "LC": "LCA", "MF": "MAF",
+		"PM": "SPM", "VC": "VCT", "WS": "WSM", "SM": "SMR", "ST": "STP", "SA": "SAU", "SN": "SEN",
+		"RS": "SRB", "SC": "SYC", "SL": "SLE", "SG": "SGP", "SX": "SXM", "SK": "SVK", "SI": "SVN",
+		"SB": "SLB", "SO": "SOM", "ZA": "ZAF", "GS": "SGS", "SS": "SSD", "ES": "ESP", "LK": "LKA",
+		"SD": "SDN", "SR": "SUR", "SJ": "SJM", "SE": "SWE", "CH": "CHE", "SY": "SYR", "TW": "TWN",
+		"TJ": "TJK", "TZ": "TZA", "TH": "THA", "TL": "TLS", "TG": "TGO", "TK": "TKL", "TO": "TON",
+		"TT": "TTO", "TN": "TUN", "TR": "TUR", "TM": "TKM", "TC": "TCA", "TV": "TUV", "UG": "UGA",
+		"UA": "UKR", "AE": "ARE", "GB": "GBR", "UM": "UMI", "US": "USA", "UY": "URY", "UZ": "UZB",
+		"VU": "VUT", "VE": "VEN", "VN": "VNM", "VG": "VGB", "VI": "VIR", "WF": "WLF", "EH": "ESH",
+		"YE": "YEM", "ZM": "ZMB", "ZW": "ZWE",
+	}
+	if v, ok := m[code]; ok {
+		return v
+	}
+	return code
 }
 
 type cfnbIPResult struct {

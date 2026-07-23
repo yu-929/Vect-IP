@@ -211,7 +211,6 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 	}
 
 	var results []Result
-	totalFails := 0
 	for i := 0; i < rounds; i++ {
 		var r Result
 		roundCtx := ctx
@@ -227,11 +226,6 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 		if !r.OK {
 			if !p.cfg.SkipFailedRounds {
 				return r
-			}
-			totalFails++
-			// Abort early if more than half of completed rounds have failed (at least 2 failures)
-			if totalFails >= 2 && totalFails*2 > i+1 {
-				return p.aggregateResults(results, ip, skipFirst)
 			}
 		}
 	}
