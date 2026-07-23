@@ -26,18 +26,15 @@ type DownloadConfig struct {
 }
 
 type DownloadResult struct {
-	IP          netip.Addr `json:"ip"`
-	OK          bool       `json:"ok"`
-	Status      int        `json:"status"`
-	Error       string     `json:"error,omitempty"`
-	Bytes       int64      `json:"bytes"`
-	TotalMS     int64      `json:"total_ms"`
-	Mbps        float64    `json:"mbps"`
+	IP      netip.Addr `json:"ip"`
+	OK      bool       `json:"ok"`
+	Status  int        `json:"status"`
+	Error   string     `json:"error,omitempty"`
+	Bytes   int64      `json:"bytes"`
+	TotalMS int64      `json:"total_ms"`
+	Mbps    float64    `json:"mbps"`
 	PeakMbps    float64    `json:"peak_mbps"`
-	BaselineRTT float64    `json:"baseline_rtt"`
-	InflightRTT float64    `json:"inflight_rtt"`
-	Streams     int        `json:"streams"`
-	When        time.Time  `json:"when"`
+	When    time.Time  `json:"when"`
 }
 
 type DownloadProber struct {
@@ -90,37 +87,17 @@ func NewDownloadProber(cfg DownloadConfig) *DownloadProber {
 	}
 }
 
-func (p *DownloadProber) measureRTT(ctx context.Context, host string) float64 {
-	url := "https://" + host + "/cdn-cgi/trace"
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
-	if err != nil {
-		return 0
-	}
-	req.Host = p.cfg.HostName
-	start := time.Now()
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return 0
-	}
-	_ = resp.Body.Close()
-	return float64(time.Since(start).Microseconds()) / 1000.0
-}
-
 func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadResult {
 	start := time.Now()
 	out := DownloadResult{
-		IP:      ip,
-		When:    start,
-		Streams: 1,
+		IP:   ip,
+		When: start,
 	}
 
 	host := ip.String()
 	if ip.Is6() {
 		host = "[" + host + "]"
 	}
-
-	// Baseline RTT before download
-	out.BaselineRTT = p.measureRTT(ctx, host)
 
 	var url string
 	if p.cfg.CustomURL {
@@ -158,13 +135,6 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 		out.TotalMS = time.Since(start).Milliseconds()
 		return out
 	}
-
-	// Inflight RTT measurement: fire after 500ms in a goroutine
-	inflightCh := make(chan float64, 1)
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		inflightCh <- p.measureRTT(ctx, host)
-	}()
 
 	var n int64
 	buf := make([]byte, 64*1024)
@@ -221,12 +191,6 @@ func (p *DownloadProber) Download(ctx context.Context, ip netip.Addr) DownloadRe
 		out.Mbps = (float64(n) * 8) / elapsed.Seconds() / 1e6
 	}
 	out.PeakMbps = peakMbps
-
-	// Collect inflight RTT if goroutine completed
-	select {
-	case out.InflightRTT = <-inflightCh:
-	default:
-	}
 
 	if err != nil && !errors.Is(err, io.EOF) {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {

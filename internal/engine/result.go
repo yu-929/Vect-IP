@@ -53,8 +53,6 @@ type TopResult struct {
 	DownloadMbps     float64 `json:"download_mbps"`
 	DownloadPeakMbps float64 `json:"download_peak_mbps"`
 	DownloadError    string  `json:"download_error,omitempty"`
-	BufferbloatMS    float64 `json:"bufferbloat_ms"`
-	Streams          int     `json:"streams"`
 
 	PrefixSamples int `json:"prefix_samples"`
 	PrefixOK      int `json:"prefix_ok"`

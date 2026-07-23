@@ -62,7 +62,6 @@ type ScanRequest struct {
 	JitterFusionSearch   bool     `json:"jitterFusionSearch"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 	ColoDiversity        bool     `json:"coloDiversity"`
-	SpeedFusion          bool     `json:"speedFusion"`
 }
 
 type ScanStatus struct {
@@ -463,13 +462,9 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	if req.TopN > 0 {
 		topN = req.TopN
 	}
-	engineTopN := topN
-	if req.SpeedFusion {
-		engineTopN = topN * 3
-	}
 	cfg := engine.Config{
 		Budget:          req.Budget,
-		TopN:            engineTopN,
+		TopN:            topN,
 		Concurrency:     req.Concurrency,
 		Heads:           req.Heads,
 		Beam:            req.Beam,
@@ -484,7 +479,6 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		JitterFusionSearch: req.JitterFusionSearch,
 		SkipFailedRounds:   req.SkipFailedRounds,
 		ColoDiversity:      req.ColoDiversity,
-		SpeedFusion:        req.SpeedFusion,
 		OnProgress: func(info engine.ProgressInfo) {
 			session.mu.Lock()
 			session.progress = ProgressData{
@@ -594,74 +588,9 @@ go func() {
 		session.mu.Unlock()
 		sendProgress(session.progress, subs)
 
-		// Medium download stage: 1MB to filter out clearly slow candidates
-		if req.SpeedFusion && len(session.result) > topN*2 {
-			log.Printf("medium: starting medium downloads on %d results (2MB×3)", len(session.result))
-			mediumCfg := probe.DownloadConfig{
-				Timeout: 10 * time.Second,
-				Bytes:   2_000_000,
-			}
-			mediumDlp := probe.NewMultiStreamDownloadProber(mediumCfg, 3)
-			mdlConc := req.DownloadConcurrency
-			if mdlConc <= 1 {
-				mdlConc = 10
-			}
-			sem := make(chan struct{}, mdlConc)
-			var mWg sync.WaitGroup
-			for i := range session.result {
-				mWg.Add(1)
-				sem <- struct{}{}
-				go func(idx int) {
-					defer mWg.Done()
-					defer func() { <-sem }()
-					dlCtx, dlCancel := context.WithTimeout(ctx, 10*time.Second)
-					dr := mediumDlp.Download(dlCtx, session.result[idx].IP)
-					dlCancel()
-					session.result[idx].DownloadOK = dr.OK
-					session.result[idx].DownloadBytes = dr.Bytes
-					session.result[idx].DownloadMS = dr.TotalMS
-					session.result[idx].DownloadMbps = dr.Mbps
-					session.result[idx].DownloadPeakMbps = dr.PeakMbps
-					session.result[idx].BufferbloatMS = dr.InflightRTT - dr.BaselineRTT
-					session.result[idx].Streams = dr.Streams
-				}(i)
-			}
-			mWg.Wait()
-			for i := range session.result {
-				r := &session.result[i]
-				score := float64(r.TotalMS)
-				if r.DownloadOK && r.DownloadMbps > 0 {
-					dlBonus := r.DownloadMbps * 0.5
-					if dlBonus > score {
-						dlBonus = score
-					}
-					score -= dlBonus
-				}
-				if req.SpeedFusion && r.BufferbloatMS > 20 {
-					score += (r.BufferbloatMS - 20) * 0.5
-				}
-				if req.JitterFusionSearch && r.JitterMS > 0 {
-					score += r.JitterMS * 0.5
-				}
-				r.ScoreMS = score
-			}
-			sort.SliceStable(session.result, func(i, j int) bool {
-				return session.result[i].ScoreMS < session.result[j].ScoreMS
-			})
-			keep := topN * 2
-			if keep > len(session.result) {
-				keep = len(session.result)
-			}
-			session.result = session.result[:keep]
-			log.Printf("medium: kept %d results after medium download", keep)
-		}
-
 		// Run download tests if requested (keep SSE open during download)
 		if req.DownloadTop > 0 && len(session.result) > 0 && session.result[0].ScoreMS < 6000 {
 			dlTop := req.DownloadTop
-			if req.SpeedFusion {
-				dlTop = len(session.result)
-			}
 			log.Printf("download: starting %d tests on %d results", dlTop, len(session.result))
 			session.mu.Lock()
 			session.status = "downloading"
@@ -696,10 +625,7 @@ go func() {
 				}
 			}
 
-			dlp := probe.Downloader(probe.NewDownloadProber(dlCfg))
-			if req.SpeedFusion {
-				dlp = probe.NewMultiStreamDownloadProber(dlCfg, 3)
-			}
+			dlp := probe.NewDownloadProber(dlCfg)
 			dlConc := req.DownloadConcurrency
 			if dlConc <= 1 {
 				dlConc = 1
@@ -758,10 +684,8 @@ go func() {
 						r.DownloadBytes = dr.Bytes
 						r.DownloadMS = dr.TotalMS
 						r.DownloadMbps = dr.Mbps
-						r.DownloadPeakMbps = dr.PeakMbps
-						r.DownloadError = dr.Error
-						r.BufferbloatMS = dr.InflightRTT - dr.BaselineRTT
-						r.Streams = dr.Streams
+r.DownloadPeakMbps = dr.PeakMbps
+					r.DownloadError = dr.Error
 						if dr.OK {
 							successCount++
 						}
@@ -794,72 +718,17 @@ go func() {
 			}
 			close(workCh)
 			wg.Wait()
-
-			// Stability verification: repeat download on top 5, take minimum speed
-			if req.SpeedFusion {
-				verifyCount := 5
-				if verifyCount > len(session.result) {
-					verifyCount = len(session.result)
-				}
-				var vWg sync.WaitGroup
-				for i := 0; i < verifyCount; i++ {
-					vWg.Add(1)
-					go func(idx int) {
-						defer vWg.Done()
-						r := &session.result[idx]
-						if !r.DownloadOK {
-							return
-						}
-						verifyDlp := probe.NewMultiStreamDownloadProber(dlCfg, 3)
-						minMbps := r.DownloadMbps
-						for attempt := 0; attempt < 2; attempt++ {
-							dlCtx, dlCancel := context.WithTimeout(ctx, time.Duration(dlTimeout)*time.Second)
-							dr := verifyDlp.Download(dlCtx, r.IP)
-							dlCancel()
-							if dr.OK && dr.Mbps < minMbps {
-								minMbps = dr.Mbps
-							}
-						}
-						r.DownloadMbps = minMbps
-					}(i)
-				}
-				vWg.Wait()
-				log.Printf("verify: stability verification done for top %d", verifyCount)
-			}
 		}
 
 		// Re-sort by comprehensive score: latency + bandwidth + download speed
 		session.mu.Lock()
-		if req.SpeedFusion {
-			for i := range session.result {
-				r := &session.result[i]
-				score := float64(r.TotalMS)
-				if r.DownloadOK && r.DownloadMbps > 0 {
-					dlBonus := r.DownloadMbps * 0.5
-					if dlBonus > score {
-						dlBonus = score
-					}
-					score -= dlBonus
-				}
-				if r.BufferbloatMS > 20 {
-					score += (r.BufferbloatMS - 20) * 0.5
-				}
-				if req.JitterFusionSearch && r.JitterMS > 0 {
-					score += r.JitterMS * 0.5
-				}
-				r.ScoreMS = score
-			}
-		}
 		sort.SliceStable(session.result, func(i, j int) bool {
 			return session.result[i].ScoreMS < session.result[j].ScoreMS
 		})
-		if req.SpeedFusion && len(session.result) > topN {
-			session.result = session.result[:topN]
-		}
 		session.finishedAt = time.Now()
 		if session.status != "failed" {
-		session.status = "completed"
-	}
+			session.status = "completed"
+		}
 		session.mu.Unlock()
 
 		// Close SSE channels after all processing is done

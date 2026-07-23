@@ -43,9 +43,8 @@ type probeTask struct {
 }
 
 type probeDone struct {
-	task           probeTask
-	result         probe.Result
-	downloadResult probe.DownloadResult
+	task   probeTask
+	result probe.Result
 }
 
 // New creates a new search engine.
@@ -300,13 +299,6 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 		if e.cfg.JitterFusionSearch && d.result.JitterMS > 0 {
 			score += d.result.JitterMS * 0.3
 		}
-		if e.cfg.SpeedFusion && d.downloadResult.OK && d.downloadResult.Mbps > 0 {
-			dlBonus := d.downloadResult.Mbps * 0.5
-			if dlBonus > score {
-				dlBonus = score
-			}
-			score -= dlBonus
-		}
 	}
 
 	// Add to top N
@@ -325,10 +317,6 @@ func (e *Engine) processOneResult(d probeDone, timeoutMS float64) {
 		MaxMS:         d.result.MaxMS,
 		ScoreMS:       score,
 		Trace:         d.result.Trace,
-		DownloadOK:    d.downloadResult.OK,
-		DownloadBytes: d.downloadResult.Bytes,
-		DownloadMS:    d.downloadResult.TotalMS,
-		DownloadMbps:  d.downloadResult.Mbps,
 		PrefixSamples: stats.Samples,
 		PrefixOK:      stats.Successes,
 		PrefixFail:    stats.Failures,
@@ -354,24 +342,6 @@ func (e *Engine) worker(ctx context.Context, wg *sync.WaitGroup, probeCfg probe.
 		cancel()
 
 		pd := probeDone{task: task, result: result}
-
-		// Lightweight download probe with adaptive size based on latency
-		if e.cfg.SpeedFusion && result.OK {
-			probeSize := int64(100_000)
-			if result.TotalMS < 80 {
-				probeSize = 500_000
-			} else if result.TotalMS < 150 {
-				probeSize = 200_000
-			}
-			dlCfg := probe.DownloadConfig{
-				Timeout: 3 * time.Second,
-				Bytes:   probeSize,
-			}
-			adptProber := probe.NewDownloadProber(dlCfg)
-			dlCtx, dlCancel := context.WithTimeout(ctx, 3*time.Second)
-			pd.downloadResult = adptProber.Download(dlCtx, task.ip)
-			dlCancel()
-		}
 
 		select {
 		case e.done <- pd:
