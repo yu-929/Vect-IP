@@ -1029,7 +1029,11 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					if err != nil {
 						continue
 					}
-					probeCtx, probeCancel := context.WithTimeout(context.Background(), httpCfg.Timeout)
+					probeTimeout := httpCfg.Timeout * time.Duration(req.JitterSamples)
+					if probeTimeout < 15*time.Second {
+						probeTimeout = 15 * time.Second
+					}
+					probeCtx, probeCancel := context.WithTimeout(context.Background(), probeTimeout)
 					res := hp.ProbeHTTPTraceMulti(probeCtx, addr)
 					probeCancel()
 					if res.OK {
