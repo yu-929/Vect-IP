@@ -2842,6 +2842,8 @@ for w := 0; w < workers; w++ {
 		close(bwCh)
 		bwWg.Wait()
 
+		okResults = okResults[:bwCount]
+
 		maxSpeed := 1.0
 		for _, r := range okResults {
 			if r.speedMbps > maxSpeed {
@@ -2881,11 +2883,6 @@ for w := 0; w < workers; w++ {
 			return okResults[i].score > okResults[j].score
 		})
 	}
-
-	if topN > len(okResults) {
-		topN = len(okResults)
-	}
-	okResults = okResults[:topN]
 
 	results := make([]map[string]interface{}, len(okResults))
 	for i, r := range okResults {
