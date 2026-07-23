@@ -2346,7 +2346,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		Path:             "/cdn-cgi/trace",
 		Port:             443,
 		Rounds:           intMax(1, req.TcpProbes),
-		SkipFirst:        0,
+		SkipFirst:        1,
 		SkipFailedRounds: true,
 	}
 	if probeCfg.Timeout <= 0 {
@@ -2376,7 +2376,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					continue
 				}
 				ctx, cancel := context.WithTimeout(context.Background(), probeCfg.Timeout)
-				res := p.ProbeHTTPTrace(ctx, addr)
+				res := p.ProbeHTTPTraceMulti(ctx, addr)
 				cancel()
 
 				r := cfnbIPResult{
@@ -2386,6 +2386,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 				if res.OK {
 					r.ok = true
 					r.latencyMS = float64(res.TotalMS)
+					r.jitterMS = float64(res.JitterMS)
 					r.tcpLatencyMS = float64(res.ConnectMS)
 					r.httpLatency = float64(res.TTFBMS)
 					if res.Trace != nil {
@@ -2450,8 +2451,10 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		}
 
 		dlCfg := probe.DownloadConfig{
-			Timeout: 3 * time.Second,
-			Bytes:   int64(req.BwSize * 1024 * 1024),
+			Timeout:  15 * time.Second,
+			Bytes:    int64(req.BwSize * 1024 * 1024),
+			SNI:      "speed.cloudflare.com",
+			HostName: "speed.cloudflare.com",
 		}
 		if dlCfg.Bytes <= 0 {
 			dlCfg.Bytes = 50_000_000
