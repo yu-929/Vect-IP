@@ -209,6 +209,8 @@ func SetupServer(port int, webFS fs.FS) *http.Server {
 	mux.HandleFunc("/api/resolve-domain", handleResolveDomain)
 	mux.HandleFunc("/api/route-info", handleRouteInfo)
 
+	registerCfnbRoutes(mux)
+
 	server := &http.Server{
 		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
 		Handler: mux,
