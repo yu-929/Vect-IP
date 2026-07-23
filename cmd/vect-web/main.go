@@ -2441,6 +2441,64 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	}
 	okResults = okResults[:topN]
 
+	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 0, Budget: 100})
+
+	if req.TestHttp && req.JitterSamples > 1 {
+		httpCfg := probe.Config{
+			Timeout:          time.Duration(req.TcpTimeout * float64(time.Second)),
+			SNI:              "example.com",
+			HostHeader:       "example.com",
+			Path:             "/cdn-cgi/trace",
+			Port:             443,
+			Rounds:           req.JitterSamples,
+			SkipFirst:        1,
+			SkipFailedRounds: true,
+		}
+		if httpCfg.Timeout <= 0 {
+			httpCfg.Timeout = 3 * time.Second
+		}
+		hp := probe.NewProber(httpCfg)
+
+		var htWg sync.WaitGroup
+		var htMu sync.Mutex
+		htDone := 0
+		htCh := make(chan int, len(okResults))
+		htWorkers := intMax(1, req.Workers)
+		if htWorkers > len(okResults) {
+			htWorkers = len(okResults)
+		}
+
+		for w := 0; w < htWorkers; w++ {
+			htWg.Add(1)
+			go func() {
+				defer htWg.Done()
+				for idx := range htCh {
+					r := &okResults[idx]
+					addr, err := netip.ParseAddr(r.ip)
+					if err != nil {
+						continue
+					}
+					ctx, cancel := context.WithTimeout(context.Background(), httpCfg.Timeout)
+					res := hp.ProbeHTTPTraceMulti(ctx, addr)
+					cancel()
+					if res.OK {
+						r.httpLatency = float64(res.TotalMS)
+						r.jitterMS = float64(res.JitterMS)
+					}
+					htMu.Lock()
+					htDone++
+					sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: htDone, Budget: 100})
+					htMu.Unlock()
+				}
+			}()
+		}
+		for i := 0; i < len(okResults); i++ {
+			htCh <- i
+		}
+		close(htCh)
+		htWg.Wait()
+	}
+
 	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 100, Budget: 100})
 
 	if req.BwCandidates > 0 {
@@ -2450,8 +2508,10 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		}
 
 		dlCfg := probe.DownloadConfig{
-			Timeout: 3 * time.Second,
-			Bytes:   int64(req.BwSize * 1024 * 1024),
+			Timeout:  10 * time.Second,
+			Bytes:    int64(req.BwSize * 1024 * 1024),
+			SNI:      "speed.cloudflare.com",
+			HostName: "speed.cloudflare.com",
 		}
 		if dlCfg.Bytes <= 0 {
 			dlCfg.Bytes = 50_000_000
