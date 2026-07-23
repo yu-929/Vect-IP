@@ -1854,6 +1854,7 @@ func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		scriptDir := "/tmp/cfnb"
+		os.MkdirAll(scriptDir, 0755)
 		configPath := filepath.Join(scriptDir, "config.json")
 
 		sources := make([]map[string]interface{}, len(req.Sources))
