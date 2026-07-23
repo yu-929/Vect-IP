@@ -2324,6 +2324,7 @@ type cfnbIPResult struct {
 	httpLatency  float64
 	speedMbps    float64
 	ok           bool
+	score        float64
 }
 
 func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
@@ -2339,18 +2340,22 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 
 	sendCfnbProgress(session, ProgressData{Stage: 1, Nodes: len(ips), Completed: 100, Budget: 100})
 
+	timeout := time.Duration(req.TcpTimeout * float64(time.Second))
+	if timeout <= 0 {
+		timeout = 3 * time.Second
+	}
+
+	tcpProbes := intMax(1, req.TcpProbes)
+
 	probeCfg := probe.Config{
-		Timeout:          time.Duration(req.TcpTimeout * float64(time.Second)),
+		Timeout:          timeout,
 		SNI:              "example.com",
 		HostHeader:       "example.com",
 		Path:             "/cdn-cgi/trace",
 		Port:             443,
-		Rounds:           intMax(1, req.TcpProbes),
-		SkipFirst:        0,
+		Rounds:           tcpProbes,
+		SkipFirst:        1,
 		SkipFailedRounds: true,
-	}
-	if probeCfg.Timeout <= 0 {
-		probeCfg.Timeout = 3 * time.Second
 	}
 
 	p := probe.NewProber(probeCfg)
@@ -2375,8 +2380,8 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 				if err != nil {
 					continue
 				}
-				ctx, cancel := context.WithTimeout(context.Background(), probeCfg.Timeout)
-				res := p.ProbeHTTPTrace(ctx, addr)
+				ctx, cancel := context.WithTimeout(context.Background(), timeout)
+				res := p.ProbeHTTPTraceMulti(ctx, addr)
 				cancel()
 
 				r := cfnbIPResult{
@@ -2388,6 +2393,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					r.latencyMS = float64(res.TotalMS)
 					r.tcpLatencyMS = float64(res.ConnectMS)
 					r.httpLatency = float64(res.TTFBMS)
+					r.jitterMS = float64(res.JitterMS)
 					if res.Trace != nil {
 						r.colo = res.Trace["colo"]
 					}
@@ -2428,10 +2434,6 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		return
 	}
 
-	sort.Slice(okResults, func(i, j int) bool {
-		return okResults[i].latencyMS < okResults[j].latencyMS
-	})
-
 	topN := req.TopN
 	if topN <= 0 {
 		topN = 20
@@ -2439,13 +2441,30 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	if topN > len(okResults) {
 		topN = len(okResults)
 	}
+
+	maxTcpLat := 1.0
+	for _, r := range okResults {
+		if r.tcpLatencyMS > maxTcpLat {
+			maxTcpLat = r.tcpLatencyMS
+		}
+	}
+	for i := range okResults {
+		tcpScore := 0.0
+		if maxTcpLat > 0 {
+			tcpScore = (1 - okResults[i].tcpLatencyMS/maxTcpLat) * req.TcpLatWeight
+		}
+		okResults[i].score = tcpScore
+	}
+	sort.Slice(okResults, func(i, j int) bool {
+		return okResults[i].score > okResults[j].score
+	})
 	okResults = okResults[:topN]
 
 	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 0, Budget: 100})
 
 	if req.TestHttp && req.JitterSamples > 1 {
 		httpCfg := probe.Config{
-			Timeout:          time.Duration(req.TcpTimeout * float64(time.Second)),
+			Timeout:          timeout,
 			SNI:              "example.com",
 			HostHeader:       "example.com",
 			Path:             "/cdn-cgi/trace",
@@ -2453,9 +2472,6 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 			Rounds:           req.JitterSamples,
 			SkipFirst:        1,
 			SkipFailedRounds: true,
-		}
-		if httpCfg.Timeout <= 0 {
-			httpCfg.Timeout = 3 * time.Second
 		}
 		hp := probe.NewProber(httpCfg)
 
@@ -2497,6 +2513,35 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		}
 		close(htCh)
 		htWg.Wait()
+
+		maxHttpLat := 1.0
+		maxJitter := 1.0
+		for _, r := range okResults {
+			if r.httpLatency > maxHttpLat {
+				maxHttpLat = r.httpLatency
+			}
+			if r.jitterMS > maxJitter {
+				maxJitter = r.jitterMS
+			}
+		}
+		for i := range okResults {
+			httpScore := 0.0
+			jitterScore := 0.0
+			if maxHttpLat > 0 {
+				httpScore = (1 - okResults[i].httpLatency/maxHttpLat) * req.HttpLatWeight
+			}
+			if maxJitter > 0 {
+				jitterScore = (1 - okResults[i].jitterMS/maxJitter) * req.JitterWeight
+			}
+			tcpScore := 0.0
+			if maxTcpLat > 0 {
+				tcpScore = (1 - okResults[i].tcpLatencyMS/maxTcpLat) * req.TcpLatWeight
+			}
+			okResults[i].score = tcpScore + httpScore + jitterScore
+		}
+		sort.Slice(okResults, func(i, j int) bool {
+			return okResults[i].score > okResults[j].score
+		})
 	}
 
 	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 100, Budget: 100})
@@ -2555,6 +2600,45 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		}
 		close(bwCh)
 		bwWg.Wait()
+
+		maxSpeed := 1.0
+		for _, r := range okResults {
+			if r.speedMbps > maxSpeed {
+				maxSpeed = r.speedMbps
+			}
+		}
+		maxHttpLat2 := 1.0
+		maxJitter2 := 1.0
+		for _, r := range okResults {
+			if r.httpLatency > maxHttpLat2 {
+				maxHttpLat2 = r.httpLatency
+			}
+			if r.jitterMS > maxJitter2 {
+				maxJitter2 = r.jitterMS
+			}
+		}
+		for i := range okResults {
+			tcpScore := 0.0
+			httpScore := 0.0
+			jitterScore := 0.0
+			speedScore := 0.0
+			if maxTcpLat > 0 {
+				tcpScore = (1 - okResults[i].tcpLatencyMS/maxTcpLat) * req.TcpLatWeight
+			}
+			if maxHttpLat2 > 0 {
+				httpScore = (1 - okResults[i].httpLatency/maxHttpLat2) * req.HttpLatWeight
+			}
+			if maxJitter2 > 0 {
+				jitterScore = (1 - okResults[i].jitterMS/maxJitter2) * req.JitterWeight
+			}
+			if maxSpeed > 0 {
+				speedScore = (okResults[i].speedMbps / maxSpeed) * req.SpeedWeight
+			}
+			okResults[i].score = tcpScore + httpScore + jitterScore + speedScore
+		}
+		sort.Slice(okResults, func(i, j int) bool {
+			return okResults[i].score > okResults[j].score
+		})
 	}
 
 	results := make([]map[string]interface{}, len(okResults))
@@ -2565,15 +2649,23 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		tcpLatStr := ""
 		if r.speedMbps > 0 {
 			speedStr = fmt.Sprintf("%.2f Mbps", r.speedMbps)
+		} else {
+			speedStr = "0.00 Mbps"
 		}
 		if r.httpLatency > 0 {
 			httpLatStr = fmt.Sprintf("%.0f ms", r.httpLatency)
+		} else {
+			httpLatStr = "0 ms"
 		}
 		if r.jitterMS > 0 {
 			httpJitterStr = fmt.Sprintf("%.0f ms", r.jitterMS)
+		} else {
+			httpJitterStr = "0 ms"
 		}
 		if r.tcpLatencyMS > 0 {
 			tcpLatStr = fmt.Sprintf("%.0f ms", r.tcpLatencyMS)
+		} else {
+			tcpLatStr = "0 ms"
 		}
 		results[i] = map[string]interface{}{
 			"ip":           r.ip,
