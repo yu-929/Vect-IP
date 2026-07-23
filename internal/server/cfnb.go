@@ -1087,11 +1087,11 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					if err != nil {
 						continue
 					}
-					probeCtx, probeCancel := context.WithTimeout(context.Background(), 10*time.Second)
+					probeCtx, probeCancel := context.WithTimeout(context.Background(), 30*time.Second)
 					dr := dlp.Download(probeCtx, addr)
 					probeCancel()
 					if dr.OK {
-						r.speedMbps = dr.Mbps
+						r.speedMbps = dr.PeakMbps
 					}
 					bwMu.Lock()
 					bwDone++

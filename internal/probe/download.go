@@ -82,7 +82,6 @@ func NewDownloadProber(cfg DownloadConfig) *DownloadProber {
 		cfg: cfg,
 		client: &http.Client{
 			Transport: transport,
-			Timeout:   cfg.Timeout,
 		},
 	}
 }
