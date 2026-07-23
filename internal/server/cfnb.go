@@ -1194,6 +1194,13 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		})
 	}
 
+	if req.GlobalMode {
+		if topN > len(okResults) {
+			topN = len(okResults)
+		}
+		okResults = okResults[:topN]
+	}
+
 	results := make([]map[string]interface{}, len(okResults))
 	for i, r := range okResults {
 		speedStr := ""
