@@ -551,7 +551,6 @@ r.DownloadPeakMbps = dr.PeakMbps
 			session.status = "completed"
 		}
 		session.mu.Unlock()
-		session.mu.Unlock()
 
 		// Close SSE channels after all processing is done
 		session.mu.Lock()
