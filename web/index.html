@@ -46,11 +46,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .page-content.scrolled::before{opacity:1}
 
 /* ===== Tabs ===== */
-.tab-content{display:none;will-change:transform,opacity;transition:transform .4s cubic-bezier(0.34,1.56,0.64,1),opacity .3s ease}
-.tab-content.active{display:block}
+.tab-content{display:none!important;will-change:transform,opacity;transition:transform .4s cubic-bezier(0.34,1.56,0.64,1),opacity .3s ease}
+.tab-content.active{display:block!important}
 
 /* ===== Bottom TabBar ===== */
-.tab-bar{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 10pt);left:50%;transform:translateX(-50%);z-index:100;background:var(--tabbar-bg);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);border:0.5px solid var(--tabbar-border);padding:4pt 6pt;display:flex;justify-content:space-around;align-items:center;border-radius:28pt;box-shadow:0 4px 24px rgba(0,0,0,0.08);gap:2pt;min-width:200pt}
+.bottom-row{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 10pt);left:50%;transform:translateX(-50%);z-index:100;display:flex;align-items:center;gap:6pt}
+.switch-btn{width:36pt;height:36pt;border-radius:50%;border:0.5px solid var(--glass-border);background:var(--tabbar-bg);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);color:var(--secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .35s var(--ease-spring),color .15s ease;padding:0;flex-shrink:0}
+.switch-btn:active{transform:scale(0.88);color:var(--primary)}
+.switch-btn svg{width:16pt;height:16pt}
+.tab-bar{background:var(--tabbar-bg);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);border:0.5px solid var(--tabbar-border);padding:4pt 6pt;display:flex;justify-content:space-around;align-items:center;border-radius:28pt;box-shadow:0 4px 24px rgba(0,0,0,0.08);gap:2pt;min-width:200pt}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:1pt;border:none;background:transparent;color:var(--secondary);cursor:pointer;padding:5pt 10pt;font-family:inherit;transition:transform .12s ease-out,color .15s ease,background .2s ease;-webkit-tap-highlight-color:transparent;border-radius:22pt;white-space:nowrap}
 .tab-item.active,.tab-item:active{color:var(--primary)}
 .tab-item.active{background:var(--input-bg)}
@@ -125,7 +129,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 /* ===== Status Overview ===== */
 .status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6pt;margin-bottom:0}
 .stat-item{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:50pt;padding:0 10pt;background:rgba(118,118,128,0.03);border-radius:10pt;box-sizing:border-box}
-.stat-val{font-size:16pt;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%}
+.stat-val{font-size:16pt;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .stat-val.brand{color:var(--primary)}
 .stat-val.mono{font-family:'SF Mono',ui-monospace,monospace;font-size:14px}
 .stat-val.ip{font-family:'SF Mono',ui-monospace,monospace;font-size:14px;word-break:break-all;line-height:1.3;cursor:pointer}
@@ -139,7 +143,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 .stage-item{height:40pt;display:flex;flex-direction:column;justify-content:center;padding:0;border-top:0.5px solid rgba(60,60,60,0.08);border-radius:0;background:transparent}
 .stage-item:first-child{border-top:none}
 .stage-item .stage-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3pt}
-.stage-item .stage-name{font-size:12px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:4pt}
+.stage-item .stage-name{font-size:12px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:4pt;white-space:nowrap}
 .stage-item .stage-count{font-size:11px;color:var(--muted2);font-variant-numeric:tabular-nums}
 .stage-item .stage-bar{height:5pt;background:var(--progress-track);border-radius:2.5pt;overflow:hidden;margin-bottom:2pt}
 .stage-item .stage-fill{height:100%;border-radius:2.5pt;background:linear-gradient(90deg,var(--progress-fill-start),var(--progress-fill-end));transition:width .5s var(--ease-smooth);width:0%}
@@ -327,7 +331,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 <div class="page-content">
 
 <!-- ============ SCAN TAB ============ -->
-<div class="tab-content active" id="tab-scan">
+<div class="tab-content active" id="tab-vect-scan">
 
 <!-- Status Overview -->
 <div class="glass-card material-regular" id="localIPCard" style="display:flex;flex-direction:column;height:260pt">
@@ -521,7 +525,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div><!-- tab-scan -->
 
 <!-- ============ HISTORY TAB ============ -->
-<div class="tab-content" id="tab-history">
+<div class="tab-content" id="tab-vect-history">
 <div class="glass-card material-regular">
 <div class="card-title">扫描历史</div>
 <div class="history-header">
@@ -546,7 +550,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 
 <!-- ============ SETTINGS TAB ============ -->
-<div class="tab-content" id="tab-settings">
+<div class="tab-content" id="tab-vect-settings">
 <div class="glass-card material-regular">
 <div class="card-title">设置</div>
 
@@ -786,31 +790,304 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 </div>
 
+<!-- ============ CFNB SCAN TAB ============ -->
+<div class="tab-content" id="tab-cfnb-scan">
+
+<!-- Local Network -->
+<div class="glass-card material-regular" id="cfnbLocalIPCard" style="display:flex;flex-direction:column;height:auto;min-height:140pt;margin-bottom:12pt">
+<div class="card-header">
+<div class="card-title">本地网络</div>
+<button type="button" class="btn-text" onclick="fetchLocalIP()">刷新</button>
+</div>
+<div style="border-top:0.5px solid var(--glass-border);margin:8pt 0 6pt 0"></div>
+<div class="local-grid" id="cfnbLocalInfo">
+<div class="local-row" onclick="copyText(document.getElementById('cfnbLiPublic').textContent)" style="cursor:pointer;-webkit-tap-highlight-color:transparent"><span class="local-label">公网IP</span><span class="local-val public" id="cfnbLiPublic">--</span></div>
+<div class="local-row"><span class="local-label">本地IP</span><span class="local-val" id="cfnbLiLocal">--</span></div>
+<div class="local-row"><span class="local-label">运营商</span><span class="local-val" id="cfnbLiISP">--</span></div>
+<div class="local-row"><span class="local-label">位置</span><span class="local-val" id="cfnbLiLocation">--</span></div>
+</div>
+</div>
+
+<div class="glass-card material-regular">
+<div class="card-title">CFNB - Cloudflare IP 优选</div>
+
+<div class="section">
+<div class="field">
+<label>数据源（每行一条：URL / CIDR / IP:端口）</label>
+<textarea id="cfnbSources" placeholder="https://zip.cm.edu.kg/all.txt&#10;1.1.1.0/24&#10;1.2.3.4:443" autocomplete="off">https://zip.cm.edu.kg/all.txt</textarea>
+</div>
+<div style="display:flex;gap:4pt;flex-wrap:wrap;margin-top:4pt">
+<button type="button" class="btn-text" style="font-size:11px;padding:2pt 6pt" onclick="document.getElementById('cfnbFileInput').click()">导入</button>
+<input type="file" id="cfnbFileInput" accept=".txt,.csv" style="display:none" onchange="importCfnbIPs(this)">
+<button type="button" class="btn-text" style="font-size:11px;padding:2pt 6pt" onclick="navigator.clipboard.readText().then(function(t){if(t){var ta=S('cfnbSources');ta.value=ta.value.trim()?ta.value+'\n'+t:t;}}).catch(function(){showToast('粘贴失败，请手动粘贴');})">粘贴</button>
+<button type="button" class="btn-text" style="font-size:11px;padding:2pt 6pt" onclick="S('cfnbSources').value=''">清空</button>
+</div>
+</div>
+
+<div class="section">
+<div class="settings-row">
+<div style="flex:1"><div class="sl-label">可用性检测</div></div>
+<div class="toggle-wrap"><div class="toggle-track on" id="cfnbAvailTrack" onclick="toggleTrack('cfnbAvailTrack','cfnbAvailToggle')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbAvailToggle" checked></div></div>
+</div>
+<div class="settings-row">
+<div style="flex:1"><div class="sl-label">HTTP 检测</div></div>
+<div class="toggle-wrap"><div class="toggle-track on" id="cfnbHttpTrack" onclick="toggleTrack('cfnbHttpTrack','cfnbHttpToggle')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbHttpToggle" checked></div></div>
+</div>
+</div>
+
+</div>
+
+<div id="cfnbError" class="hidden error-box">
+<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11a1 1 0 110-2 1 1 0 010 2zm-1-7h2v4H9V6z"/></svg>
+<span id="cfnbErrorText"></span>
+</div>
+
+<div class="btn-spacer">
+<button class="btn btn-primary" id="cfnbActionBtn" onclick="toggleCfnb()">开始扫描</button>
+</div>
+
+<div style="border-top:0.5px solid var(--glass-border);margin:14pt 0"></div>
+
+<div class="glass-card material-thin" id="cfnbStatusPanel" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<span style="font-size:13px;font-weight:500;color:var(--secondary)">扫描进度</span>
+<div style="display:flex;align-items:center;gap:6pt">
+<span style="font-size:11px;color:var(--muted2);font-family:'SF Mono',ui-monospace,monospace" id="cfnbScanId">--</span>
+</div>
+</div>
+<div id="cfnbSkeletonPanel">
+<div class="skeleton-card" style="border:none;backdrop-filter:none;background:transparent;padding:0;margin:0">
+<div class="skeleton-stage">
+<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
+<div class="skeleton-line w80 h10" style="margin-bottom:6pt"></div>
+<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
+<div class="skeleton-line w80 h10" style="margin-bottom:6pt"></div>
+<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
+<div class="skeleton-line w80 h10" style="margin-bottom:6pt"></div>
+<div class="sk-row"><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h10"></div></div>
+<div class="skeleton-line w80 h10" style="margin-bottom:6pt"></div>
+</div>
+<div class="skeleton-grid">
+<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
+<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
+<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
+<div><div class="skeleton-line w60 h10"></div><div class="skeleton-line w40 h20"></div></div>
+</div>
+</div>
+</div>
+<div id="cfnbProgressContent" style="display:none">
+<div class="stage-list" id="cfnbStageList">
+<div class="stage-item">
+<div class="stage-top"><span class="stage-name">获取节点</span><span class="stage-count" id="cfnbS1Count">--</span></div>
+<div class="stage-bar"><div class="stage-fill" id="cfnbS1Fill"></div></div>
+<div class="stage-footer"><span id="cfnbS1Est">预计 --</span><span id="cfnbS1Rem">--</span></div>
+</div>
+<div class="stage-item">
+<div class="stage-top"><span class="stage-name">连接测试</span><span class="stage-count" id="cfnbS2Count">--</span></div>
+<div class="stage-bar"><div class="stage-fill" id="cfnbS2Fill"></div></div>
+<div class="stage-footer"><span id="cfnbS2Est">预计 --</span><span id="cfnbS2Rem">--</span></div>
+</div>
+<div class="stage-item" id="cfnbStage3Item">
+<div class="stage-top"><span class="stage-name">可用检测</span><span class="stage-count" id="cfnbS3Count">--</span></div>
+<div class="stage-bar"><div class="stage-fill" id="cfnbS3Fill"></div></div>
+<div class="stage-footer"><span id="cfnbS3Est">预计 --</span><span id="cfnbS3Rem">--</span></div>
+</div>
+<div class="stage-item">
+<div class="stage-top"><span class="stage-name">抖动检测</span><span class="stage-count" id="cfnbS4Count">--</span></div>
+<div class="stage-bar"><div class="stage-fill" id="cfnbS4Fill"></div></div>
+<div class="stage-footer"><span id="cfnbS4Est">预计 --</span><span id="cfnbS4Rem">--</span></div>
+</div>
+<div class="stage-item" id="cfnbStage5Item">
+<div class="stage-top"><span class="stage-name">带宽测速</span><span class="stage-count" id="cfnbS5Count">--</span></div>
+<div class="stage-bar"><div class="stage-fill" id="cfnbS5Fill"></div></div>
+<div class="stage-footer"><span id="cfnbS5Est">预计 --</span><span id="cfnbS5Rem">--</span></div>
+</div>
+</div>
+<div class="status-grid">
+<div class="stat-item"><div class="stat-val brand" id="cfnbPCompleted">0%</div><div class="stat-lbl">完成进度</div></div>
+<div class="stat-item"><div class="stat-val" id="cfnbPStage">-</div><div class="stat-lbl">当前阶段</div></div>
+<div class="stat-item"><div class="stat-val" id="cfnbPElapsed">0s</div><div class="stat-lbl">总用时</div></div>
+</div>
+</div>
+</div>
+
+<div class="glass-card material-thin" id="cfnbResultPanel" style="display:none">
+<div class="card-title">优选结果</div>
+<div style="border-top:0.5px solid var(--glass-border);margin:8pt 0 6pt 0"></div>
+<div class="history-list" id="cfnbResultList"></div>
+</div>
+
+</div>
+
+<!-- ============ CFNB HISTORY TAB ============ -->
+<div class="tab-content" id="tab-cfnb-history">
+<div class="glass-card material-regular">
+<div class="card-title">CFNB 扫描历史</div>
+<div class="history-header">
+<span class="count" id="cfnbHistoryCount">0 条记录</span>
+<button class="clear-btn" onclick="clearCfnbHistory()" id="clearCfnbHistoryBtn" style="display:none">清空</button>
+</div>
+<div style="border-top:0.5px solid var(--glass-border);margin:8pt 0 12pt 0"></div>
+<div class="history-list" id="cfnbHistoryList">
+    <div class="history-empty">
+      <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="40" cy="40" r="28"/>
+        <path d="M40 28v12l8 8"/>
+        <path d="M28 12l-8 8M52 12l8 8"/>
+        <path d="M12 28l8 8M12 52l8-8M60 36l8 8M60 44l8-8"/>
+        <path d="M28 68l-8-8M52 68l8-8"/>
+      </svg>
+      <div class="empty-title">暂无扫描记录</div>
+<div class="empty-desc">完成一次 CFNB 扫描后，结果将出现在这里<br>点击「扫描」Tab 开始</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ============ CFNB SETTINGS TAB ============ -->
+<div class="tab-content" id="tab-cfnb-settings">
+<div class="glass-card material-regular">
+<div class="card-title">筛选模式与数量控制</div>
+<div class="section">
+<div class="row">
+<div class="field"><label>筛选模式</label>
+<select id="cfnbSettingGlobalMode"><option value="true">全局优选</option><option value="false">分国家优选</option></select>
+</div>
+<div class="field"><label>全局保留数量</label><input id="cfnbSettingGlobalTopN" type="number" value="15" min="1"></div>
+</div>
+<div class="row" style="margin-top:6pt">
+<div class="field"><label>分国家保留数量</label><input id="cfnbSettingPerCountryTopN" type="number" value="1" min="1"></div>
+<div class="field"><label>测速候选数</label><input id="cfnbSettingBwCandidates" type="number" value="150" min="1"></div>
+</div>
+<div class="row" style="margin-top:6pt">
+<div class="field"><label>测速文件大小 (MB)</label><input id="cfnbSettingBwSize" type="number" value="1" min="0.1" step="0.1"></div>
+<div class="field"><label>并发数</label><input id="cfnbSettingWorkers" type="number" value="300" min="1" max="1000"></div>
+</div>
+</div>
+</div>
+
+<div class="glass-card material-regular" style="margin-top:10pt">
+<div class="card-title">TCP 连接测试</div>
+<div class="section">
+<div class="row">
+<div class="field"><label>TCP 超时 (s)</label><input id="cfnbSettingTcpTimeout" type="number" value="2" min="0.5" step="0.5"></div>
+<div class="field"><label>TCP 探测次数</label><input id="cfnbSettingTcpProbes" type="number" value="1" min="1"></div>
+</div>
+<div class="row" style="margin-top:6pt">
+<div class="field"><label>最低成功率</label><input id="cfnbSettingMinSuccess" type="number" value="1.0" min="0.0" max="1.0" step="0.05"></div>
+<div class="field"><label>全局Socket默认超时 (s)</label><input id="cfnbSettingSocketTimeout" type="number" value="3" min="0.5" step="0.5"></div>
+</div>
+</div>
+</div>
+
+<div class="glass-card material-regular" style="margin-top:10pt">
+<div class="card-title">综合排序权重</div>
+<div class="section">
+<div class="row">
+<div class="field"><label>带宽权重</label><input id="cfnbSettingSpeedWeight" type="number" value="3.0" min="0" step="0.5"></div>
+<div class="field"><label>HTTP 延迟权重</label><input id="cfnbSettingHttpLatWeight" type="number" value="3.0" min="0" step="0.5"></div>
+</div>
+<div class="row" style="margin-top:6pt">
+<div class="field"><label>HTTP延迟抖动权重</label><input id="cfnbSettingJitterWeight" type="number" value="3.0" min="0" step="0.5"></div>
+<div class="field"><label>TCP 延迟权重</label><input id="cfnbSettingTcpLatWeight" type="number" value="0.0" min="0" step="0.5"></div>
+</div>
+<div class="row" style="margin-top:6pt">
+<div class="field"><label>HTTP延迟抖动测试次数</label><input id="cfnbSettingJitterProbes" type="number" value="3" min="1"></div>
+<div class="field"><label>带宽测速并发</label><input id="cfnbSettingBwWorkers" type="number" value="10" min="1" max="20"></div>
+</div>
+</div>
+</div>
+
+<div class="glass-card material-regular" style="margin-top:10pt">
+<div class="card-title">前置过滤</div>
+<div class="section">
+<div class="settings-row">
+<div style="flex:1"><div class="sl-label">端口过滤</div></div>
+<div class="toggle-wrap"><div class="toggle-track on" id="cfnbSettingPortFilterTrack" onclick="toggleTrack('cfnbSettingPortFilterTrack','cfnbSettingPortFilterToggle')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbSettingPortFilterToggle" checked></div></div>
+</div>
+<div class="field" style="margin-top:6pt"><label>允许端口</label><input id="cfnbSettingPorts" type="text" value="443" placeholder="逗号分隔，如 443,2053"></div>
+<div class="settings-row" style="margin-top:6pt">
+<div style="flex:1"><div class="sl-label">白名单过滤</div></div>
+<div class="toggle-wrap"><div class="toggle-track" id="cfnbSettingWhitelistTrack" onclick="toggleTrack('cfnbSettingWhitelistTrack','cfnbSettingWhitelistToggle')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbSettingWhitelistToggle"></div></div>
+</div>
+<div class="field" style="margin-top:6pt"><label>白名单国家代码</label><input id="cfnbSettingWhitelistCountries" type="text" value="US" placeholder="逗号分隔，如 US,JP"></div>
+<div class="settings-row" style="margin-top:6pt">
+<div style="flex:1"><div class="sl-label">黑名单过滤</div></div>
+<div class="toggle-wrap"><div class="toggle-track on" id="cfnbSettingBlockedTrack" onclick="toggleTrack('cfnbSettingBlockedTrack','cfnbSettingBlockedToggle')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbSettingBlockedToggle" checked></div></div>
+</div>
+<div class="field" style="margin-top:6pt"><label>黑名单国家代码</label><input id="cfnbSettingBlockedCountries" type="text" value="CN" placeholder="逗号分隔，如 CN,US"></div>
+</div>
+</div>
+
+<div class="glass-card material-regular" style="margin-top:10pt">
+<div class="card-title">DNS 上传</div>
+<div class="section">
+<div class="settings-row">
+<div style="flex:1"><div class="sl-label">启用 DNS 上传</div></div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="cfnbDnsEnableTrack" onclick="toggleTrack('cfnbDnsEnableTrack','cfnbDnsEnableToggle');var c=S('cfnbDnsConfigFields');c.style.display=c.style.display==='none'?'':'none';localStorage.setItem('cfnb-dns-enabled',document.getElementById('cfnbDnsEnableToggle').checked?'1':'0')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbDnsEnableToggle"></div>
+</div>
+</div>
+<div id="cfnbDnsConfigFields" style="display:none">
+<div class="field" style="margin-top:6pt"><label>服务商</label><select id="cfnbDnsProvider" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="cloudflare">Cloudflare</option><option value="vercel">Vercel</option></select></div>
+<div class="field" style="margin-top:6pt"><label>API Token</label><input id="cfnbDnsToken" type="password" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="API Token"></div>
+<div class="field" style="margin-top:6pt"><label>Zone / Domain</label><input id="cfnbDnsZone" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="Zone ID 或域名"></div>
+<div class="field" style="margin-top:6pt"><label>子域名前缀</label><input id="cfnbDnsSubdomain" type="text" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box" placeholder="例: cf"></div>
+<div class="field" style="margin-top:6pt"><label>上传数量</label><input id="cfnbDnsCount" type="number" value="3" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;height:36pt;box-sizing:border-box"></div>
+<div class="field" style="margin-top:6pt"><label>记录类型</label><select id="cfnbDnsRecordType" style="background:var(--input-bg);border:0.5px solid var(--glass-border);border-radius:8pt;padding:6pt 8pt;font-size:14px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;width:100%;height:36pt;box-sizing:border-box"><option value="A">A 记录</option><option value="TXT">TXT 记录</option></select></div>
+<div class="settings-row" style="margin-top:4pt">
+<div style="flex:1"><div class="sl-label">IPv6落地过滤</div><div class="sl-desc">过滤落地仅IPv6节点|保留IPv4/双栈节点</div></div>
+<div class="toggle-wrap"><div class="toggle-track" id="cfnbFilterIpv6OnlyTrack" onclick="toggleTrack('cfnbFilterIpv6OnlyTrack','cfnbFilterIpv6OnlyToggle')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbFilterIpv6OnlyToggle"></div></div>
+</div>
+<div class="segmented" style="margin-top:6pt;margin-bottom:0">
+<button class="seg-btn-plain" onclick="saveCfnbDnsConfig()" style="color:var(--primary);font-weight:600">保存设置</button>
+<button class="seg-btn-plain" onclick="clearCfnbDnsConfig()" style="color:var(--danger)">移除设置</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="glass-card material-regular" style="margin-top:10pt">
+<div class="card-title">GIT 上传</div>
+<div class="section">
+<div class="settings-row">
+<div style="flex:1"><div class="sl-label">启用 GIT 上传</div></div>
+<div class="toggle-wrap">
+<div class="toggle-track" id="cfnbGitEnableTrack" onclick="toggleTrack('cfnbGitEnableTrack','cfnbGitEnableToggle');var c=S('cfnbGitConfigFields');c.style.display=c.style.display==='none'?'':'none';localStorage.setItem('cfnb-git-enabled',document.getElementById('cfnbGitEnableToggle').checked?'1':'0')"><div class="toggle-knob"></div><input type="checkbox" class="toggle-input" id="cfnbGitEnableToggle"></div>
+</div>
+</div>
+<div id="cfnbGitConfigFields" style="display:none">
+<div class="field" style="margin-top:4pt"><label>GitHub Token</label><input id="cfnbGitToken" type="password" placeholder="Personal Access Token"></div>
+<div class="field" style="margin-top:4pt"><label>仓库 (owner/repo)</label><input id="cfnbGitRepo" type="text" placeholder="例: user/my-ips"></div>
+<div class="field" style="margin-top:4pt"><label>文件路径</label><input id="cfnbGitPath" type="text" placeholder="例: ips.txt (默认 ips.txt)"></div>
+<div class="field" style="margin-top:4pt"><label>分支</label><input id="cfnbGitBranch" type="text" placeholder="main"></div>
+<div class="segmented" style="margin-top:6pt;margin-bottom:0">
+<button class="seg-btn-plain" onclick="saveCfnbGitConfig()" style="color:var(--primary);font-weight:600">保存设置</button>
+<button class="seg-btn-plain" onclick="clearCfnbGitConfig()" style="color:var(--danger)">移除设置</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <!-- Bottom TabBar -->
-<div class="tab-bar">
-<button class="tab-item active" data-tab="scan" onclick="switchTab('scan')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
-<span class="tab-label">扫描</span>
+<div class="bottom-row" id="bottomRow">
+<button class="switch-btn" id="tabSwitchBtn" onclick="onSwitchArea()" title="切换 VE/CF">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4M16 3l4 4-4 4"/><path d="M4 7h16M4 17h16"/><path d="M12 17l4 4 4-4"/></svg>
 </button>
-<button class="tab-item" data-tab="history" onclick="switchTab('history')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-<span class="tab-label">历史</span>
-</button>
-<button class="tab-item" data-tab="settings" onclick="switchTab('settings')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-<span class="tab-label">设置</span>
-</button>
+<div class="tab-bar" id="mainTabBar">
+</div>
 </div>
 
 <script>
-let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false;
+let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false, cfnbStartTime=0;
 const S=document.getElementById.bind(document);
 if(window.visualViewport){
 window.visualViewport.addEventListener('resize',function(){
-var bar=document.querySelector('.tab-bar');
+var bar=document.getElementById('bottomRow');
 if(!bar)return;
 var kb=window.visualViewport.height<window.innerHeight*0.6;
 bar.style.display=kb?'none':'';
@@ -820,7 +1097,7 @@ if('ontouchstart' in window||navigator.maxTouchPoints>0){
 document.addEventListener('focusin',function(e){
 	var t=e.target;
 	if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
-		var bar=document.querySelector('.tab-bar');
+		var bar=document.getElementById('bottomRow');
 		if(bar)bar.style.display='none';
 	}
 });
@@ -829,7 +1106,7 @@ document.addEventListener('focusout',function(e){
 	if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
 		setTimeout(function(){
 			if(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA'||document.activeElement.tagName==='SELECT'))return;
-			var bar=document.querySelector('.tab-bar');
+			var bar=document.getElementById('bottomRow');
 			if(bar)bar.style.display='';
 		},200);
 	}
@@ -839,7 +1116,7 @@ document.addEventListener('focusout',function(e){
 // Double-tap bottom tab bar to scroll to top
 (function(){
 	var lastTap = 0;
-	document.querySelector('.tab-bar').addEventListener('click', function(e){
+	document.getElementById('mainTabBar').addEventListener('click', function(e){
 		var now = Date.now();
 		if(now - lastTap < 400){
 			window.scrollTo({top:0,behavior:'smooth'});
@@ -876,8 +1153,9 @@ activeTab.style.transform='translateY(8px) scale(0.97)';activeTab.style.opacity=
 activeTab._entering=true;
 requestAnimationFrame(()=>{activeTab.style.transition='transform .45s var(--ease-spring),opacity .3s ease';activeTab.style.transform='';activeTab.style.opacity='';setTimeout(()=>{activeTab.style.transition='';activeTab._entering=false;},500);});
 }
-items.forEach(t=>{t.classList.toggle('active',t.dataset.tab===name);});
-if(name==='scan'&&curId){
+  items.forEach(t=>{t.classList.toggle('active',t.dataset.tab===name);});
+  if(name!=='cfnb-scan')S('cfnbResultPanel').style.display='none';
+  if(name==='vect-scan'&&curId){
 S('statusPanel').style.display='';
 if(!es||es.readyState===2){
 es=new EventSource('/api/scan/'+curId+'?subscribe');
@@ -896,6 +1174,37 @@ es.addEventListener('done',function(){
 });
 }
 }
+}
+
+// Mode switching
+var currentMode = 'vect';
+function buildTabBar(){
+  var bar = document.getElementById('mainTabBar');
+  if(!bar) return;
+  var tabs = [];
+  if(currentMode === 'vect'){
+    tabs = [
+      {tab:'vect-scan', label:'扫描', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'},
+      {tab:'vect-history', label:'历史', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'},
+      {tab:'vect-settings', label:'设置', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>'}
+    ];
+  } else {
+    tabs = [
+      {tab:'cfnb-scan', label:'扫描', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'},
+      {tab:'cfnb-history', label:'历史', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'},
+      {tab:'cfnb-settings', label:'设置', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>'}
+    ];
+  }
+  bar.innerHTML = tabs.map(function(t, i){
+    return '<button class="tab-item'+(i===0?' active':'')+'" data-tab="'+t.tab+'" onclick="switchTab(\''+t.tab+'\')">'+t.svg+'<span class="tab-label">'+t.label+'</span></button>';
+  }).join('');
+}
+function onSwitchArea(){
+  currentMode = (currentMode === 'vect' ? 'cfnb' : 'vect');
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
+  var firstTab = currentMode === 'vect' ? 'vect-scan' : 'cfnb-scan';
+  buildTabBar();
+  switchTab(firstTab);
 }
 
 // Theme
@@ -959,6 +1268,14 @@ const on=S('asnTrack').classList.toggle('on');
 S('asnToggle').checked=on;
 localStorage.setItem('vect-asn',on?'1':'0');
 	renderHistory();
+}
+
+function toggleTrack(trackId, toggleId){
+  var track=document.getElementById(trackId);
+  var tog=document.getElementById(toggleId);
+  if(!track||!tog)return;
+  var on=track.classList.toggle('on');
+  tog.checked=on;
 }
 
 function toggleJitterFusion(){
@@ -1065,7 +1382,7 @@ S('budget').value=budget;
 S('concurrency').value=concurrency;
 S('cidrs').value=cidrs;
 updateCidrCount();
-switchTab('scan');
+switchTab('vect-scan');
 showToast('已应用预设');
 }
 
@@ -1113,14 +1430,14 @@ if(document.querySelector('.seg-btn'))document.querySelector('.seg-btn').classLi
 // Local IP
 async function fetchLocalIP(){
 try{
-S('liPublic').textContent='加载中...';
+var pub='加载中...',loc='--',isp='--',geo='--';
+S('liPublic').textContent='加载中...';if(S('cfnbLiPublic'))S('cfnbLiPublic').textContent='加载中...';
 const r=await fetch('/api/local-ip?_='+Date.now());
 const d=await r.json();
-S('liPublic').textContent=d.publicIP||'--';
-S('liLocal').textContent=d.localIPs&&d.localIPs.length?d.localIPs[0]:'--';
-S('liISP').textContent=d.isp||'--';
-S('liLocation').textContent=d.location||'--';
-}catch(e){S('liPublic').textContent='获取失败'}
+pub=d.publicIP||'--';loc=d.localIPs&&d.localIPs.length?d.localIPs[0]:'--';isp=d.isp||'--';geo=d.location||'--';
+S('liPublic').textContent=pub;S('liLocal').textContent=loc;S('liISP').textContent=isp;S('liLocation').textContent=geo;
+if(S('cfnbLiPublic')){S('cfnbLiPublic').textContent=pub;S('cfnbLiLocal').textContent=loc;S('cfnbLiISP').textContent=isp;S('cfnbLiLocation').textContent=geo;}
+}catch(e){S('liPublic').textContent='获取失败';if(S('cfnbLiPublic'))S('cfnbLiPublic').textContent='获取失败';}
 }
 fetchLocalIP();
 
@@ -1627,6 +1944,379 @@ window.scrollTo(0,Math.round(scrollY*newDocH/docH));
 showToast('已删除');
 }
 
+function setCfnbBtn(text, running){
+  var btn=S('cfnbActionBtn');
+  btn.textContent=text;
+  btn.classList.toggle('btn-running',running);
+}
+function hideCfnbError(){
+  S('cfnbError').classList.add('hidden');
+}
+function showCfnbError(msg){
+  S('cfnbErrorText').textContent=msg;
+  S('cfnbError').classList.remove('hidden');
+}
+function importCfnbIPs(input){
+  var file=input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var text=e.target.result;
+    var ta=S('cfnbSources');
+    var existing=ta.value.trim();
+    var lines=text.split(/\r?\n/).map(function(l){return l.trim()}).filter(Boolean);
+    var ips=lines.filter(function(l){return !l.startsWith('#')&&!l.startsWith('//')});
+    if(existing)ta.value=existing+'\n'+ips.join('\n');
+    else ta.value=ips.join('\n');
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+function toggleCfnb(){
+  haptic();
+  var btn=S('cfnbActionBtn');
+  if(btn.classList.contains('btn-running')){
+    cancelCfnbScan();
+    return;
+  }
+  cfnbStartTime=Date.now();
+  var allLines=S('cfnbSources').value.split('\n').map(function(s){return s.trim()}).filter(Boolean);
+  var sources=[],cidrs=[],ips=[];
+  allLines.forEach(function(line){
+    if(line.indexOf('://')>=0){
+      sources.push(line);
+    }else if(line.indexOf('/')>=0&&/^\d+\.\d+\.\d+\.\d+\/\d+$/.test(line)){
+      cidrs.push(line);
+    }else{
+      ips.push(line);
+    }
+  });
+  // Read filter settings from settings page
+  var portFilterOn=document.getElementById('cfnbSettingPortFilterToggle').checked;
+  var portStr=S('cfnbSettingPorts').value.trim();
+  var whitelistOn=document.getElementById('cfnbSettingWhitelistToggle').checked;
+  var whitelistStr=S('cfnbSettingWhitelistCountries').value.trim();
+  var blockedOn=document.getElementById('cfnbSettingBlockedToggle').checked;
+  var blockedStr=S('cfnbSettingBlockedCountries').value.trim();
+  var body={
+    sources:sources,
+    cidrs:cidrs,
+    ips:ips,
+    globalMode:S('cfnbSettingGlobalMode').value==='true',
+    topN:parseInt(S('cfnbSettingGlobalTopN').value)||15,
+    perCountryTopN:parseInt(S('cfnbSettingPerCountryTopN').value)||1,
+    bwCandidates:parseInt(S('cfnbSettingBwCandidates').value)||150,
+    bwSize:parseFloat(S('cfnbSettingBwSize').value)||1,
+    tcpTimeout:parseFloat(S('cfnbSettingTcpTimeout').value)||2,
+    tcpProbes:parseInt(S('cfnbSettingTcpProbes').value)||1,
+    minSuccessRate:parseFloat(S('cfnbSettingMinSuccess').value)||1.0,
+    socketTimeout:parseFloat(S('cfnbSettingSocketTimeout').value)||3,
+    workers:parseInt(S('cfnbSettingWorkers').value)||300,
+    speedWeight:parseFloat(S('cfnbSettingSpeedWeight').value)||3.0,
+    httpLatWeight:parseFloat(S('cfnbSettingHttpLatWeight').value)||3.0,
+    jitterWeight:parseFloat(S('cfnbSettingJitterWeight').value)||3.0,
+    tcpLatWeight:parseFloat(S('cfnbSettingTcpLatWeight').value)||0.0,
+    jitterSamples:parseInt(S('cfnbSettingJitterProbes').value)||3,
+    bwWorkers:parseInt(S('cfnbSettingBwWorkers').value)||10,
+    testAvailability:document.getElementById('cfnbAvailToggle').checked,
+    testHttp:document.getElementById('cfnbHttpToggle').checked,
+    portFilterEnabled:portFilterOn,
+    ports:portFilterOn&&portStr?portStr.split(',').map(function(s){return parseInt(s.trim())}).filter(function(n){return!isNaN(n)&&n>0}):[443],
+    whitelistEnabled:whitelistOn,
+    whitelistCountries:whitelistOn&&whitelistStr?whitelistStr.split(',').map(function(s){return s.trim().toUpperCase()}).filter(Boolean):whitelistOn?['US']:[],
+    blockedEnabled:blockedOn,
+    blockedCountries:blockedOn&&blockedStr?blockedStr.split(',').map(function(s){return s.trim().toUpperCase()}).filter(Boolean):blockedOn?['CN']:[]
+  };
+  if(!body.sources.length&&!body.cidrs.length&&!body.ips.length){showToast('请至少输入一个数据源 URL、CIDR 或 IP');return;}
+  hideCfnbError();
+  setCfnbBtn('停止扫描',true);
+  S('cfnbStatusPanel').style.display='';
+  S('cfnbSkeletonPanel').style.display='';
+  S('cfnbProgressContent').style.display='none';
+  S('cfnbResultPanel').style.display='none';
+  S('cfnbScanId').textContent='启动中...';
+  for(var i=1;i<=5;i++){
+    var fill=S('cfnbS'+i+'Fill');
+    if(fill)fill.style.width='0%';
+    var cnt=S('cfnbS'+i+'Count');
+    if(cnt)cnt.textContent='--';
+    var est=S('cfnbS'+i+'Est');
+    if(est)est.textContent='预计 --';
+    var rem=S('cfnbS'+i+'Rem');
+    if(rem)rem.textContent='--';
+  }
+  S('cfnbPCompleted').textContent='0%';
+  S('cfnbPStage').textContent='-';
+  S('cfnbPElapsed').textContent='0s';
+  // Close previous EventSource to prevent stale done/error handlers
+  if(window._cfnbEs){window._cfnbEs.close();}
+  var _gen=(window._cfnbGen=(window._cfnbGen||0)+1);
+  fetch('/api/cfnb/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  .then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t);});return r.json();})
+  .then(function(d){
+    var id=d.id;
+    if(!id){setCfnbBtn('开始扫描',false);showCfnbError('未获取到任务 ID');return;}
+    S('cfnbScanId').textContent=id;
+    curId=id;
+    var es=new EventSource('/api/cfnb/run/'+id+'?subscribe');
+    window._cfnbEs=es;
+    es.onmessage=function(e){
+      if(!e.data)return;
+      try{updateCfnbProgress(JSON.parse(e.data));}catch(ex){}
+    };
+    es.addEventListener('done',function(){
+      if(window._cfnbGen!==_gen)return;
+      es.close();
+      if(window._cfnbEs===es)window._cfnbEs=null;
+      fetch('/api/cfnb/run/'+id).then(function(r){return r.json();}).then(function(d){
+        setCfnbBtn('开始扫描',false);
+        if(d.status==='cancelled'){showToast('扫描已取消');return;}
+        if(d.results&&d.results.length){
+          var cfnbHistory=loadCfnbHistory();
+          cfnbHistory.unshift({time:new Date().toLocaleString(),duration:Math.round((Date.now()-cfnbStartTime)/1000),results:d.results});
+          if(cfnbHistory.length>50)cfnbHistory.length=50;
+          saveCfnbHistory(cfnbHistory);
+          renderCfnbHistory();
+        }
+        if(d.error)showCfnbError(d.error);
+      });
+    });
+    es.onerror=function(){
+      if(this.readyState===2){
+        if(window._cfnbGen!==_gen)return;
+        fetch('/api/cfnb/run/'+id).then(function(r){return r.json();}).then(function(d){
+          if(window._cfnbGen!==_gen)return;
+          setCfnbBtn('开始扫描',false);
+          if(d.status==='failed')showCfnbError(d.error||'运行失败');
+        });
+      }
+    };
+  })
+  .catch(function(e){
+    setCfnbBtn('开始扫描',false);
+    showCfnbError(e.message||'运行失败');
+  });
+}
+function cancelCfnbScan(){
+  if(!curId)return;
+  showToast('正在取消扫描...');
+  fetch('/api/cfnb/cancel/'+curId).then(function(r){return r.json();}).then(function(d){
+    if(d.status==='cancelled'){showToast('扫描已取消');setCfnbBtn('开始扫描',false);}
+  }).catch(function(){setCfnbBtn('开始扫描',false);});
+}
+
+function updateCfnbProgress(p){
+  S('cfnbSkeletonPanel').style.display='none';
+  S('cfnbProgressContent').style.display='';
+  var stage=p.stage||0;
+  var completed=p.completed||0;
+  var budget=p.budget||100;
+  var pct=budget>0?Math.min(100,Math.round(completed*100/budget)):0;
+  var elapsed=Math.floor((Date.now()-cfnbStartTime)/1000);
+  var stageNames={1:'获取节点',2:'连接测试',3:'可用检测',4:'抖动检测',5:'带宽测速'};
+  for(var i=1;i<=5;i++){
+    var fill=S('cfnbS'+i+'Fill');
+    var cnt=S('cfnbS'+i+'Count');
+    var est=S('cfnbS'+i+'Est');
+    var rem=S('cfnbS'+i+'Rem');
+    if(fill){
+      if(i<stage){fill.style.width='100%';fill.style.background='var(--success)';}
+      else if(i===stage){fill.style.width=pct+'%';fill.style.background='';}
+      else{fill.style.width='0%';}
+    }
+    if(cnt){
+      if(i===1){
+        if(stage===1){
+          cnt.textContent=(p.nodes||0)+' 条';
+        }
+      }else{
+        cnt.textContent=i<stage||(i===5&&pct===100)?'完成':i===stage?(pct+'%'):'--';
+      }
+    }
+    if(est)est.textContent=i<stage||(i===5&&pct===100)?'已完成':i===stage?'进行中...':'预计 --';
+    if(rem)rem.textContent='';
+  }
+  S('cfnbPCompleted').textContent=pct+'%';
+  S('cfnbPStage').textContent=stageNames[stage]||'阶段 '+stage;
+  S('cfnbPElapsed').textContent=elapsed+'s';
+}
+
+function saveCfnbDnsConfig(){
+  var cfg={provider:S('cfnbDnsProvider').value,token:S('cfnbDnsToken').value,zone:S('cfnbDnsZone').value,subdomain:S('cfnbDnsSubdomain').value,count:S('cfnbDnsCount').value,filterIpv6Only:document.getElementById('cfnbFilterIpv6OnlyToggle').checked,recordType:S('cfnbDnsRecordType').value};
+  localStorage.setItem('cfnb-dns-config',JSON.stringify(cfg));
+  showToast('DNS 设置已保存');
+}
+function clearCfnbDnsConfig(){
+  localStorage.removeItem('cfnb-dns-config');
+  S('cfnbDnsToken').value='';S('cfnbDnsZone').value='';S('cfnbDnsSubdomain').value='';S('cfnbDnsCount').value='3';S('cfnbDnsRecordType').value='A';
+  document.getElementById('cfnbFilterIpv6OnlyToggle').checked=false;
+  showToast('DNS 设置已清除');
+}
+function saveCfnbGitConfig(){
+  var cfg={token:S('cfnbGitToken').value,repo:S('cfnbGitRepo').value,path:S('cfnbGitPath').value,branch:S('cfnbGitBranch').value};
+  localStorage.setItem('cfnb-git-config',JSON.stringify(cfg));
+  showToast('GIT 设置已保存');
+}
+function clearCfnbGitConfig(){
+  localStorage.removeItem('cfnb-git-config');
+  S('cfnbGitToken').value='';S('cfnbGitRepo').value='';S('cfnbGitPath').value='';S('cfnbGitBranch').value='';
+  showToast('GIT 设置已清除');
+}
+
+function loadCfnbHistory(){
+try{return JSON.parse(localStorage.getItem('cfnb-history')||'[]');}catch(e){return [];}
+}
+function saveCfnbHistory(h){
+localStorage.setItem('cfnb-history',JSON.stringify(h));
+}
+function renderCfnbHistory(skipAnimation){
+var history=loadCfnbHistory();
+var list=S('cfnbHistoryList');
+S('cfnbHistoryCount').textContent=history.length+' 条记录';
+S('clearCfnbHistoryBtn').style.display=history.length?'':'none';
+if(!history.length){list.innerHTML='<div class="history-empty">暂无扫描记录</div>';return;}
+var html='';
+history.forEach(function(h,hi){
+var ips=h.results||[];
+html+='<div class="glass-card history-item stagger-enter" data-idx="'+hi+'">';
+html+='<div class="history-item-top"><span class="h-time">'+h.time+'</span><div style="display:flex;gap:6pt"><button class="btn-text" onclick="copyCfnbResults('+hi+')">复制</button><button class="btn-text" onclick="deleteCfnbHistory('+hi+')">删除</button></div></div>';
+if(ips.length){
+var r0=ips[0];
+html+='<div class="ip" onclick="copyText(\''+r0.ip+'\')">'+r0.ip+':'+r0.port+'</div>';
+html+='<div class="history-metrics"><div class="hm-row">';
+html+='<span class="hm">实测带宽: <strong class="'+(r0.speed?'ok':'')+'">'+(r0.speed||'-')+'</strong></span>';
+html+='<span class="hm">HTTP延迟: <strong>'+(r0.http_latency||'-')+'</strong></span>';
+html+='<span class="hm">TCP延迟: <strong>'+(r0.tcp_latency||'-')+'</strong></span>';
+html+='<span class="hm">HTTP抖动: <strong>'+(r0.http_jitter||'-')+'</strong></span>';
+html+='<span class="hm">国家代码: <strong>'+(r0.label||'-')+'</strong></span>';
+html+='<span class="hm">总用时长: <strong>'+fmtDur(h.duration||0)+'</strong></span>';
+html+='</div></div>';
+}
+if(ips.length>1){
+html+='<div class="h-expand-bar"><div class="segmented" style="margin-bottom:0;flex:1">'+
+'<button class="seg-btn" onclick="toggleCfnbHistoryExpand('+hi+')" id="cfnbExpandBtn_'+hi+'"><span>展开全部 | '+ips.length+'</span></button>'+
+'<button class="seg-btn" onclick="cfnbDnsUploadFromHistory('+hi+')">DNS上传</button>'+
+'<button class="seg-btn" onclick="cfnbGitUploadFromHistory('+hi+')">GIT上传</button>'+
+'</div></div>';
+html+='<div class="h-detail" id="cfnbHDetail_'+hi+'" style="display:none">';
+ips.forEach(function(r,ri){
+if(ri===0)return;
+html+='<div class="h-detail-row">';
+html+='<div class="h-detail-rank">#'+(ri+1)+'</div>';
+html+='<div class="h-detail-ip" onclick="copyText(\''+r.ip+'\')">'+r.ip+':'+r.port+'</div>';
+html+='<div class="h-detail-meta">';
+if(r.speed)html+='<span class="h-detail-dl" title="实测带宽">'+r.speed+'</span>';
+if(r.http_latency)html+='<span class="h-detail-score" title="HTTP延迟">'+r.http_latency+'</span>';
+if(r.tcp_latency)html+='<span class="h-detail-jitter" title="TCP延迟">'+r.tcp_latency+'</span>';
+if(r.http_jitter)html+='<span class="h-detail-jitter" title="HTTP抖动">'+r.http_jitter+'</span>';
+if(r.label)html+='<span class="h-detail-jitter" title="国家代码" style="color:var(--primary)">'+r.label+'</span>';
+html+='</div>';
+html+='</div>';
+});
+html+='</div>';
+}
+html+='</div>';
+});
+if(!skipAnimation){
+list.innerHTML=html;
+requestAnimationFrame(function(){
+list.querySelectorAll('.stagger-enter').forEach(function(el,i){
+setTimeout(function(){el.classList.add('enter');},i*50);
+});
+});
+}else{
+var tmp=document.createElement('div');
+tmp.innerHTML=html;
+tmp.querySelectorAll('.stagger-enter').forEach(function(el){el.classList.add('enter');});
+list.innerHTML=tmp.innerHTML;
+}
+}
+function toggleCfnbHistoryExpand(hi){
+var detail=S('cfnbHDetail_'+hi);
+var btn=S('cfnbExpandBtn_'+hi);
+if(!detail||!btn)return;
+var isHidden=detail.style.display==='none';
+var top=btn.getBoundingClientRect().top;
+detail.style.display=isHidden?'':'none';
+var h=loadCfnbHistory();
+var total=h[hi]?h[hi].results.length:0;
+if(isHidden){btn.querySelector('span').textContent='收起全部 | '+total;}
+else{btn.querySelector('span').textContent='展开全部 | '+total;}
+window.scrollBy(0,btn.getBoundingClientRect().top-top);
+}
+function deleteCfnbHistory(idx){
+var h=loadCfnbHistory();
+if(!h[idx])return;
+h.splice(idx,1);
+saveCfnbHistory(h);
+renderCfnbHistory(true);
+showToast('已删除');
+}
+function clearCfnbHistory(){
+saveCfnbHistory([]);
+renderCfnbHistory(true);
+showToast('已清空');
+}
+function cfnbDnsUpload(ipsJson){
+var ips=JSON.parse(decodeURIComponent(ipsJson));
+if(!ips.length){showToast('没有可用的节点');return;}
+if(localStorage.getItem('cfnb-dns-enabled')!=='1'){showToast('请开启 DNS 上传并配置参数');switchTab('cfnb-settings');return;}
+var cfg={provider:S('cfnbDnsProvider').value,token:S('cfnbDnsToken').value,zone:S('cfnbDnsZone').value,subdomain:S('cfnbDnsSubdomain').value,count:parseInt(S('cfnbDnsCount').value)||ips.length,filter_ipv6_only:document.getElementById('cfnbFilterIpv6OnlyToggle').checked,record_type:S('cfnbDnsRecordType').value};
+if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在 CFNB 设置中配置 DNS 参数');switchTab('cfnb-settings');return;}
+var cleanIps=ips.map(function(s){var idx=s.indexOf(':');return idx>=0?s.substring(0,idx):s;});
+showActionSheet('DNS 上传','确认上传 DNS 记录？',[
+{label:'确认上传',fn:function(){showToast('正在上传 DNS 记录...');var x=new XMLHttpRequest();x.open('POST','/api/dns-upload',true);x.setRequestHeader('Content-Type','application/json');x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败: '+x.responseText);}};x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:cleanIps,filter_ipv6_only:cfg.filter_ipv6_only,record_type:cfg.record_type}));}}
+]);
+}
+function cfnbGitUpload(ipsJson){
+var ips=JSON.parse(decodeURIComponent(ipsJson));
+if(!ips.length){showToast('没有可用的节点');return;}
+if(localStorage.getItem('cfnb-git-enabled')!=='1'){showToast('请开启 GIT 上传并配置参数');switchTab('cfnb-settings');return;}
+var repoCheck=S('cfnbGitRepo').value.trim();
+repoCheck=repoCheck.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
+if(!S('cfnbGitToken').value.trim()||repoCheck.split('/').length!==2){showToast('请先配置 CFNB GIT 参数');switchTab('cfnb-settings');return;}
+showActionSheet('GitHub 上传','确认上传 '+ips.length+' 条节点到 GitHub？',[
+{label:'确认上传',fn:function(){showToast('正在上传...');var x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);x.setRequestHeader('Content-Type','application/json');x.onload=function(){if(x.status===200){showToast('上传成功');}else{showToast('上传失败: '+x.responseText);}};x.send(JSON.stringify({token:S('cfnbGitToken').value.trim(),repo:repoCheck,path:S('cfnbGitPath').value.trim()||'ips.txt',branch:S('cfnbGitBranch').value.trim()||'main',ips:ips}));}}
+]);
+}
+function cfnbDnsUploadFromHistory(idx){
+var h=loadCfnbHistory();
+if(!h[idx])return;
+var ips=h[idx].results||[];
+if(!ips.length){showToast('没有可用的节点');return;}
+if(localStorage.getItem('cfnb-dns-enabled')!=='1'){showToast('请开启 DNS 上传并配置参数');switchTab('cfnb-settings');return;}
+var cfg={provider:S('cfnbDnsProvider').value,token:S('cfnbDnsToken').value,zone:S('cfnbDnsZone').value,subdomain:S('cfnbDnsSubdomain').value,count:parseInt(S('cfnbDnsCount').value)||ips.length,filter_ipv6_only:document.getElementById('cfnbFilterIpv6OnlyToggle').checked,record_type:S('cfnbDnsRecordType').value};
+if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在 CFNB 设置中配置 DNS 参数');switchTab('cfnb-settings');return;}
+var cleanIps=ips.map(function(r){var idx2=r.ip.indexOf(':');return idx2>=0?r.ip.substring(0,idx2):r.ip;});
+showActionSheet('DNS 上传','确认上传 DNS 记录？',[
+{label:'确认上传',fn:function(){showToast('正在上传 DNS 记录...');var x=new XMLHttpRequest();x.open('POST','/api/dns-upload',true);x.setRequestHeader('Content-Type','application/json');x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败: '+x.responseText);}};x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:cleanIps,filter_ipv6_only:cfg.filter_ipv6_only,record_type:cfg.record_type}));}}
+]);
+}
+function cfnbGitUploadFromHistory(idx){
+var h=loadCfnbHistory();
+if(!h[idx])return;
+var ips=h[idx].results||[];
+if(!ips.length){showToast('没有可用的节点');return;}
+if(localStorage.getItem('cfnb-git-enabled')!=='1'){showToast('请开启 GIT 上传并配置参数');switchTab('cfnb-settings');return;}
+var repoCheck=S('cfnbGitRepo').value.trim();
+repoCheck=repoCheck.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
+if(!S('cfnbGitToken').value.trim()||repoCheck.split('/').length!==2){showToast('请先配置 CFNB GIT 参数');switchTab('cfnb-settings');return;}
+showActionSheet('GitHub 上传','选择节点格式',[
+{label:'IP:端口#国家代码',fn:function(){var lines=ips.map(function(r){return r.ip+':'+r.port+'#'+(r.label||'');});doCfnbGitUpload(lines,repoCheck);}},
+{label:'IP:端口#国家代码 带宽',fn:function(){var lines=ips.map(function(r){var line=r.ip+':'+r.port+'#'+(r.label||'');if(r.speed)line+=' '+r.speed;return line;});doCfnbGitUpload(lines,repoCheck);}}
+]);
+}
+function doCfnbGitUpload(lines,repo){
+showToast('正在上传...');var x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);x.setRequestHeader('Content-Type','application/json');x.onload=function(){if(x.status===200){showToast('上传成功');}else{showToast('上传失败: '+x.responseText);}};x.send(JSON.stringify({token:S('cfnbGitToken').value.trim(),repo:repo,path:S('cfnbGitPath').value.trim()||'ips.txt',branch:S('cfnbGitBranch').value.trim()||'main',ips:lines}));
+}
+function copyCfnbResults(idx){
+var h=loadCfnbHistory();
+if(!h[idx])return;
+var ips=h[idx].results||[];
+if(!ips.length){showToast('没有可复制的结果');return;}
+var text=ips.map(function(r){return r.ip+':'+r.port+'#'+(r.label||'');}).join('\n');
+navigator.clipboard.writeText(text).then(function(){showToast('已复制 '+ips.length+' 条节点');},function(){showToast('复制失败,请手动选择');});
+}
 function clearHistory(){
 saveHistory([]);
 renderHistory(true);
@@ -1636,11 +2326,11 @@ showToast('已清空');
 function dnsUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
-if(localStorage.getItem('vect-dns-enabled')!=='1'){showToast('请开启 DNS 上传并配置参数');switchTab('settings');return;}
+if(localStorage.getItem('vect-dns-enabled')!=='1'){showToast('请开启 DNS 上传并配置参数');switchTab('vect-settings');return;}
 const ips=h[idx].results.map(function(r){return r.ip});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
 const cfg={provider:S('dnsProvider').value,token:S('dnsToken').value,zone:S('dnsZone').value,subdomain:S('dnsSubdomain').value,count:parseInt(S('dnsCount').value)||ips.length,filter_ipv6_only:S('filterIpv6OnlyToggle').checked,record_type:S('dnsRecordType').value};
-if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在设置中配置 DNS 参数');switchTab('settings');return;}
+if(!cfg.token||!cfg.zone||!cfg.subdomain){showToast('请先在设置中配置 DNS 参数');switchTab('vect-settings');return;}
 showActionSheet('DNS 上传','确认上传 DNS 记录？',[
 {label:'确认上传',fn:function(){showToast('正在上传 DNS 记录...');const x=new XMLHttpRequest();x.open('POST','/api/dns-upload',true);x.setRequestHeader('Content-Type','application/json');x.onload=function(){if(x.status===200){showToast('DNS 上传完成: '+JSON.parse(x.responseText).count+' 条');}else{showToast('DNS 上传失败: '+x.responseText);}};x.send(JSON.stringify({provider:cfg.provider,token:cfg.token,zone:cfg.zone,subdomain:cfg.subdomain,count:cfg.count,ips:ips,filter_ipv6_only:cfg.filter_ipv6_only,record_type:cfg.record_type}));}}
 ]);
@@ -1649,10 +2339,10 @@ showActionSheet('DNS 上传','确认上传 DNS 记录？',[
 function githubUploadFromHistory(idx){
 const h=loadHistory();
 if(!h[idx])return;
-if(localStorage.getItem('vect-git-enabled')!=='1'){showToast('请开启 GIT 上传并配置参数');switchTab('settings');return;}
+if(localStorage.getItem('vect-git-enabled')!=='1'){showToast('请开启 GIT 上传并配置参数');switchTab('vect-settings');return;}
 var repoCheck=S('gitRepo').value.trim();
 repoCheck=repoCheck.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
-if(!S('gitToken').value.trim()||repoCheck.split('/').length!==2){showToast('请先配置 GIT 参数');switchTab('settings');return;}
+if(!S('gitToken').value.trim()||repoCheck.split('/').length!==2){showToast('请先配置 GIT 参数');switchTab('vect-settings');return;}
 var sheetIdx=idx;
 showActionSheet('GitHub 上传','选择要上传的节点范围',[
 {label:'All IP',fn:function(){doGithubUpload(sheetIdx,false);}},
@@ -1667,9 +2357,9 @@ const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithAsn(r);});
 if(!ips.length){showToast('该次扫描没有可用的结果');return;}
 var repo=S('gitRepo').value.trim();
 repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
-if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('settings');return;}
+if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('vect-settings');return;}
 const cfg={token:S('gitToken').value,repo:repo,path:S('gitPath').value,branch:S('gitBranch').value};
-if(!cfg.token||!cfg.repo){showToast('请先在设置中配置 GIT 参数');switchTab('settings');return;}
+if(!cfg.token||!cfg.repo){showToast('请先在设置中配置 GIT 参数');switchTab('vect-settings');return;}
 showToast('正在上传到 GitHub...');
 const x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);
 x.setRequestHeader('Content-Type','application/json');
@@ -1682,9 +2372,9 @@ if(!results.length){showToast('没有测速成功的节点');return;}
 const ips=results.map(function(r){return r.ip+':443#'+resultSuffixWithBandwidth(r);});
 var repo=S('gitRepo').value.trim();
 repo=repo.replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
-if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('settings');return;}
+if(repo.split('/').length!==2){showToast('仓库格式错误，应为 owner/repo');switchTab('vect-settings');return;}
 const cfg={token:S('gitToken').value,repo:repo,path:S('gitPath').value,branch:S('gitBranch').value};
-if(!cfg.token||!cfg.repo){showToast('请先在设置中配置 GIT 参数');switchTab('settings');return;}
+if(!cfg.token||!cfg.repo){showToast('请先在设置中配置 GIT 参数');switchTab('vect-settings');return;}
 showToast('正在上传到 GitHub...');
 const x=new XMLHttpRequest();x.open('POST','/api/github-upload',true);
 x.setRequestHeader('Content-Type','application/json');
@@ -1856,6 +2546,8 @@ renderHistory();
 syncHistoryFromServer();
 updateCidrCount();
 updateThemeOpts();
+buildTabBar();
+renderCfnbHistory();
 // Init DNS toggle from storage
 if(localStorage.getItem('vect-dns-enabled')==='1'){
 S('dnsEnableTrack').classList.add('on');
@@ -1867,6 +2559,18 @@ if(localStorage.getItem('vect-git-enabled')==='1'){
 S('gitEnableTrack').classList.add('on');
 S('gitEnableToggle').checked=true;
 S('gitConfigFields').style.display='';
+}
+// Init CFNB DNS toggle from storage
+if(localStorage.getItem('cfnb-dns-enabled')==='1'){
+S('cfnbDnsEnableTrack').classList.add('on');
+document.getElementById('cfnbDnsEnableToggle').checked=true;
+S('cfnbDnsConfigFields').style.display='';
+}
+// Init CFNB GIT toggle from storage
+if(localStorage.getItem('cfnb-git-enabled')==='1'){
+S('cfnbGitEnableTrack').classList.add('on');
+document.getElementById('cfnbGitEnableToggle').checked=true;
+S('cfnbGitConfigFields').style.display='';
 }
 // Init ASN toggle from storage (default ON)
 if(localStorage.getItem('vect-asn')!=='0'){
@@ -1921,6 +2625,32 @@ if(git){
 	if(git.repo)S('gitRepo').value=git.repo;
 	if(git.path)S('gitPath').value=git.path;
 	if(git.branch)S('gitBranch').value=git.branch;
+}
+}catch(e){}
+// Restore CFNB DNS config from storage
+try{
+var cdns=JSON.parse(localStorage.getItem('cfnb-dns-config'));
+if(cdns){
+  if(cdns.provider)S('cfnbDnsProvider').value=cdns.provider;
+  if(cdns.token)S('cfnbDnsToken').value=cdns.token;
+  if(cdns.zone)S('cfnbDnsZone').value=cdns.zone;
+  if(cdns.subdomain)S('cfnbDnsSubdomain').value=cdns.subdomain;
+  if(cdns.count)S('cfnbDnsCount').value=cdns.count;
+  if(cdns.recordType)S('cfnbDnsRecordType').value=cdns.recordType;
+  if(cdns.filterIpv6Only){
+    document.getElementById('cfnbFilterIpv6OnlyToggle').checked=true;
+    S('cfnbFilterIpv6OnlyTrack').classList.add('on');
+  }
+}
+}catch(e){}
+// Restore CFNB Git config from storage
+try{
+var cgit=JSON.parse(localStorage.getItem('cfnb-git-config'));
+if(cgit){
+  if(cgit.token)S('cfnbGitToken').value=cgit.token;
+  if(cgit.repo)S('cfnbGitRepo').value=cgit.repo;
+  if(cgit.path)S('cfnbGitPath').value=cgit.path;
+  if(cgit.branch)S('cfnbGitBranch').value=cgit.branch;
 }
 }catch(e){}
 
