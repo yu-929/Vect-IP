@@ -349,12 +349,36 @@ func handleCfnbRun(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Check python3 availability and script existence
+		pythonBin := ""
+		for _, name := range []string{"python3", "python"} {
+			if p, err := exec.LookPath(name); err == nil {
+				pythonBin = p
+				break
+			}
+		}
+		if pythonBin == "" {
+			session.mu.Lock()
+			session.err = "python3 not found: CFNB requires Python on this device"
+			session.status = "failed"
+			session.mu.Unlock()
+			return
+		}
+		scriptPath := filepath.Join(scriptDir, "main.py")
+		if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+			session.mu.Lock()
+			session.err = "CFNB script not found at " + scriptPath + ": please install CFNB package first"
+			session.status = "failed"
+			session.mu.Unlock()
+			return
+		}
+
 		sendCfnbProgress(session, ProgressData{Stage: 1, Nodes: 0, Completed: 0, Budget: 100})
 
 		pctx, pcancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer pcancel()
 
-		cmd := exec.CommandContext(pctx, "python3", "main.py")
+		cmd := exec.CommandContext(pctx, pythonBin, "main.py")
 		cmd.Dir = scriptDir
 		cmd.Env = append(os.Environ(), "PYTHONUNBUFFERED=1")
 
