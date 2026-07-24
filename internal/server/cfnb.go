@@ -1028,14 +1028,15 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					probeCtx, probeCancel := context.WithTimeout(context.Background(), probeTimeout)
 					res := hp.ProbeHTTPTraceMulti(probeCtx, addr)
 					probeCancel()
-					if res.OK {
-						loc := res.Trace["loc"]
-						if loc != "" {
-							r.colo = alpha2ToAlpha3(loc) + "-" + loc
-						}
-						r.httpLatency = float64(res.TotalMS)
-						r.jitterMS = float64(res.JitterMS)
+if res.OK {
+					loc := res.Trace["loc"]
+					if loc != "" {
+						r.colo = alpha2ToAlpha3(loc) + "-" + loc
 					}
+					r.httpLatency = float64(res.TotalMS)
+					r.jitterMS = float64(res.JitterMS)
+					fmt.Printf("HTTPLAT %s: latency=%.1f jitter=%.1f ok=%v\n", r.ip, r.httpLatency, r.jitterMS, res.OK)
+				}
 					htMu.Lock()
 					htDone++
 					sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: htDone, Budget: len(okResults)})

@@ -9,7 +9,6 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"net/http/httptrace"
 	"net/netip"
 	"sort"
 	"strings"
@@ -66,23 +65,24 @@ func NewProber(cfg Config) *Prober {
 	transport := &http.Transport{
 		Proxy: nil, // critical: ignore HTTP(S)_PROXY and NO_PROXY env vars
 		DialContext: (&net.Dialer{
-			Timeout:   cfg.Timeout,
+			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		ForceAttemptHTTP2:     true,
+		ForceAttemptHTTP2:     false,
+		TLSNextProto:          make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 		MaxIdleConns:          1024,
 		MaxIdleConnsPerHost:   256,
 		IdleConnTimeout:       30 * time.Second,
-		TLSHandshakeTimeout:   cfg.Timeout,
+		TLSHandshakeTimeout:   30 * time.Second,
 		ResponseHeaderTimeout: cfg.Timeout,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			ServerName: cfg.SNI,
+			ServerName:         cfg.SNI,
+			InsecureSkipVerify: true,
 		},
 	}
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   cfg.Timeout,
 	}
 
 	return &Prober{cfg: cfg, client: client}
@@ -108,37 +108,7 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	}
 	url := fmt.Sprintf("https://%s:%d%s", targetHost, port, p.cfg.Path)
 
-	var (
-		connectStart time.Time
-		tlsStart     time.Time
-		gotFirstByte time.Time
-		connectDur   time.Duration
-		tlsDur       time.Duration
-	)
-
-	trace := &httptrace.ClientTrace{
-		ConnectStart: func(network, addr string) {
-			connectStart = time.Now()
-		},
-		ConnectDone: func(network, addr string, err error) {
-			if !connectStart.IsZero() {
-				connectDur = time.Since(connectStart)
-			}
-		},
-		TLSHandshakeStart: func() {
-			tlsStart = time.Now()
-		},
-		TLSHandshakeDone: func(state tls.ConnectionState, err error) {
-			if !tlsStart.IsZero() {
-				tlsDur = time.Since(tlsStart)
-			}
-		},
-		GotFirstResponseByte: func() {
-			gotFirstByte = time.Now()
-		},
-	}
-
-	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(ctx, trace), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		res.Error = err.Error()
 		res.TotalMS = time.Since(start).Milliseconds()
@@ -147,24 +117,38 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	if p.cfg.HostHeader != "" {
 		req.Host = p.cfg.HostHeader
 	}
+	req.Close = true
 	req.Header.Set("User-Agent", "vect/0.1")
 	req.Header.Set("Accept", "text/plain")
 
 	httpRes, err := p.client.Do(req)
 	if err != nil {
-		// Normalize common context timeout.
-		if errors.Is(err, context.DeadlineExceeded) {
-			res.Error = "timeout"
-		} else {
-			res.Error = err.Error()
+		// Retry once on EOF: some CDN nodes close the connection immediately
+		// after receiving a request on a newly established connection.
+		if strings.Contains(err.Error(), "EOF") {
+			fmt.Printf("PROBE RETRY %s -> %s: EOF (total=%dms)\n", ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			req2, err2 := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+			if err2 == nil {
+				if p.cfg.HostHeader != "" {
+					req2.Host = p.cfg.HostHeader
+				}
+				req2.Close = true
+				req2.Header.Set("User-Agent", "vect/0.1")
+				req2.Header.Set("Accept", "text/plain")
+				httpRes, err = p.client.Do(req2)
+			}
 		}
-		res.TotalMS = time.Since(start).Milliseconds()
-		res.ConnectMS = connectDur.Milliseconds()
-		res.TLSMS = tlsDur.Milliseconds()
-		if !gotFirstByte.IsZero() {
-			res.TTFBMS = gotFirstByte.Sub(start).Milliseconds()
+		if err != nil {
+			// Normalize common context timeout.
+			if errors.Is(err, context.DeadlineExceeded) {
+				res.Error = "timeout"
+			} else {
+				res.Error = err.Error()
+			}
+			fmt.Printf("PROBE ERR %s -> %s: %s (total=%dms) errtype=%T\n", ip.String(), p.cfg.HostHeader, res.Error, time.Since(start).Milliseconds(), err)
+			res.TotalMS = time.Since(start).Milliseconds()
+			return res
 		}
-		return res
 	}
 	defer func() { _ = httpRes.Body.Close() }()
 
@@ -175,19 +159,15 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 		return res
 	}
 	res.Status = httpRes.StatusCode
-	res.ConnectMS = connectDur.Milliseconds()
-	res.TLSMS = tlsDur.Milliseconds()
-	if !gotFirstByte.IsZero() {
-		res.TTFBMS = gotFirstByte.Sub(start).Milliseconds()
-	}
 	res.TotalMS = time.Since(start).Milliseconds()
+	res.OK = true
 
 	if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
-		res.OK = true
 		res.Trace = parseTrace(string(body))
+		fmt.Printf("PROBE OK %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
 	} else {
-		res.OK = false
 		res.Error = fmt.Sprintf("http_status_%d", httpRes.StatusCode)
+		fmt.Printf("PROBE BAD %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
 	}
 	return res
 }
@@ -212,21 +192,10 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 
 	var results []Result
 	for i := 0; i < rounds; i++ {
-		var r Result
-		roundCtx := ctx
-		if p.cfg.SkipFailedRounds && p.cfg.Timeout > 0 {
-			var roundCancel context.CancelFunc
-			roundCtx, roundCancel = context.WithTimeout(ctx, p.cfg.Timeout)
-			r = p.probeOnce(roundCtx, ip)
-			roundCancel()
-		} else {
-			r = p.probeOnce(roundCtx, ip)
-		}
+		r := p.probeOnce(ctx, ip)
 		results = append(results, r)
-		if !r.OK {
-			if !p.cfg.SkipFailedRounds {
-				return r
-			}
+		if !r.OK && !p.cfg.SkipFailedRounds {
+			return r
 		}
 	}
 
@@ -234,7 +203,6 @@ func (p *Prober) ProbeHTTPTraceMulti(ctx context.Context, ip netip.Addr) Result 
 }
 
 func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int) Result {
-	// Filter out failed rounds, then skip first N
 	var allOK []Result
 	for _, r := range results {
 		if r.OK {
@@ -255,6 +223,7 @@ func (p *Prober) aggregateResults(results []Result, ip netip.Addr, skipFirst int
 	avg.JitterMS = jitterMS
 	avg.MinMS = minMS
 	avg.MaxMS = maxMS
+	fmt.Printf("AGGREGATE %s: total=%d ok=%d skipFirst=%d valid=%d\n", ip.String(), avg.TotalMS, len(allOK), skipFirst, len(validResults))
 	return avg
 }
 

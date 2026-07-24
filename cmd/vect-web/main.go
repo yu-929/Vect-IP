@@ -2405,7 +2405,7 @@ func selectPerCountry(results []cfnbIPResult, perCountryTopN int, globalTopN int
 	sort.Slice(selected, func(i, j int) bool {
 		return selected[i].score > selected[j].score
 	})
-	if len(selected) > globalTopN {
+	if len(selected) > globalTopN && globalTopN > 0 {
 		selected = selected[:globalTopN]
 	}
 	return selected
@@ -2640,8 +2640,11 @@ for w := 0; w < workers; w++ {
 					sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: avDone, Budget: len(okResults)})
 					avMu.Unlock()
 					if res.OK {
+						colo := res.Trace["colo"]
 						loc := res.Trace["loc"]
-						if loc != "" {
+						if colo != "" && loc != "" {
+							r.colo = colo + "-" + loc
+						} else if loc != "" {
 							r.colo = alpha2ToAlpha3(loc) + "-" + loc
 						}
 						availMu.Lock()
@@ -2660,7 +2663,7 @@ for w := 0; w < workers; w++ {
 			okResults = availResults
 		}
 		if !req.GlobalMode {
-			okResults = selectPerCountry(okResults, req.PerCountryTopN, topN)
+			okResults = selectPerCountry(okResults, req.PerCountryTopN, 0)
 		}
 		okResults = filterByCountry(okResults, req)
 		if len(okResults) == 0 {
@@ -2677,7 +2680,7 @@ for w := 0; w < workers; w++ {
 
 	if req.TestHttp && req.JitterSamples > 1 {
 		httpCfg := probe.Config{
-			Timeout:          3 * time.Second,
+			Timeout:          30 * time.Second,
 			SNI:              "example.com",
 			HostHeader:       "example.com",
 			Path:             "/cdn-cgi/trace",
@@ -2719,12 +2722,16 @@ for w := 0; w < workers; w++ {
 					res := hp.ProbeHTTPTraceMulti(probeCtx, addr)
 					probeCancel()
 					if res.OK {
+						colo := res.Trace["colo"]
 						loc := res.Trace["loc"]
-						if loc != "" {
+						if colo != "" && loc != "" {
+							r.colo = colo + "-" + loc
+						} else if loc != "" {
 							r.colo = alpha2ToAlpha3(loc) + "-" + loc
 						}
 						r.httpLatency = float64(res.TotalMS)
 						r.jitterMS = float64(res.JitterMS)
+						fmt.Printf("HTTPLAT %s: latency=%.1f jitter=%.1f ok=%v total=%d\n", r.ip, r.httpLatency, r.jitterMS, res.OK, res.TotalMS)
 					}
 					htMu.Lock()
 					htDone++
@@ -2767,6 +2774,9 @@ for w := 0; w < workers; w++ {
 		sort.Slice(okResults, func(i, j int) bool {
 			return okResults[i].score > okResults[j].score
 		})
+		for i := 0; i < 5 && i < len(okResults); i++ {
+			fmt.Printf("AFTERSORT %s: httpLatency=%.1f score=%.4f colo=%s\n", okResults[i].ip, okResults[i].httpLatency, okResults[i].score, okResults[i].colo)
+		}
 	}
 
 	if !req.TestAvailability {
@@ -2906,6 +2916,9 @@ for w := 0; w < workers; w++ {
 			httpLatStr = fmt.Sprintf("%.1f ms", r.httpLatency)
 		} else {
 			httpLatStr = "0 ms"
+			if r.speedMbps > 0 || r.tcpLatencyMS > 0 {
+				fmt.Printf("OUTPUT %s: httpLatency=%.1f speed=%.2f tcp=%.1f colo=%s\n", r.ip, r.httpLatency, r.speedMbps, r.tcpLatencyMS, r.colo)
+			}
 		}
 		if r.jitterMS > 0 {
 			httpJitterStr = fmt.Sprintf("%.1f ms", r.jitterMS)
