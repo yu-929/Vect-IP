@@ -2598,13 +2598,15 @@ for w := 0; w < workers; w++ {
 	if req.TestAvailability {
 		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: len(okResults)})
 		availCfg := probe.Config{
-			Timeout:    3 * time.Second,
-			SNI:        "example.com",
-			HostHeader: "example.com",
-			Path:       "/cdn-cgi/trace",
-			Port:       443,
-			Rounds:     1,
-			SkipFirst:  0,
+			Timeout:             3 * time.Second,
+			DialTimeout:         3 * time.Second,
+			TLSHandshakeTimeout: 3 * time.Second,
+			SNI:                 "example.com",
+			HostHeader:          "example.com",
+			Path:                "/cdn-cgi/trace",
+			Port:                443,
+			Rounds:              1,
+			SkipFirst:           0,
 		}
 		ap := probe.NewProber(availCfg)
 		var avWg sync.WaitGroup

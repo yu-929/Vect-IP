@@ -16,14 +16,16 @@ import (
 )
 
 type Config struct {
-	Timeout          time.Duration
-	SNI              string
-	HostHeader       string
-	Path             string
-	Port             int    // TLS port (default 443)
-	Rounds           int   // 总测试次数，默认6
-	SkipFirst        int   // 跳过前N次，默认1（跳过第1次握手）
-	SkipFailedRounds bool  // 跳过失败轮次（不中断探测）
+	Timeout              time.Duration
+	SNI                  string
+	HostHeader           string
+	Path                 string
+	Port                 int    // TLS port (default 443)
+	Rounds               int   // 总测试次数，默认6
+	SkipFirst            int   // 跳过前N次，默认1（跳过第1次握手）
+	SkipFailedRounds     bool  // 跳过失败轮次（不中断探测）
+	DialTimeout          time.Duration // TCP dial 超时，0 则使用 Timeout
+	TLSHandshakeTimeout  time.Duration // TLS 握手超时，0 则使用 Timeout
 }
 
 type Result struct {
@@ -58,6 +60,14 @@ func NewProber(cfg Config) *Prober {
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = 3 * time.Second
 	}
+	dialTimeout := cfg.DialTimeout
+	if dialTimeout <= 0 {
+		dialTimeout = 30 * time.Second
+	}
+	tlsTimeout := cfg.TLSHandshakeTimeout
+	if tlsTimeout <= 0 {
+		tlsTimeout = 30 * time.Second
+	}
 	if cfg.Port <= 0 {
 		cfg.Port = 443
 	}
@@ -65,7 +75,7 @@ func NewProber(cfg Config) *Prober {
 	transport := &http.Transport{
 		Proxy: nil, // critical: ignore HTTP(S)_PROXY and NO_PROXY env vars
 		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
+			Timeout:   dialTimeout,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
 		ForceAttemptHTTP2:     false,
@@ -73,7 +83,7 @@ func NewProber(cfg Config) *Prober {
 		MaxIdleConns:          1024,
 		MaxIdleConnsPerHost:   256,
 		IdleConnTimeout:       30 * time.Second,
-		TLSHandshakeTimeout:   30 * time.Second,
+		TLSHandshakeTimeout:   tlsTimeout,
 		ResponseHeaderTimeout: cfg.Timeout,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
