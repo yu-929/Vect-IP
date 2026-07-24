@@ -988,6 +988,8 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	if req.TestHttp && req.JitterSamples > 1 {
 		httpCfg := probe.Config{
 			Timeout:          3 * time.Second,
+			CloseConn:        true,
+			DisableHTTP2:     true,
 			SNI:              "example.com",
 			HostHeader:       "example.com",
 			Path:             "/cdn-cgi/trace",

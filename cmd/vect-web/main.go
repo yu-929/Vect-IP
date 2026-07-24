@@ -2685,6 +2685,8 @@ for w := 0; w < workers; w++ {
 			Timeout:             30 * time.Second,
 			DialTimeout:         30 * time.Second,
 			TLSHandshakeTimeout: 30 * time.Second,
+			CloseConn:           true,
+			DisableHTTP2:        true,
 			SNI:                 "example.com",
 			HostHeader:          "example.com",
 			Path:                "/cdn-cgi/trace",

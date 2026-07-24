@@ -26,6 +26,8 @@ type Config struct {
 	SkipFailedRounds     bool  // 跳过失败轮次（不中断探测）
 	DialTimeout          time.Duration // TCP dial 超时，0 则使用 Timeout
 	TLSHandshakeTimeout  time.Duration // TLS 握手超时，0 则使用 Timeout
+	CloseConn            bool  // 每轮强制关闭连接（用于 HTTP jitter 测量）
+	DisableHTTP2         bool  // 禁用 HTTP/2（用于 req.Close 生效）
 }
 
 type Result struct {
@@ -78,8 +80,7 @@ func NewProber(cfg Config) *Prober {
 			Timeout:   dialTimeout,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		ForceAttemptHTTP2:     false,
-		TLSNextProto:          make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+		ForceAttemptHTTP2:     !cfg.DisableHTTP2,
 		MaxIdleConns:          1024,
 		MaxIdleConnsPerHost:   256,
 		IdleConnTimeout:       30 * time.Second,
@@ -90,6 +91,9 @@ func NewProber(cfg Config) *Prober {
 			ServerName:         cfg.SNI,
 			InsecureSkipVerify: true,
 		},
+	}
+	if cfg.DisableHTTP2 {
+		transport.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
 	}
 	client := &http.Client{
 		Transport: transport,
@@ -128,7 +132,9 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	if p.cfg.HostHeader != "" {
 		req.Host = p.cfg.HostHeader
 	}
-	req.Close = true
+	if p.cfg.CloseConn {
+		req.Close = true
+	}
 	req.Header.Set("User-Agent", "vect/0.1")
 	req.Header.Set("Accept", "text/plain")
 
@@ -143,7 +149,9 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 				if p.cfg.HostHeader != "" {
 					req2.Host = p.cfg.HostHeader
 				}
-				req2.Close = true
+				if p.cfg.CloseConn {
+					req2.Close = true
+				}
 				req2.Header.Set("User-Agent", "vect/0.1")
 				req2.Header.Set("Accept", "text/plain")
 				httpRes, err = p.client.Do(req2)
