@@ -906,7 +906,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 	// Keep all reachable IPs for availability/HTTP tests (don't filter by TCP latency)
 
 	if req.TestAvailability {
-		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: 100})
+		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: len(okResults)})
 		availCfg := probe.Config{
 			Timeout:    3 * time.Second,
 			SNI:        "api.090227.xyz",
@@ -947,7 +947,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					probeCancel()
 					avMu.Lock()
 					avDone++
-					sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: avDone, Budget: 100})
+					sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: avDone, Budget: len(okResults)})
 					avMu.Unlock()
 					if res.OK {
 						loc := res.Trace["loc"]
@@ -983,7 +983,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 100, Budget: 100})
 	}
 
-	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 0, Budget: 100})
+	sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: 0, Budget: len(okResults)})
 
 	if req.TestHttp && req.JitterSamples > 1 {
 		httpCfg := probe.Config{
@@ -1038,7 +1038,7 @@ func runCfnbScanGo(session *CfnbSession, req cfnbRunRequest, id string) {
 					}
 					htMu.Lock()
 					htDone++
-					sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: htDone, Budget: 100})
+					sendCfnbProgress(session, ProgressData{Stage: 4, Nodes: len(okResults), Completed: htDone, Budget: len(okResults)})
 					htMu.Unlock()
 				}
 			}()
@@ -1368,50 +1368,55 @@ func collectCfnbIPs(req cfnbRunRequest, id string, session *CfnbSession) []cfnbI
 }
 
 func fetchURLIPs(url string, session *CfnbSession) []cfnbIPEntry {
-	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		session.mu.Lock()
-		session.err = "fetch source " + url + ": " + err.Error()
-		session.status = "failed"
-		session.mu.Unlock()
-		return nil
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
-	if err != nil {
-		session.mu.Lock()
-		session.err = "read source " + url + ": " + err.Error()
-		session.status = "failed"
-		session.mu.Unlock()
-		return nil
-	}
-
-	lines := strings.Split(string(body), "\n")
-	var entries []cfnbIPEntry
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+	var lastErr error
+	for retry := 0; retry < 3; retry++ {
+		if retry > 0 {
+			time.Sleep(time.Duration(retry) * time.Second)
+		}
+		client := &http.Client{Timeout: 15 * time.Second}
+		resp, err := client.Get(url)
+		if err != nil {
+			lastErr = err
 			continue
 		}
-		ipport := strings.SplitN(line, "#", 2)[0]
-		ipport = strings.TrimSpace(ipport)
-		if ipport == "" {
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
+		if err != nil {
+			lastErr = err
 			continue
 		}
-		ip := ipport
-		port := 443
-		if strings.Contains(ipport, ":") {
-			parts := strings.SplitN(ipport, ":", 2)
-			ip = parts[0]
-			if p, err := strconv.Atoi(parts[1]); err == nil {
-				port = p
+
+		lines := strings.Split(string(body), "\n")
+		var entries []cfnbIPEntry
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+				continue
+			}
+			ipport := strings.SplitN(line, "#", 2)[0]
+			ipport = strings.TrimSpace(ipport)
+			if ipport == "" {
+				continue
+			}
+			ip := ipport
+			port := 443
+			if strings.Contains(ipport, ":") {
+				parts := strings.SplitN(ipport, ":", 2)
+				ip = parts[0]
+				if p, err := strconv.Atoi(parts[1]); err == nil {
+					port = p
+				}
+			}
+			if net.ParseIP(ip) != nil {
+				entries = append(entries, cfnbIPEntry{ip: ip, port: port})
 			}
 		}
-		if net.ParseIP(ip) != nil {
-			entries = append(entries, cfnbIPEntry{ip: ip, port: port})
-		}
+		return entries
 	}
-	return entries
+	session.mu.Lock()
+	session.err = "fetch source " + url + ": " + lastErr.Error()
+	session.status = "failed"
+	session.mu.Unlock()
+	return nil
 }
