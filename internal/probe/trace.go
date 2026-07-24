@@ -88,8 +88,7 @@ func NewProber(cfg Config) *Prober {
 		ResponseHeaderTimeout: cfg.Timeout,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			ServerName:         cfg.SNI,
-			InsecureSkipVerify: true,
+			ServerName: cfg.SNI,
 		},
 	}
 	if cfg.DisableHTTP2 {

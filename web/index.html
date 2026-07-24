@@ -1076,12 +1076,9 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 
 <!-- Bottom TabBar -->
 <div class="bottom-row" id="bottomRow">
-<button class="switch-btn" id="tabSwitchBtn" onclick="onSwitchArea()" title="切换 VE/CF">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4M16 3l4 4-4 4"/><path d="M4 7h16M4 17h16"/><path d="M12 17l4 4 4-4"/></svg>
-</button>
-<div class="tab-bar" id="mainTabBar">
-</div>
-</div>
+ <div class="tab-bar" id="mainTabBar">
+ </div>
+ </div>
 
 <script>
 let curId=null, es=null, results=[], estStart=0, coloMode='', coloSelected=[], polling=false, scanDone=false, progressLocked=false, cfnbStartTime=0, cfnbCurId=null;
@@ -1178,34 +1175,17 @@ es.addEventListener('done',function(){
 }
 
 // Mode switching
-var currentMode = 'vect';
 function buildTabBar(){
   var bar = document.getElementById('mainTabBar');
   if(!bar) return;
-  var tabs = [];
-  if(currentMode === 'vect'){
-    tabs = [
-      {tab:'vect-scan', label:'扫描', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'},
-      {tab:'vect-history', label:'历史', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'},
-      {tab:'vect-settings', label:'设置', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>'}
-    ];
-  } else {
-    tabs = [
-      {tab:'cfnb-scan', label:'扫描', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'},
-      {tab:'cfnb-history', label:'历史', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'},
-      {tab:'cfnb-settings', label:'设置', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>'}
-    ];
-  }
+  var tabs = [
+    {tab:'vect-scan', label:'扫描', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'},
+    {tab:'vect-history', label:'历史', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'},
+    {tab:'vect-settings', label:'设置', svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>'}
+  ];
   bar.innerHTML = tabs.map(function(t, i){
     return '<button class="tab-item'+(i===0?' active':'')+'" data-tab="'+t.tab+'" onclick="switchTab(\''+t.tab+'\')">'+t.svg+'<span class="tab-label">'+t.label+'</span></button>';
   }).join('');
-}
-function onSwitchArea(){
-  currentMode = (currentMode === 'vect' ? 'cfnb' : 'vect');
-  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
-  var firstTab = currentMode === 'vect' ? 'vect-scan' : 'cfnb-scan';
-  buildTabBar();
-  switchTab(firstTab);
 }
 
 // Theme
