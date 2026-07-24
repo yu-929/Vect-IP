@@ -2682,13 +2682,15 @@ for w := 0; w < workers; w++ {
 
 	if req.TestHttp && req.JitterSamples > 1 {
 		httpCfg := probe.Config{
-			Timeout:          30 * time.Second,
-			SNI:              "example.com",
-			HostHeader:       "example.com",
-			Path:             "/cdn-cgi/trace",
-			Port:             443,
-			Rounds:           req.JitterSamples,
-			SkipFailedRounds: true,
+			Timeout:             30 * time.Second,
+			DialTimeout:         30 * time.Second,
+			TLSHandshakeTimeout: 30 * time.Second,
+			SNI:                 "example.com",
+			HostHeader:          "example.com",
+			Path:                "/cdn-cgi/trace",
+			Port:                443,
+			Rounds:              req.JitterSamples,
+			SkipFailedRounds:    true,
 		}
 		hp := probe.NewProber(httpCfg)
 

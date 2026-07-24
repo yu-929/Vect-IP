@@ -62,11 +62,11 @@ func NewProber(cfg Config) *Prober {
 	}
 	dialTimeout := cfg.DialTimeout
 	if dialTimeout <= 0 {
-		dialTimeout = 30 * time.Second
+		dialTimeout = cfg.Timeout
 	}
 	tlsTimeout := cfg.TLSHandshakeTimeout
 	if tlsTimeout <= 0 {
-		tlsTimeout = 30 * time.Second
+		tlsTimeout = cfg.Timeout
 	}
 	if cfg.Port <= 0 {
 		cfg.Port = 443
@@ -93,6 +93,7 @@ func NewProber(cfg Config) *Prober {
 	}
 	client := &http.Client{
 		Transport: transport,
+		Timeout:   cfg.Timeout,
 	}
 
 	return &Prober{cfg: cfg, client: client}
