@@ -2599,9 +2599,9 @@ for w := 0; w < workers; w++ {
 		sendCfnbProgress(session, ProgressData{Stage: 3, Nodes: len(okResults), Completed: 0, Budget: len(okResults)})
 		availCfg := probe.Config{
 			Timeout:    3 * time.Second,
-			SNI:        "api.090227.xyz",
-			HostHeader: "api.090227.xyz",
-			Path:       "/check",
+			SNI:        "example.com",
+			HostHeader: "example.com",
+			Path:       "/cdn-cgi/trace",
 			Port:       443,
 			Rounds:     1,
 			SkipFirst:  0,
