@@ -1678,10 +1678,52 @@ if(d.status==='completed'){
 		S('s6Rem').textContent='已完成';
 		results.forEach(x=>{const a=asnMap[x.ip];if(a){x.asname=a.asname;x.asn=a.asn;}});
 	}
-	renderResults(d.result||[]);
-	resetButtons();
-	showToast('扫描完成');
-	notifyComplete(d.result);
+// Save history before renderResults to ensure it's recorded even if rendering fails
+ 	const rawResults=d.result||[];
+ 	try{
+ 		const valid=rawResults.filter(x=>x.score_ms<6000);
+ 		if(valid.length){
+ 			const seen=new Set();
+ 			const deduped=valid.filter(x=>{if(seen.has(x.ip))return false;seen.add(x.ip);return true;});
+ 			deduped.sort((a,b)=>{
+ 				if(a.download_ok&&!b.download_ok)return -1;
+ 				if(!a.download_ok&&b.download_ok)return 1;
+ 				return a.score_ms-b.score_ms;
+ 			});
+ 			const history=loadHistory();
+ 			const entry={
+ 				time:new Date().toLocaleString(),
+ 				duration:Math.round((Date.now()-estStart)/1000),
+ 				cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean).join(', '),
+ 				asn:S('asn').value.trim(),
+ 				budget:S('budget').value,
+ 				results:deduped.map(x=>({
+ 					ip:x.ip,
+ 					score:x.score_ms,
+ 					jitter:x.jitter_ms||0,
+ 					totalMs:x.total_ms||0,
+ 					minMs:x.min_ms||0,
+ 					maxMs:x.max_ms||0,
+ 					colo:x.trace&&x.trace.colo?x.trace.colo:'',
+ 					prefix:x.prefix||'',
+ 					route:x.trace&&x.trace.route?x.trace.route:'',
+ 					dlOk:x.download_ok,
+ 					dlMbps:x.download_mbps,
+ 					dlPeakMbps:x.download_peak_mbps||0,
+ 					dlError:x.download_error,
+ 					asname:x.asname||'',
+ 					asn:x.asn||0
+ 				}))
+ 			};
+ 			history.unshift(entry);
+ 			if(history.length>50)history.length=50;
+ 			saveHistory(history);
+ 		}
+ 	}catch(e){console.error('saveHistory error',e);}
+ 	renderResults(rawResults);
+ 	resetButtons();
+ 	showToast('扫描完成');
+ 	notifyComplete(d.result);
 }else if(d.status==='failed'){
 	progressLocked=false;
 	showError(d.error||'扫描失败');
@@ -1763,35 +1805,7 @@ async function renderResults(r){
 		if(!a.download_ok&&b.download_ok)return 1;
 		return a.score_ms-b.score_ms;
 	});
-	const history=loadHistory();
-	const entry={
-		time:new Date().toLocaleString(),
-		duration:Math.round((Date.now()-estStart)/1000),
-		cidrs:S('cidrs').value.split('\n').map(s=>s.trim()).filter(Boolean).join(', '),
-		asn:S('asn').value.trim(),
-		budget:S('budget').value,
-		results:deduped.map(x=>({
-			ip:x.ip,
-			score:x.score_ms,
-			jitter:x.jitter_ms||0,
-			totalMs:x.total_ms||0,
-			minMs:x.min_ms||0,
-			maxMs:x.max_ms||0,
-			colo:x.trace&&x.trace.colo?x.trace.colo:'',
-			prefix:x.prefix||'',
-			route:x.trace&&x.trace.route?x.trace.route:'',
-			dlOk:x.download_ok,
-			dlMbps:x.download_mbps,
-			dlPeakMbps:x.download_peak_mbps||0,
-			dlError:x.download_error,
-			asname:x.asname||'',
-			asn:x.asn||0
-		}))
-	};
-	history.unshift(entry);
-	if(history.length>50)history.length=50;
-	saveHistory(history);
-	renderHistory();
+renderHistory();
 }
 
 const coloCountry={
