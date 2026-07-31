@@ -138,8 +138,8 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	if p.cfg.CloseConn {
 		req.Close = true
 	}
-	req.Header.Set("User-Agent", "vect/0.1")
-	req.Header.Set("Accept", "text/plain")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
 
 	httpRes, err := p.client.Do(req)
 	if err != nil {
@@ -155,8 +155,8 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 				if p.cfg.CloseConn {
 					req2.Close = true
 				}
-				req2.Header.Set("User-Agent", "vect/0.1")
-				req2.Header.Set("Accept", "text/plain")
+				req2.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+				req2.Header.Set("Accept", "application/json, text/plain, */*")
 				httpRes, err = p.client.Do(req2)
 			}
 		}
