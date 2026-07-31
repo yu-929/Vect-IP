@@ -20,21 +20,24 @@ type Config struct {
 	Timeout              time.Duration
 	SNI                  string
 	HostHeader           string
-	Path                 string    // TLS port (default 443)
-	Port                 int       // 总测试次数，默认 6
-	Rounds               int       // 跳过前 N 次，默认 1（跳过第 1 次握手）
-	SkipFirst            int       // 跳过失败轮次（不中断探测）
-	SkipFailedRounds     bool      // TLS 握手超时，0 则使用 Timeout
-	DialTimeout          time.Duration // TLS 握手超时，0 则使用 Timeout
-	TLSHandshakeTimeout  time.Duration // 验证证书
-	VerifyCert           bool      // 每轮强制关闭连接（用于 HTTP jitter 测量）
-	CloseConn            bool      // 禁用 HTTP/2（用于 req.Close 生效）
+	Path                 string
+	Port                 int
+	Rounds               int
+	SkipFirst            int
+	SkipFailedRounds     bool
+	DialTimeout          time.Duration
+	TLSHandshakeTimeout  time.Duration
+	VerifyCert           bool
+	CloseConn            bool
 	DisableHTTP2         bool
+	AvailabilityCheckAPI string
+	ProxyIPMode          bool
 }
 
 type Result struct {
 	IP        netip.Addr        `json:"ip"`
 	OK        bool              `json:"ok"`
+	ProxyIP   bool              `json:"proxy_ip,omitempty"`
 	Status    int               `json:"status"`
 	Error     string            `json:"error,omitempty"`
 	ConnectMS int64             `json:"connect_ms"`
@@ -50,8 +53,9 @@ type Result struct {
 }
 
 type Prober struct {
-	cfg    Config
-	client *http.Client
+	cfg       Config
+	client    *http.Client
+	apiClient *http.Client
 }
 
 // NewProber creates a reusable, direct-connection (no proxy) prober.
@@ -78,7 +82,7 @@ func NewProber(cfg Config) *Prober {
 	}
 
 	transport := &http.Transport{
-		Proxy: nil, // critical: ignore HTTP(S)_PROXY and NO_PROXY env vars
+		Proxy: nil,
 		DialContext: (&net.Dialer{
 			Timeout:   dialTimeout,
 			KeepAlive: 30 * time.Second,
@@ -103,7 +107,44 @@ func NewProber(cfg Config) *Prober {
 		Timeout:   cfg.Timeout,
 	}
 
-	return &Prober{cfg: cfg, client: client}
+	var apiClient *http.Client
+	if cfg.AvailabilityCheckAPI != "" {
+		apiClient = &http.Client{
+			Timeout: 5 * time.Second,
+		}
+	}
+
+	return &Prober{cfg: cfg, client: client, apiClient: apiClient}
+}
+
+// checkAvailabilityAPI calls the availability check API to verify if an IP is a ProxyIP.
+func (p *Prober) checkAvailabilityAPI(ip netip.Addr) bool {
+	apiURL := fmt.Sprintf("%s?proxyip=%s:%d", p.cfg.AvailabilityCheckAPI, ip.String(), p.cfg.Port)
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return false
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+
+	resp, err := p.apiClient.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if err != nil {
+		return false
+	}
+
+	var result struct {
+		Success bool `json:"success"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return false
+	}
+	return result.Success
 }
 
 // probeOnce performs a single HTTP probe request.
@@ -186,36 +227,67 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 
 	serverHeader := httpRes.Header.Get("Server")
 	cfRay := httpRes.Header.Get("CF-RAY")
-	isCF := serverHeader == "cloudflare" || cfRay != ""
 
-	if isCF {
-		bodyStr := string(body)
-		res.Trace = parseTrace(bodyStr)
-		var jsonData map[string]any
-		if err := json.Unmarshal(body, &jsonData); err == nil && len(jsonData) > 0 {
-			res.JSON = jsonData
-		}
-		colo, _ := res.Trace["colo"]
-		fmt.Printf("PROBE OK %s -> %s: status=%d server=%s cf-ray=%s colo=%s total=%dms\n",
-			ip.String(), p.cfg.HostHeader, httpRes.StatusCode, serverHeader, cfRay, colo, time.Since(start).Milliseconds())
-	} else if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
-		bodyStr := string(body)
-		res.Trace = parseTrace(bodyStr)
-		var jsonData map[string]any
-		if err := json.Unmarshal(body, &jsonData); err == nil && len(jsonData) > 0 {
-			res.JSON = jsonData
-		}
-		_, hasIP := jsonData["ip"]
-		if hasIP {
-			fmt.Printf("PROBE OK %s -> %s: status=%d json_ip=yes total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
+	bodyStr := string(body)
+	res.Trace = parseTrace(bodyStr)
+	var jsonData map[string]any
+	if err := json.Unmarshal(body, &jsonData); err == nil && len(jsonData) > 0 {
+		res.JSON = jsonData
+	}
+
+	// Check if this is a Cloudflare node via headers
+	isCF := serverHeader == "cloudflare" || cfRay != ""
+	if !isCF {
+		res.OK = false
+		res.Error = fmt.Sprintf("no-cf status=%d server=%s", httpRes.StatusCode, serverHeader)
+		fmt.Printf("PROBE NO-CF %s -> %s: status=%d server=%s total=%dms\n",
+			ip.String(), p.cfg.HostHeader, httpRes.StatusCode, serverHeader, time.Since(start).Milliseconds())
+		return res
+	}
+
+	// Verify ProxyIP status via the availability check API.
+	// The API connects from Cloudflare Workers, providing definitive ProxyIP detection.
+	if p.apiClient != nil && p.cfg.AvailabilityCheckAPI != "" {
+		proxyIP := p.checkAvailabilityAPI(ip)
+		if p.cfg.ProxyIPMode {
+			// ProxyIP mode: only API-verified IPs are OK
+			if proxyIP {
+				res.ProxyIP = true
+				fmt.Printf("PROBE PROXYIP %s -> %s: api=success total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			} else {
+				res.OK = false
+				res.Error = "api-rejected"
+				fmt.Printf("PROBE API-REJECTED %s -> %s: total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			}
 		} else {
-			res.OK = false
-			res.Error = fmt.Sprintf("no-cf-server-header status=%d", httpRes.StatusCode)
-			fmt.Printf("PROBE NO-CF %s -> %s: status=%d server=%s total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, serverHeader, time.Since(start).Milliseconds())
+			// Official mode: all CF nodes are OK, proxy_ip is metadata
+			if proxyIP {
+				res.ProxyIP = true
+				fmt.Printf("PROBE PROXYIP %s -> %s: api=success total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			} else {
+				fmt.Printf("PROBE CF-NODE %s -> %s: api=rejected total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			}
 		}
 	} else {
-		res.Error = fmt.Sprintf("http_status_%d", httpRes.StatusCode)
-		fmt.Printf("PROBE BAD %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
+		// Fallback to JSON-based heuristic when API is not configured.
+		jsonIP, hasJSONIP := jsonData["ip"].(string)
+		proxyIPConfirmed := hasJSONIP && jsonIP != "" && jsonIP != ip.String() && !strings.Contains(jsonIP, ip.String())
+		if proxyIPConfirmed {
+			res.ProxyIP = true
+			colo, _ := res.Trace["colo"]
+			if colo == "" {
+				colo, _ = jsonData["colo"].(string)
+			}
+			fmt.Printf("PROBE PROXYIP %s -> %s: exit_ip=%s colo=%s total=%dms\n",
+				ip.String(), p.cfg.HostHeader, jsonIP, colo, time.Since(start).Milliseconds())
+		} else {
+			fmt.Printf("PROBE CF-NODE %s -> %s: status=%d server=%s cf-ray=%s total=%dms\n",
+				ip.String(), p.cfg.HostHeader, httpRes.StatusCode, serverHeader, cfRay, time.Since(start).Milliseconds())
+		}
 	}
 	return res
 }
