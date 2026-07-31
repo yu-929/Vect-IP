@@ -340,8 +340,8 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		ProxyIPMode:          req.ProxyIPMode,
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "ipv4.090227.xyz"
-		probeCfg.HostHeader = "ipv4.090227.xyz"
+		probeCfg.SNI = "cloudflare.com"
+		probeCfg.HostHeader = "cloudflare.com"
 	}
 	if req.Path == "" {
 		probeCfg.Path = "/"
