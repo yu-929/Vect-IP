@@ -278,7 +278,7 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 		proxyIPConfirmed := hasJSONIP && jsonIP != "" && jsonIP != ip.String() && !strings.Contains(jsonIP, ip.String())
 		if proxyIPConfirmed {
 			res.ProxyIP = true
-			colo := res.Trace["colo"]
+			colo, _ := res.Trace["colo"]
 			if colo == "" {
 				colo, _ = jsonData["colo"].(string)
 			}
