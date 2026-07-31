@@ -76,11 +76,6 @@ func (e *Engine) Run(ctx context.Context, req Request) (Response, error) {
 	e.tree = bandit.NewArmTree(prefixes, e.cfg.ToTreeConfig())
 	e.headManager = bandit.NewHeadManager(e.cfg.ToHeadManagerConfig(timeoutMS))
 	e.topN = NewTopNCollector(e.cfg.TopN, e.cfg.ColoDiversity)
-
-	// Apply verify cert setting to probe config
-	if !req.Probe.VerifyCert {
-		req.Probe.VerifyCert = true // default to true
-	}
 	e.probeCfg = req.Probe
 	// Initialize channels
 	e.tasks = make(chan probeTask, e.cfg.Concurrency*2)

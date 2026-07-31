@@ -334,7 +334,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		Rounds:           req.Rounds,
 		SkipFirst:        req.SkipFirst,
 		SkipFailedRounds: req.SkipFailedRounds,
-		VerifyCert:       req.VerifyCert,
+		VerifyCert:       req.VerifyCert || true, // default to true
 	}
 	if req.Host == "" {
 		probeCfg.SNI = "example.com"
@@ -345,9 +345,6 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.SkipFirst <= 0 {
 		probeCfg.SkipFirst = 1
-	}
-	if !req.VerifyCert {
-		probeCfg.VerifyCert = true // default to true
 	}
 
 	engReq := engine.Request{

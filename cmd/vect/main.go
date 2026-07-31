@@ -235,7 +235,6 @@ func main() {
 		SplitInterval:   splitInterval,
 		ColoAllow:       parseColoList(coloAllow),
 		ColoBlock:       parseColoList(coloExclude),
-		VerifyCert:      verifyCert,
 	}
 
 	probeCfg := probe.Config{
@@ -246,6 +245,7 @@ func main() {
 		Port:       port,
 		Rounds:     rounds,
 		SkipFirst:  skipFirst,
+		VerifyCert: verifyCert,
 	}
 
 	req := engine.Request{
