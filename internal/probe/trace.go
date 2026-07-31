@@ -184,27 +184,16 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 
 	if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
 		res.Trace = parseTrace(string(body))
-		// Verify Cloudflare certificate by checking cert chain
-		if httpRes.TLS != nil && len(httpRes.TLS.PeerCertificates) > 0 {
-			cert := httpRes.TLS.PeerCertificates[0]
-			// Check if certificate contains cloudflare.com
-			isCF := strings.Contains(cert.Subject.CommonName, "cloudflare.com")
-			if !isCF {
-				for _, dnsName := range cert.DNSNames {
-					if strings.Contains(dnsName, "cloudflare.com") {
-						isCF = true
-						break
-					}
-				}
-			}
-			if !isCF {
-				res.OK = false
-				res.Error = "non-cloudflare-certificate"
-				res.TotalMS = time.Since(start).Milliseconds()
-				return res
-			}
+		// Critical check: Cloudflare nodes must return a "colo" field in /cdn-cgi/trace.
+		// Non-CF servers may return 200 on any path, so we require the colo marker.
+		colo, hasColo := res.Trace["colo"]
+		if !hasColo || colo == "" {
+			res.OK = false
+			res.Error = "no-colo-field"
+			fmt.Printf("PROBE NO-COLO %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
+			return res
 		}
-		fmt.Printf("PROBE OK %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
+		fmt.Printf("PROBE OK %s -> %s: status=%d colo=%s total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, colo, time.Since(start).Milliseconds())
 	} else {
 		res.Error = fmt.Sprintf("http_status_%d", httpRes.StatusCode)
 		fmt.Printf("PROBE BAD %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
