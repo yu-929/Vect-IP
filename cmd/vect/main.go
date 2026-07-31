@@ -120,6 +120,9 @@ func main() {
 		// Colo filter
 		coloAllow   string
 		coloExclude string
+
+		// Certificate verification
+		verifyCert bool
 	)
 
 	flag.Var(&cidrs, "cidr", "CIDR to search (repeatable). Example: 1.1.0.0/16 or 2606:4700::/32")
@@ -169,6 +172,9 @@ func main() {
 	// Colo filter (CDN node filter by trace colo)
 	flag.StringVar(&coloAllow, "colo", "", "Comma-separated colo whitelist; only these CDN nodes enter results (e.g. HKG,SJC)")
 	flag.StringVar(&coloExclude, "colo-exclude", "", "Comma-separated colo blacklist; exclude these CDN nodes from results (e.g. LAX,DFW)")
+
+	// Certificate verification
+	flag.BoolVar(&verifyCert, "verify-cert", true, "Verify TLS certificate (default: true)")
 
 	flag.Parse()
 
@@ -229,6 +235,7 @@ func main() {
 		SplitInterval:   splitInterval,
 		ColoAllow:       parseColoList(coloAllow),
 		ColoBlock:       parseColoList(coloExclude),
+		VerifyCert:      verifyCert,
 	}
 
 	probeCfg := probe.Config{

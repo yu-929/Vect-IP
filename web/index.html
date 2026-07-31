@@ -757,18 +757,30 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 </div>
 </div>
-<div class="settings-row">
-<div style="flex:1">
-<div class="sl-label">Colo 机房多样性</div>
-<div class="sl-desc">TopN 结果强制分布到不同机房，避免单机房故障导致全部失效</div>
-</div>
-<div class="toggle-wrap">
-<div class="toggle-track" id="coloDiversityTrack" onclick="toggleColoDiversity()">
-<div class="toggle-knob"></div>
-<input type="checkbox" class="toggle-input" id="coloDiversityToggle" aria-label="Colo 机房多样性">
-</div>
-</div>
-</div>
+ <div class="settings-row">
+ <div style="flex:1">
+ <div class="sl-label">Colo 机房多样性</div>
+ <div class="sl-desc">TopN 结果强制分布到不同机房，避免单机房故障导致全部失效</div>
+ </div>
+ <div class="toggle-wrap">
+ <div class="toggle-track" id="coloDiversityTrack" onclick="toggleColoDiversity()">
+ <div class="toggle-knob"></div>
+ <input type="checkbox" class="toggle-input" id="coloDiversityToggle" aria-label="Colo 机房多样性">
+ </div>
+ </div>
+ </div>
+ <div class="settings-row">
+ <div style="flex:1">
+ <div class="sl-label">TLS 证书验证</div>
+ <div class="sl-desc">验证 TLS 证书有效性，过滤证书无效的 IP（默认开启）</div>
+ </div>
+ <div class="toggle-wrap">
+ <div class="toggle-track on" id="verifyCertTrack" onclick="toggleVerifyCert()">
+ <div class="toggle-knob"></div>
+ <input type="checkbox" class="toggle-input" id="verifyCertToggle" checked aria-label="TLS 证书验证">
+ </div>
+ </div>
+ </div>
 </div>
 
 <div class="settings-group">
@@ -995,6 +1007,12 @@ function toggleColoDiversity(){
 	const on=S('coloDiversityTrack').classList.toggle('on');
 	S('coloDiversityToggle').checked=on;
 	localStorage.setItem('vect-colo-diversity',on?'1':'0');
+}
+
+function toggleVerifyCert(){
+	const on=S('verifyCertTrack').classList.toggle('on');
+	S('verifyCertToggle').checked=on;
+	localStorage.setItem('vect-verify-cert',on?'1':'0');
 }
 
 function saveDnsConfig(){
@@ -1236,6 +1254,7 @@ body.seed=parseInt(S('seed').value)||0;
 body.jitterFusionSearch=S('jitterFusionToggle').checked;
 body.skipFailedRounds=S('skipFailedToggle').checked;
 body.coloDiversity=S('coloDiversityToggle').checked;
+body.verifyCert=S('verifyCertToggle').checked;
 	if(localStorage.getItem('vect-armstrong')==='1'){
 if(parseInt(S('ipVersion').value)===6||S('ipVersion').value==='6'){showError('完全体模式仅支持 IPv4，请关闭后重试');return;}
 body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=10;
@@ -1929,6 +1948,15 @@ if(localStorage.getItem('vect-skip-failed')==='1'){
 if(localStorage.getItem('vect-colo-diversity')==='1'){
 	S('coloDiversityTrack').classList.add('on');
 	S('coloDiversityToggle').checked=true;
+}
+// Init verify cert toggle from storage (default to true if not set)
+const verifyCertStored=localStorage.getItem('vect-verify-cert');
+if(verifyCertStored===null || verifyCertStored==='1'){
+	S('verifyCertTrack').classList.add('on');
+	S('verifyCertToggle').checked=true;
+} else if(verifyCertStored==='0'){
+	S('verifyCertTrack').classList.remove('on');
+	S('verifyCertToggle').checked=false;
 }
 // Restore DNS config from storage
 try{

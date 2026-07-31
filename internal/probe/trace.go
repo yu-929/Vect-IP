@@ -19,15 +19,16 @@ type Config struct {
 	Timeout              time.Duration
 	SNI                  string
 	HostHeader           string
-	Path                 string
-	Port                 int    // TLS port (default 443)
-	Rounds               int   // 总测试次数，默认6
-	SkipFirst            int   // 跳过前N次，默认1（跳过第1次握手）
-	SkipFailedRounds     bool  // 跳过失败轮次（不中断探测）
-	DialTimeout          time.Duration // TCP dial 超时，0 则使用 Timeout
-	TLSHandshakeTimeout  time.Duration // TLS 握手超时，0 则使用 Timeout
-	CloseConn            bool  // 每轮强制关闭连接（用于 HTTP jitter 测量）
-	DisableHTTP2         bool  // 禁用 HTTP/2（用于 req.Close 生效）
+	Path                 string    // TLS port (default 443)
+	Port                 int       // 总测试次数，默认 6
+	Rounds               int       // 跳过前 N 次，默认 1（跳过第 1 次握手）
+	SkipFirst            int       // 跳过失败轮次（不中断探测）
+	SkipFailedRounds     bool      // TLS 握手超时，0 则使用 Timeout
+	DialTimeout          time.Duration // TLS 握手超时，0 则使用 Timeout
+	TLSHandshakeTimeout  time.Duration // 验证证书
+	VerifyCert           bool      // 每轮强制关闭连接（用于 HTTP jitter 测量）
+	CloseConn            bool      // 禁用 HTTP/2（用于 req.Close 生效）
+	DisableHTTP2         bool
 }
 
 type Result struct {
@@ -73,6 +74,10 @@ func NewProber(cfg Config) *Prober {
 	if cfg.Port <= 0 {
 		cfg.Port = 443
 	}
+	verifyCert := cfg.VerifyCert
+	if !cfg.VerifyCert {
+		verifyCert = true // default to true
+	}
 
 	transport := &http.Transport{
 		Proxy: nil, // critical: ignore HTTP(S)_PROXY and NO_PROXY env vars
@@ -89,7 +94,7 @@ func NewProber(cfg Config) *Prober {
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			ServerName:         cfg.SNI,
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: !verifyCert,
 		},
 	}
 	if cfg.DisableHTTP2 {

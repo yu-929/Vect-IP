@@ -62,6 +62,7 @@ type ScanRequest struct {
 	CustomDownloadEnabled bool    `json:"customDownloadEnabled"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 	ColoDiversity        bool     `json:"coloDiversity"`
+	VerifyCert           bool     `json:"verifyCert"`
 }
 
 type ScanStatus struct {
@@ -333,6 +334,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		Rounds:           req.Rounds,
 		SkipFirst:        req.SkipFirst,
 		SkipFailedRounds: req.SkipFailedRounds,
+		VerifyCert:       req.VerifyCert,
 	}
 	if req.Host == "" {
 		probeCfg.SNI = "example.com"
@@ -343,6 +345,9 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.SkipFirst <= 0 {
 		probeCfg.SkipFirst = 1
+	}
+	if !req.VerifyCert {
+		probeCfg.VerifyCert = true // default to true
 	}
 
 	engReq := engine.Request{
