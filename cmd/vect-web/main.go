@@ -509,8 +509,8 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		AvailabilityCheckAPI: "https://api.090227.xyz/check",
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "example.com"
-		probeCfg.HostHeader = "example.com"
+		probeCfg.SNI = "ipv4.090227.xyz"
+		probeCfg.HostHeader = "ipv4.090227.xyz"
 	}
 	if req.Path == "" {
 		probeCfg.Path = "/cdn-cgi/trace"
