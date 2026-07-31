@@ -3,6 +3,7 @@ package probe
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -44,6 +45,7 @@ type Result struct {
 	MinMS     int64             `json:"min_ms"`
 	MaxMS     int64             `json:"max_ms"`
 	Trace     map[string]string `json:"trace,omitempty"`
+	JSON      map[string]any    `json:"json,omitempty"`
 	When      time.Time         `json:"when"`
 }
 
@@ -183,17 +185,30 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	res.OK = true
 
 	if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
-		res.Trace = parseTrace(string(body))
-		// Critical check: Cloudflare nodes must return a "colo" field in /cdn-cgi/trace.
-		// Non-CF servers may return 200 on any path, so we require the colo marker.
+		bodyStr := string(body)
+		res.Trace = parseTrace(bodyStr)
+		// Try JSON parse for probe targets that return JSON (like check.proxyip)
+		var jsonData map[string]any
+		if err := json.Unmarshal(body, &jsonData); err == nil && len(jsonData) > 0 {
+			res.JSON = jsonData
+		}
+
 		colo, hasColo := res.Trace["colo"]
-		if !hasColo || colo == "" {
+		_, hasIP := jsonData["ip"]
+		hasIPStr, hasIPField := jsonData["ipAddress"]
+
+		if (hasColo && colo != "") || hasIP || (hasIPField && hasIPStr != nil) {
+			if hasColo && colo != "" {
+				fmt.Printf("PROBE OK %s -> %s: status=%d colo=%s total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, colo, time.Since(start).Milliseconds())
+			} else {
+				fmt.Printf("PROBE OK %s -> %s: status=%d json_ip=yes total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
+			}
+		} else {
 			res.OK = false
-			res.Error = "no-colo-field"
-			fmt.Printf("PROBE NO-COLO %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
+			res.Error = "no-colo-or-ip-field"
+			fmt.Printf("PROBE NO-CLOUDFLARE %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
 			return res
 		}
-		fmt.Printf("PROBE OK %s -> %s: status=%d colo=%s total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, colo, time.Since(start).Milliseconds())
 	} else {
 		res.Error = fmt.Sprintf("http_status_%d", httpRes.StatusCode)
 		fmt.Printf("PROBE BAD %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
