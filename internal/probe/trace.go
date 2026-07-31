@@ -184,30 +184,34 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	res.TotalMS = time.Since(start).Milliseconds()
 	res.OK = true
 
-	if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
+	serverHeader := httpRes.Header.Get("Server")
+	cfRay := httpRes.Header.Get("CF-RAY")
+	isCF := serverHeader == "cloudflare" || cfRay != ""
+
+	if isCF {
 		bodyStr := string(body)
 		res.Trace = parseTrace(bodyStr)
-		// Try JSON parse for probe targets that return JSON (like check.proxyip)
 		var jsonData map[string]any
 		if err := json.Unmarshal(body, &jsonData); err == nil && len(jsonData) > 0 {
 			res.JSON = jsonData
 		}
-
-		colo, hasColo := res.Trace["colo"]
+		colo, _ := res.Trace["colo"]
+		fmt.Printf("PROBE OK %s -> %s: status=%d server=%s cf-ray=%s colo=%s total=%dms\n",
+			ip.String(), p.cfg.HostHeader, httpRes.StatusCode, serverHeader, cfRay, colo, time.Since(start).Milliseconds())
+	} else if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
+		bodyStr := string(body)
+		res.Trace = parseTrace(bodyStr)
+		var jsonData map[string]any
+		if err := json.Unmarshal(body, &jsonData); err == nil && len(jsonData) > 0 {
+			res.JSON = jsonData
+		}
 		_, hasIP := jsonData["ip"]
-		hasIPStr, hasIPField := jsonData["ipAddress"]
-
-		if (hasColo && colo != "") || hasIP || (hasIPField && hasIPStr != nil) {
-			if hasColo && colo != "" {
-				fmt.Printf("PROBE OK %s -> %s: status=%d colo=%s total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, colo, time.Since(start).Milliseconds())
-			} else {
-				fmt.Printf("PROBE OK %s -> %s: status=%d json_ip=yes total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
-			}
+		if hasIP {
+			fmt.Printf("PROBE OK %s -> %s: status=%d json_ip=yes total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
 		} else {
 			res.OK = false
-			res.Error = "no-colo-or-ip-field"
-			fmt.Printf("PROBE NO-CLOUDFLARE %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
-			return res
+			res.Error = fmt.Sprintf("no-cf-server-header status=%d", httpRes.StatusCode)
+			fmt.Printf("PROBE NO-CF %s -> %s: status=%d server=%s total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, serverHeader, time.Since(start).Milliseconds())
 		}
 	} else {
 		res.Error = fmt.Sprintf("http_status_%d", httpRes.StatusCode)
