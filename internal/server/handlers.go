@@ -337,11 +337,11 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		VerifyCert:       req.VerifyCert,
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "cloudflare.com"
-		probeCfg.HostHeader = "cloudflare.com"
+		probeCfg.SNI = "ipv4.090227.xyz"
+		probeCfg.HostHeader = "ipv4.090227.xyz"
 	}
 	if req.Path == "" {
-		probeCfg.Path = "/cdn-cgi/trace"
+		probeCfg.Path = "/"
 	}
 	if req.SkipFirst <= 0 {
 		probeCfg.SkipFirst = 1
