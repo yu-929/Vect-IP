@@ -63,6 +63,7 @@ JitterFusionSearch   bool     `json:"jitterFusionSearch"`
 	VerifyCert           bool     `json:"verifyCert"`
 	CustomDownloadEnabled bool   `json:"customDownloadEnabled"`
 	CustomDownloadURL    string   `json:"customDownloadUrl"`
+	ProxyIPMode          bool     `json:"proxyIPMode"`
 }
 
 type ScanStatus struct {
@@ -336,10 +337,11 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		SkipFailedRounds:     req.SkipFailedRounds,
 		VerifyCert:           req.VerifyCert,
 		AvailabilityCheckAPI: "https://api.090227.xyz/check",
+		ProxyIPMode:          req.ProxyIPMode,
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "ipv4.090227.xyz"
-		probeCfg.HostHeader = "ipv4.090227.xyz"
+		probeCfg.SNI = "cloudflare.com"
+		probeCfg.HostHeader = "cloudflare.com"
 	}
 	if req.Path == "" {
 		probeCfg.Path = "/"

@@ -31,6 +31,7 @@ type Config struct {
 	CloseConn            bool
 	DisableHTTP2         bool
 	AvailabilityCheckAPI string
+	ProxyIPMode          bool
 }
 
 type Result struct {
@@ -248,13 +249,28 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 	// The API connects from Cloudflare Workers, providing definitive ProxyIP detection.
 	if p.apiClient != nil && p.cfg.AvailabilityCheckAPI != "" {
 		proxyIP := p.checkAvailabilityAPI(ip)
-		if proxyIP {
-			res.ProxyIP = true
-			fmt.Printf("PROBE PROXYIP %s -> %s: api=success total=%dms\n",
-				ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+		if p.cfg.ProxyIPMode {
+			// ProxyIP mode: only API-verified IPs are OK
+			if proxyIP {
+				res.ProxyIP = true
+				fmt.Printf("PROBE PROXYIP %s -> %s: api=success total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			} else {
+				res.OK = false
+				res.Error = "api-rejected"
+				fmt.Printf("PROBE API-REJECTED %s -> %s: total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			}
 		} else {
-			fmt.Printf("PROBE CF-NODE %s -> %s: api=rejected total=%dms\n",
-				ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			// Official mode: all CF nodes are OK, proxy_ip is metadata
+			if proxyIP {
+				res.ProxyIP = true
+				fmt.Printf("PROBE PROXYIP %s -> %s: api=success total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			} else {
+				fmt.Printf("PROBE CF-NODE %s -> %s: api=rejected total=%dms\n",
+					ip.String(), p.cfg.HostHeader, time.Since(start).Milliseconds())
+			}
 		}
 	} else {
 		// Fallback to JSON-based heuristic when API is not configured.

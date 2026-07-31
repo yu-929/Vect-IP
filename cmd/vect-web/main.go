@@ -62,6 +62,7 @@ type ScanRequest struct {
 	JitterFusionSearch   bool     `json:"jitterFusionSearch"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 	ColoDiversity        bool     `json:"coloDiversity"`
+	ProxyIPMode          bool     `json:"proxyIPMode"`
 }
 
 type ScanStatus struct {
@@ -507,10 +508,11 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		SkipFirst:            req.SkipFirst,
 		SkipFailedRounds:     req.SkipFailedRounds,
 		AvailabilityCheckAPI: "https://api.090227.xyz/check",
+		ProxyIPMode:          req.ProxyIPMode,
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "ipv4.090227.xyz"
-		probeCfg.HostHeader = "ipv4.090227.xyz"
+		probeCfg.SNI = "cloudflare.com"
+		probeCfg.HostHeader = "cloudflare.com"
 	}
 	if req.Path == "" {
 		probeCfg.Path = "/cdn-cgi/trace"
