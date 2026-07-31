@@ -511,8 +511,8 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		ProxyIPMode:          req.ProxyIPMode,
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "cloudflare.com"
-		probeCfg.HostHeader = "cloudflare.com"
+		probeCfg.SNI = "example.com"
+		probeCfg.HostHeader = "example.com"
 	}
 	if req.Path == "" {
 		probeCfg.Path = "/cdn-cgi/trace"
