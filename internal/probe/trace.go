@@ -184,6 +184,26 @@ func (p *Prober) probeOnce(ctx context.Context, ip netip.Addr) Result {
 
 	if httpRes.StatusCode >= 200 && httpRes.StatusCode < 300 {
 		res.Trace = parseTrace(string(body))
+		// Verify Cloudflare certificate by checking cert chain
+		if httpRes.TLS != nil && len(httpRes.TLS.PeerCertificates) > 0 {
+			cert := httpRes.TLS.PeerCertificates[0]
+			// Check if certificate contains cloudflare.com
+			isCF := strings.Contains(cert.Subject.CommonName, "cloudflare.com")
+			if !isCF {
+				for _, dnsName := range cert.DNSNames {
+					if strings.Contains(dnsName, "cloudflare.com") {
+						isCF = true
+						break
+					}
+				}
+			}
+			if !isCF {
+				res.OK = false
+				res.Error = "non-cloudflare-certificate"
+				res.TotalMS = time.Since(start).Milliseconds()
+				return res
+			}
+		}
 		fmt.Printf("PROBE OK %s -> %s: status=%d total=%dms\n", ip.String(), p.cfg.HostHeader, httpRes.StatusCode, time.Since(start).Milliseconds())
 	} else {
 		res.Error = fmt.Sprintf("http_status_%d", httpRes.StatusCode)
