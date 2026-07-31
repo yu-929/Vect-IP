@@ -334,7 +334,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		Rounds:           req.Rounds,
 		SkipFirst:        req.SkipFirst,
 		SkipFailedRounds: req.SkipFailedRounds,
-		VerifyCert:       req.VerifyCert || true, // default to true
+		VerifyCert:       req.VerifyCert,
 	}
 	if req.Host == "" {
 		probeCfg.SNI = "example.com"

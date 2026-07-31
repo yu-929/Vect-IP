@@ -74,10 +74,6 @@ func NewProber(cfg Config) *Prober {
 	if cfg.Port <= 0 {
 		cfg.Port = 443
 	}
-	verifyCert := cfg.VerifyCert
-	if !cfg.VerifyCert {
-		verifyCert = true // default to true
-	}
 
 	transport := &http.Transport{
 		Proxy: nil, // critical: ignore HTTP(S)_PROXY and NO_PROXY env vars
@@ -94,7 +90,7 @@ func NewProber(cfg Config) *Prober {
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			ServerName:         cfg.SNI,
-			InsecureSkipVerify: !verifyCert,
+			InsecureSkipVerify: !cfg.VerifyCert,
 		},
 	}
 	if cfg.DisableHTTP2 {
