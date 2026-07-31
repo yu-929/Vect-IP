@@ -62,7 +62,6 @@ type ScanRequest struct {
 	JitterFusionSearch   bool     `json:"jitterFusionSearch"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 	ColoDiversity        bool     `json:"coloDiversity"`
-	ProxyIPMode          bool     `json:"proxyIPMode"`
 }
 
 type ScanStatus struct {
@@ -500,15 +499,13 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	probeCfg := probe.Config{
-		Timeout:              timeout,
-		SNI:                  req.Host,
-		HostHeader:           req.Host,
-		Path:                 req.Path,
-		Rounds:               req.Rounds,
-		SkipFirst:            req.SkipFirst,
-		SkipFailedRounds:     req.SkipFailedRounds,
-		AvailabilityCheckAPI: "https://api.090227.xyz/check",
-		ProxyIPMode:          req.ProxyIPMode,
+		Timeout:          timeout,
+		SNI:              req.Host,
+		HostHeader:       req.Host,
+		Path:             req.Path,
+		Rounds:           req.Rounds,
+		SkipFirst:        req.SkipFirst,
+		SkipFailedRounds: req.SkipFailedRounds,
 	}
 	if req.Host == "" {
 		probeCfg.SNI = "example.com"

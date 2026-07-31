@@ -57,13 +57,12 @@ type ScanRequest struct {
 	DownloadBytes        int64    `json:"downloadBytes"`
 	DownloadTimeout      int      `json:"downloadTimeout"`
 	DownloadConcurrency  int      `json:"downloadConcurrency"`
-JitterFusionSearch   bool     `json:"jitterFusionSearch"`
+	JitterFusionSearch   bool     `json:"jitterFusionSearch"`
+	CustomDownloadURL    string   `json:"customDownloadUrl"`
+	CustomDownloadEnabled bool    `json:"customDownloadEnabled"`
 	SkipFailedRounds     bool     `json:"skipFailedRounds"`
 	ColoDiversity        bool     `json:"coloDiversity"`
 	VerifyCert           bool     `json:"verifyCert"`
-	CustomDownloadEnabled bool   `json:"customDownloadEnabled"`
-	CustomDownloadURL    string   `json:"customDownloadUrl"`
-	ProxyIPMode          bool     `json:"proxyIPMode"`
 }
 
 type ScanStatus struct {
@@ -328,20 +327,18 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	probeCfg := probe.Config{
-		Timeout:              timeout,
-		SNI:                  req.Host,
-		HostHeader:           req.Host,
-		Path:                 req.Path,
-		Rounds:               req.Rounds,
-		SkipFirst:            req.SkipFirst,
-		SkipFailedRounds:     req.SkipFailedRounds,
-		VerifyCert:           req.VerifyCert,
-		AvailabilityCheckAPI: "https://api.090227.xyz/check",
-		ProxyIPMode:          req.ProxyIPMode,
+		Timeout:          timeout,
+		SNI:              req.Host,
+		HostHeader:       req.Host,
+		Path:             req.Path,
+		Rounds:           req.Rounds,
+		SkipFirst:        req.SkipFirst,
+		SkipFailedRounds: req.SkipFailedRounds,
+		VerifyCert:       req.VerifyCert,
 	}
 	if req.Host == "" {
-		probeCfg.SNI = "ipv4.090227.xyz"
-		probeCfg.HostHeader = "ipv4.090227.xyz"
+		probeCfg.SNI = "cloudflare.com"
+		probeCfg.HostHeader = "cloudflare.com"
 	}
 	if req.Path == "" {
 		probeCfg.Path = "/"

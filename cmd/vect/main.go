@@ -133,7 +133,7 @@ func main() {
 	flag.IntVar(&heads, "heads", 4, "Number of search heads (diversification)")
 	flag.IntVar(&beam, "beam", 32, "Beam width per head (kept candidate prefixes)")
 	flag.DurationVar(&timeout, "timeout", 3*time.Second, "Per-probe timeout")
-	flag.StringVar(&host, "host", "ipv4.090227.xyz", "Host name used for BOTH TLS SNI and HTTP Host header")
+	flag.StringVar(&host, "host", "cloudflare.com", "Host name used for BOTH TLS SNI and HTTP Host header")
 	flag.StringVar(&sni, "sni", "", "TLS SNI server name (deprecated: use --host)")
 	flag.StringVar(&hostHdr, "host-header", "", "HTTP Host header (deprecated: use --host)")
 	flag.StringVar(&path, "path", "/", "HTTP path to request")
@@ -238,15 +238,14 @@ func main() {
 	}
 
 	probeCfg := probe.Config{
-		Timeout:              timeout,
-		SNI:                  sni,
-		HostHeader:           hostHdr,
-		Path:                 path,
-		Port:                 port,
-		Rounds:               rounds,
-		SkipFirst:            skipFirst,
-		VerifyCert:           verifyCert,
-		AvailabilityCheckAPI: "https://api.090227.xyz/check",
+		Timeout:    timeout,
+		SNI:        sni,
+		HostHeader: hostHdr,
+		Path:       path,
+		Port:       port,
+		Rounds:     rounds,
+		SkipFirst:  skipFirst,
+		VerifyCert: verifyCert,
 	}
 
 	req := engine.Request{
