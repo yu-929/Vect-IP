@@ -591,7 +591,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 <div class="row" style="margin-top:6pt">
 <div class="field"><label>多样性权重</label><input id="diversityWeight" type="number" value="0.3" step="0.05" min="0" max="1"></div>
-<div class="field"><label>目标域名</label><input id="host" value="example.com"></div>
+<div class="field"><label>目标域名</label><input id="host" value="cloudflare.com"></div>
 </div>
 <div class="row" style="margin-top:6pt">
 <div class="field"><label>IPv4 下钻步长</label><input id="splitStepV4" type="number" value="2" min="1" max="8"></div>
@@ -1239,7 +1239,7 @@ if(adv){
 body.heads=parseInt(S('heads').value)||4;
 body.beam=parseInt(S('beam').value)||32;
 body.timeout=(parseFloat(S('timeout').value)||3)+'s';
-body.host=S('host').value||'example.com';
+body.host=S('host').value||'cloudflare.com';
 body.skipFirst=parseInt(S('skipFirst').value)||1;
 body.diversityWeight=parseFloat(S('diversityWeight').value)||0.3;
 body.splitStepV4=parseInt(S('splitStepV4').value)||2;
@@ -1261,7 +1261,7 @@ body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=1
 body.splitStepV4=8;body.maxBitsV4=32;body.rounds=10;body.skipFirst=3;
 body.heads=parseInt(S('heads')?S('heads').value:4)||4;
 body.timeout=(parseFloat(S('timeout')?S('timeout').value:3)||3)+'s';
-body.host=S('host')?S('host').value:'example.com';
+body.host=S('host')?S('host').value:'cloudflare.com';
 body.splitStepV6=parseInt(S('splitStepV6')?S('splitStepV6').value:4)||4;
 body.maxBitsV6=parseInt(S('maxBitsV6')?S('maxBitsV6').value:56)||56;
 }

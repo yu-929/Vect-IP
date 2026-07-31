@@ -133,7 +133,7 @@ func main() {
 	flag.IntVar(&heads, "heads", 4, "Number of search heads (diversification)")
 	flag.IntVar(&beam, "beam", 32, "Beam width per head (kept candidate prefixes)")
 	flag.DurationVar(&timeout, "timeout", 3*time.Second, "Per-probe timeout")
-	flag.StringVar(&host, "host", "example.com", "Host name used for BOTH TLS SNI and HTTP Host header (recommended)")
+	flag.StringVar(&host, "host", "cloudflare.com", "Host name used for BOTH TLS SNI and HTTP Host header (recommended, use a Cloudflare-hosted domain)")
 	flag.StringVar(&sni, "sni", "", "TLS SNI server name (deprecated: use --host)")
 	flag.StringVar(&hostHdr, "host-header", "", "HTTP Host header (deprecated: use --host)")
 	flag.StringVar(&path, "path", "/cdn-cgi/trace", "HTTP path to request")
