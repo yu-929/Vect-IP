@@ -591,7 +591,7 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
 </div>
 <div class="row" style="margin-top:6pt">
 <div class="field"><label>多样性权重</label><input id="diversityWeight" type="number" value="0.3" step="0.05" min="0" max="1"></div>
-<div class="field"><label>目标域名</label><input id="host" value="cloudflare.com"></div>
+<div class="field"><label>目标域名</label><input id="host" value="ipv4.090227.xyz"></div>
 </div>
 <div class="row" style="margin-top:6pt">
 <div class="field"><label>IPv4 下钻步长</label><input id="splitStepV4" type="number" value="2" min="1" max="8"></div>
@@ -766,18 +766,6 @@ textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,119,237,0
  <div class="toggle-track" id="coloDiversityTrack" onclick="toggleColoDiversity()">
  <div class="toggle-knob"></div>
  <input type="checkbox" class="toggle-input" id="coloDiversityToggle" aria-label="Colo 机房多样性">
- </div>
- </div>
- </div>
- <div class="settings-row">
- <div style="flex:1">
- <div class="sl-label">反代模式</div>
- <div class="sl-desc">仅 API 验证通过的 IP 标记为 OK，其他 CF 节点标记为不可用</div>
- </div>
- <div class="toggle-wrap">
- <div class="toggle-track" id="proxyIPModeTrack" onclick="toggleProxyIPMode()">
- <div class="toggle-knob"></div>
- <input type="checkbox" class="toggle-input" id="proxyIPModeToggle" aria-label="反代模式">
  </div>
  </div>
  </div>
@@ -1021,12 +1009,6 @@ function toggleColoDiversity(){
 	localStorage.setItem('vect-colo-diversity',on?'1':'0');
 }
 
-function toggleProxyIPMode(){
-	const on=S('proxyIPModeTrack').classList.toggle('on');
-	S('proxyIPModeToggle').checked=on;
-	localStorage.setItem('vect-proxyip-mode',on?'1':'0');
-}
-
 function toggleVerifyCert(){
 	const on=S('verifyCertTrack').classList.toggle('on');
 	S('verifyCertToggle').checked=on;
@@ -1257,7 +1239,7 @@ if(adv){
 body.heads=parseInt(S('heads').value)||4;
 body.beam=parseInt(S('beam').value)||32;
 body.timeout=(parseFloat(S('timeout').value)||3)+'s';
-body.host=S('host').value||'cloudflare.com';
+body.host=S('host').value||'ipv4.090227.xyz';
 body.skipFirst=parseInt(S('skipFirst').value)||1;
 body.diversityWeight=parseFloat(S('diversityWeight').value)||0.3;
 body.splitStepV4=parseInt(S('splitStepV4').value)||2;
@@ -1272,7 +1254,6 @@ body.seed=parseInt(S('seed').value)||0;
 body.jitterFusionSearch=S('jitterFusionToggle').checked;
 body.skipFailedRounds=S('skipFailedToggle').checked;
 body.coloDiversity=S('coloDiversityToggle').checked;
-body.proxyIPMode=S('proxyIPModeToggle').checked;
 body.verifyCert=S('verifyCertToggle').checked;
 	if(localStorage.getItem('vect-armstrong')==='1'){
 if(parseInt(S('ipVersion').value)===6||S('ipVersion').value==='6'){showError('完全体模式仅支持 IPv4，请关闭后重试');return;}
@@ -1280,7 +1261,7 @@ body.beam=64;body.diversityWeight=1;body.splitInterval=30;body.minSamplesSplit=1
 body.splitStepV4=8;body.maxBitsV4=32;body.rounds=10;body.skipFirst=3;
 body.heads=parseInt(S('heads')?S('heads').value:4)||4;
 body.timeout=(parseFloat(S('timeout')?S('timeout').value:3)||3)+'s';
-body.host=S('host')?S('host').value:'cloudflare.com';
+body.host=S('host')?S('host').value:'ipv4.090227.xyz';
 body.splitStepV6=parseInt(S('splitStepV6')?S('splitStepV6').value:4)||4;
 body.maxBitsV6=parseInt(S('maxBitsV6')?S('maxBitsV6').value:56)||56;
 }
@@ -1967,11 +1948,6 @@ if(localStorage.getItem('vect-skip-failed')==='1'){
 if(localStorage.getItem('vect-colo-diversity')==='1'){
 	S('coloDiversityTrack').classList.add('on');
 	S('coloDiversityToggle').checked=true;
-}
-// Init proxy IP mode toggle from storage
-if(localStorage.getItem('vect-proxyip-mode')==='1'){
-	S('proxyIPModeTrack').classList.add('on');
-	S('proxyIPModeToggle').checked=true;
 }
 // Init verify cert toggle from storage (default to true if not set)
 const verifyCertStored=localStorage.getItem('vect-verify-cert');
